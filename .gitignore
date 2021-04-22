@@ -1,0 +1,6 @@
+.vscode
+.project
+.pydevproject
+build/
+dist/
+*.egg-info/

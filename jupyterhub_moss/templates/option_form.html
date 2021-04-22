@@ -1,0 +1,248 @@
+<link href="/form/option_form.css" rel="stylesheet" />
+<script>
+window.SLURM_DATA = JSON.parse('{{ jsondata }}');
+</script>
+<script
+  src="/form/option_form.js"
+  type="text/javascript"
+  charset="utf-8"
+></script>
+<ul class="nav nav-tabs nav-justified">
+  <li class="active">
+    <a data-toggle="tab" href="#home" id="simple_tab_link">
+      Simple
+    </a>
+  </li>
+  <li><a data-toggle="tab" href="#menu1">Advanced</a></li>
+</ul>
+<div class="tab-content">
+  <div id="home" class="tab-pane fade in active">
+    <p class="subheading">Partition</p>
+    <div class="radio-toolbar">
+      {% for name, partition in partitions.items() %}
+      {% if partition.simple %}
+      <input
+        type="radio"
+        name="partition_simple"
+        id="{{ name }}"
+        value="{{ name }}"
+        {% if name == default_partition %}
+        checked
+        {% endif %}
+      />
+      <label for="{{ name }}">
+        <p>{{ partition.description }} <span class="label-extra-info">({{ partition.architecture }})</span></p>
+        <p class="label-extra-info">Partition: {{ name }}</p>
+      </label>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <p class="subheading">CPUs</p>
+    <div class="radio-toolbar">
+      <input
+        type="radio"
+        id="minimumCore"
+        name="nprocs_simple"
+        value="1"
+        checked
+      />
+      <label for="minimumCore">
+        <p>Minimum</p>
+        <p class="label-extra-info">1 core</p>
+      </label>
+
+      <input
+        type="radio"
+        id="mediumCore"
+        name="nprocs_simple"
+        value="1"
+      />
+      <label for="mediumCore">
+        <p>Half&nbsp;node</p>
+        <p id="mediumCpufield" class="label-extra-info"></p>
+      </label>
+
+      <input
+        type="radio"
+        id="maximumCore"
+        name="nprocs_simple"
+        value="1"
+      />
+      <label for="maximumCore">
+        <p>Entire&nbsp;node</p>
+        <p id="maximumCpufield" class="label-extra-info"></p>
+      </label>
+    </div>
+
+    <div id="gpu_simple" hidden>
+    <p class="subheading">GPUs</p>
+    <div class="radio-toolbar">
+      {% set ns = namespace(max_ngpus=0) %}
+      {% for partition in partitions.values() %}
+        {% if partition.simple and ns.max_ngpus <= partition.max_ngpus %}
+          {% set ns.max_ngpus = partition.max_ngpus %}
+        {% endif %}
+      {% endfor %}
+      {% for index in range(ns.max_ngpus+1) %}
+      <input
+        type="radio"
+        id="{{ index }}Gpu"
+        name="ngpus_simple"
+        value="{{ index }}"
+      />
+      <label for="{{ index }}Gpu">{{ index }}</label>
+      {% endfor %}
+    </div>
+    </div>
+    <p class="subheading">Options</p>
+    <div class="form-container">
+      <label for="jupyterlab_simple">Launch JupyterLab:</label>
+      <input
+        type="checkbox"
+        id="jupyterlab_simple"
+        name="jupyterlab_simple"
+      />
+      <label for="runtime_simple">Job duration:</label>
+      <select
+        name="runtime_simple"
+        id="runtime_simple"
+      >
+        <option value="01:00:00" selected>1 hour</option>
+        <option value="02:00:00">2 hours</option>
+        <option value="04:00:00">4 hours</option>
+        <option value="06:00:00">6 hours</option>
+        <option value="08:00:00">8 hours</option>
+        <option value="12:00:00">12 hours</option>
+      </select>
+    </div>
+    <h4 style="text-align: center">List of available resources:</h4>
+    <table width="100%" border="1" style="text-align: center">
+      <tr style="text-align: center; background-color: orange">
+        <th style="text-align: center" colspan="6">Current Status</th>
+      </tr>
+
+      <tr style="text-align: center; background-color: gold">
+        <th style="text-align: center">Partition</th>
+        <th style="text-align: center"># nodes</th>
+        <th style="text-align: center"># avail</th>
+      </tr>
+
+      {% for name, partition in partitions.items() %}
+      {% if partition.simple %}
+      <tr>
+        <th style="text-align: center">{{ name }}</th>
+        <td>{{ partition.max_nnodes }}</td>
+        <td>{{ partition.nnodes_idle }}</td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </table>
+  </div>
+  <div id="menu1" class="tab-pane fade indent-right" align="right">
+    <div class="form-container">
+    <label for="partition" accesskey="p">
+      Partition <span class="label-extra-info">(--partition)</span>:
+    </label>
+    <select
+      name="partition"
+      id="partition"
+    >
+      {% for name in partitions.keys() %}
+      <option value="{{ name }}">{{ name }}</option>
+      {% endfor %}
+    </select>
+    <label for="nnodes" accesskey="n">
+      Number of nodes <span class="label-extra-info">(--nodes)</span>:</label>
+    <input
+      type="number"
+      id="nnodes"
+      name="nnodes"
+      min="1"
+      value="1"
+    />
+    <label for="ntasks" accesskey="t">
+      Number of tasks <span class="label-extra-info">(--tasks)</span>:
+    </label>
+    <input
+      type="number"
+      id="ntasks"
+      name="ntasks"
+      min="1"
+      value="1"
+    />
+    <label for="nprocs" accesskey="c">
+      CPUs per task <span class="label-extra-info">(--cpus-per-task)</span>:
+    </label>
+    <input
+      type="number"
+      id="nprocs"
+      name="nprocs"
+      min="1"
+      value="1"
+    />
+    <label for="ngpus">
+      Number of GPUs <span class="label-extra-info">(--gres:&lt;gpu&gt;:)</span>:
+    </label>
+    <input
+      type="number"
+      id="ngpus"
+      name="ngpus"
+      min="0"
+      value="0"
+    />
+    <label for="runtime" accesskey="r">
+      Job duration <span class="label-extra-info">(as hh:mm:ss, --time)</span>:
+    </label>
+    <input
+      type="text"
+      id="runtime"
+      name="runtime"
+      value="01:00:00"
+      placeholder="hh:mm:ss"
+      pattern="(([0-1][0-9])|(2[0-3])):[0-5][0-9]:[0-5][0-9]"
+    />
+    <label for="reservation" accesskey="v">
+      Reservation <span class="label-extra-info">(--reservation)</span>:
+    </label>
+    <input
+      type="text"
+      id="reservation"
+      name="reservation"
+      placeholder="no reservation"
+    />
+    <label for="exclusive">Exclusive <span class="label-extra-info">(--exclusive)</span>:</label>
+    <input
+      type="checkbox"
+      id="exclusive"
+      name="exclusive"
+      value="true"
+    />
+    <label for="jupyterlab">Launch JupyterLab:</label>
+    <input
+      type="checkbox"
+      id="jupyterlab"
+      name="jupyterlab"
+      value="true"
+    />
+    </div>
+
+    <h4 style="text-align: center">List of available resources:</h4>
+    <table width="100%" border="1" style="text-align: center">
+      <tr style="text-align: center; background-color: orange">
+        <th style="text-align: center" colspan="6">Current Status</th>
+      </tr>
+      <tr style="text-align: center; background-color: gold">
+        <th style="text-align: center">Partition</th>
+        <th style="text-align: center"># nodes</th>
+        <th style="text-align: center"># avail</th>
+      </tr>
+      {% for name, partition in partitions.items() %}
+      <tr>
+        <th style="text-align: center">{{ name }}</th>
+        <td>{{ partition.max_nnodes }}</td>
+        <td>{{ partition.nnodes_idle }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>

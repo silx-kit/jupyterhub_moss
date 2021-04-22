@@ -1,0 +1,92 @@
+.radio-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.radio-toolbar label {
+  flex: 1 1 0%;
+  background-color: white;
+  margin: 5px;
+  padding: 10px 20px;
+  font-family: sans-serif, Arial;
+  font-size: 14px;
+  border: 1px solid #d3d3d3;
+  border-radius: 4px;
+  color: black;
+  cursor: pointer;
+  text-align: center;
+}
+
+.radio-toolbar label:hover {
+  background-color: #d3d3d3;
+}
+
+.radio-toolbar input[type='radio'] {
+  opacity: 0;
+  position: fixed;
+  width: 0;
+}
+
+.radio-toolbar input[type='radio']:focus + label {
+  border: 2px dashed #444;
+}
+
+.radio-toolbar input[type='radio']:checked + label {
+  background-color: #d3d3d3;
+  border-color: #d3d3d3;
+}
+
+.radio-toolbar input[type='radio']:disabled + label {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: cyan;
+}
+
+.subheading {
+  padding-top: 15px;
+  text-align: center;
+}
+
+.tab-content {
+  margin-bottom: -1em; /* Remove spacing by <br> above Start button */
+}
+
+.label-extra-info {
+  font-weight: normal;
+}
+
+.form-container {
+  padding: 0.3em;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  justify-items: stretch;
+}
+
+.form-container label {
+  justify-self: start;
+  cursor: pointer;
+}
+
+.form-container input[type="number"] {
+  width: 100%;
+}
+
+.form-container input[type="checkbox"] {
+  justify-self: start;
+}
+
+@media (max-width: 768px) {
+  .form-container label {
+    grid-column: 1;
+  }
+  .form-container input,
+  .form-container select {
+    grid-column: 1 / 3;
+  }
+  .form-container input[type="checkbox"] {
+    grid-column: 2;
+  }
+}
