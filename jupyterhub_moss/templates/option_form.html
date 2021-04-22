@@ -224,6 +224,16 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       name="jupyterlab"
       value="true"
     />
+    <label for="singularity_image">
+      Singularity image <span class="label-extra-info">(*.sif file)</span> <span class="label-info">Bêta</span>:
+    </label>
+    <input
+      type="text"
+      id="singularity_image"
+      name="singularity_image"
+      placeholder="/path/to/singularity/image.sif"
+    />
+
     </div>
 
     <h4 style="text-align: center">List of available resources:</h4>

@@ -49,12 +49,22 @@ class MOSlurmSpawner(SlurmSpawner):
         help="Information on supported partitions",
     ).tag(config=True)
 
+    singularity_cmd = traitlets.List(
+        trait=traitlets.Unicode(),
+        default_value=["singularity", "exec"],
+        help="Singularity command to use for starting jupyter server in container",
+    ).tag(config=True)
+
     jinja_env = Environment(
         loader=FileSystemLoader(TEMPLATE_PATH),
         autoescape=False,
         trim_blocks=True,
         lstrip_blocks=True,
     )
+
+    def __init__(self, *args, **kwargs):
+        self.__singularity_image = ""
+        super().__init__(*args, **kwargs)
 
     def _options_form_default(self):
         """Create a form for the user to choose the configuration for the SLURM job"""
@@ -109,6 +119,7 @@ class MOSlurmSpawner(SlurmSpawner):
         "exclusive": lambda v: v == "true",
         "ngpus": int,
         "jupyterlab": lambda v: v == "true",
+        "singularity_image": str,
     }
 
     _RUNTIME_REGEXP = re.compile(
@@ -136,6 +147,12 @@ class MOSlurmSpawner(SlurmSpawner):
             raise AssertionError("Error in number ot tasks")
         if "ngpus" in options and not 0 <= options["ngpus"] <= 2:
             raise AssertionError("Error in number of GPUs")
+        if "singularity_image" in options and not os.path.isfile(
+            options["singularity_image"]
+        ):
+            raise AssertionError(
+                "Singularity image not available: %s" % options["singularity_image"]
+            )
 
     def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
         """Parse the form and add options to the SLURM job script"""
@@ -166,11 +183,23 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             options["gres"] = gpu_gres_template.format(options["ngpus"])
 
-        # Virtualenv is not activated, we need to provide full path
-        venv_dir = self.partitions[partition]["venv"]
-        self.batchspawner_singleuser_cmd = os.path.join(
-            venv_dir, "batchspawner-singleuser"
-        )
-        self.cmd = [os.path.join(venv_dir, "jupyterhub-singleuser")]
+        self.__singularity_image = options.get("singularity_image", "")
+        if self.__singularity_image:
+            self.batchspawner_singleuser_cmd = "batchspawner-singleuser"
+            self.cmd = ["jupyterhub-singleuser"]
+        else:
+            # Virtualenv is not activated, we need to provide full path
+            venv_dir = self.partitions[partition]["venv"]
+            self.batchspawner_singleuser_cmd = os.path.join(
+                venv_dir, "batchspawner-singleuser"
+            )
+            self.cmd = [os.path.join(venv_dir, "jupyterhub-singleuser")]
 
         return options
+
+    def cmd_formatted_for_batch(self):
+        """Prepend singularity command if needed"""
+        cmd = super().cmd_formatted_for_batch()
+        if self.__singularity_image:
+            cmd = " ".join(self.singularity_cmd + [self.__singularity_image, cmd])
+        return cmd
