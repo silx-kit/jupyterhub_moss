@@ -42,6 +42,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 "venv": traitlets.Unicode(),
                 "max_ngpus": traitlets.Int(),
                 "max_nprocs": traitlets.Int(),
+                "max_runtime": traitlets.Int(),
             },
         ),
         key_trait=traitlets.Unicode(),

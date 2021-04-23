@@ -21,6 +21,7 @@ function setSimplePartition(name) {
   const maximumCpuFieldSimple = document.getElementById('maximumCpufield');
   const maximumCoreSimple = document.getElementById('maximumCore');
   const nprocsElem = document.getElementById('nprocs');
+  const runtimeSelect = document.getElementById('runtime_simple');
 
   partitionElem.value = name;
   updatePartitionLimits();
@@ -47,6 +48,15 @@ function setSimplePartition(name) {
   // Update nprocs according to current CPUs choice
   const selector = document.querySelector('input[name="nprocs_simple"]:checked');
   nprocsElem.value = selector ? selector.value : '1';
+
+  // Update available runtime options
+  // Reset to 1 hour if choice is not available with current partition
+  if (runtimeSelection.value * 3600 > info['max_runtime']) {
+    runtimeSelect.selectedIndex = 0;
+  }
+  runtimeSelect.options.forEach(element => {
+    setVisible(element, element.value * 3600 <= info['max_runtime']);
+  });
 }
 
 function updatePartitionLimits() {
@@ -113,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Runtime
   document.getElementById('runtime_simple').addEventListener(
     'change', e => {
-      runtime.value = e.target.value;
+      runtime.value = `${e.target.value}:00:00`;
   });
 
   // Reset when returning to simple tab

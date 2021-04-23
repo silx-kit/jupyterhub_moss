@@ -25,6 +25,7 @@ c.MOSlurmSpawner.partitions = {
         "venv": "/jupyter_env_path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes 
         "max_ngpus": 0,                    # Maximum number of GPUs per node
         "max_nprocs": 28,                  # Maximum number of CPUs per node
+        "max_runtime": 12*3600,            # Maximum time limit in seconds
     },
     "partition_2": {
         "description": "Partition 2",
@@ -34,6 +35,7 @@ c.MOSlurmSpawner.partitions = {
         "venv": "/path/to/jupyter/env/for/partition_2/bin/",
         "max_ngpus": 2,
         "max_nprocs": 128,
+        "max_runtime": 1*3600,
     },
     "partition_3": {
         "description": "Partition 3",
@@ -43,6 +45,7 @@ c.MOSlurmSpawner.partitions = {
         "venv": "/path/to/jupyter/env/for/partition_3/bin/",
         "max_ngpus": 0,
         "max_nprocs": 28,
+        "max_runtime": 12*3600,
     },
 }
 ```
