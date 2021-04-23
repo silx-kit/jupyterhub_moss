@@ -3,6 +3,14 @@ function resetSpawnForm() {
   setSimplePartition(window.SLURM_DATA.default_partition);
 }
 
+function setVisible(element, visible) {
+  if (visible) {
+    element.removeAttribute('hidden');
+  } else {
+    element.setAttribute('hidden', '');
+  }
+}
+
 function setSimplePartition(name) {
   const partitionElem = document.getElementById('partition');
   const gpuDivSimple = document.getElementById('gpu_simple');
@@ -20,11 +28,7 @@ function setSimplePartition(name) {
   const info = window.SLURM_DATA.partitions[name];
 
   // Toggle GPU choice display
-  if (info.max_ngpus !== 0) {
-    gpuDivSimple.removeAttribute('hidden');
-  } else {
-    gpuDivSimple.setAttribute('hidden', '');
-  }
+  setVisible(gpuDivSimple, info.max_ngpus !== 0);
 
   // Reset ngpus and GPUs choice
   gpuRadio0Simple.checked = true;
@@ -65,14 +69,9 @@ function updatePartitionLimits() {
 
   document.querySelectorAll('input[name="ngpus_simple"]').forEach(element =>
   {
-    const labelElem = document.querySelector(`label[for="${element.id}"]`)
-    if (element.value <= info.max_ngpus) {
-      element.removeAttribute('hidden');
-      labelElem.removeAttribute('hidden');
-    } else {
-      element.setAttribute('hidden', '');
-      labelElem.setAttribute('hidden', '');
-    }
+    const isVisible = element.value <= info.max_ngpus;
+    setVisible(element, isVisible);
+    setVisible(document.querySelector(`label[for="${element.id}"]`), isVisible);
   });
 }
 
