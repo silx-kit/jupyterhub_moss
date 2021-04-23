@@ -3,6 +3,14 @@ function resetSpawnForm() {
   setSimplePartition(window.SLURM_DATA.default_partition);
 }
 
+function setVisible(element, visible) {
+  if (visible) {
+    element.removeAttribute('hidden');
+  } else {
+    element.setAttribute('hidden', '');
+  }
+}
+
 function setSimplePartition(name) {
   const partitionElem = document.getElementById('partition');
   const gpuDivSimple = document.getElementById('gpu_simple');
@@ -13,6 +21,7 @@ function setSimplePartition(name) {
   const maximumCpuFieldSimple = document.getElementById('maximumCpufield');
   const maximumCoreSimple = document.getElementById('maximumCore');
   const nprocsElem = document.getElementById('nprocs');
+  const runtimeSelect = document.getElementById('runtime_simple');
 
   partitionElem.value = name;
   updatePartitionLimits();
@@ -20,11 +29,7 @@ function setSimplePartition(name) {
   const info = window.SLURM_DATA.partitions[name];
 
   // Toggle GPU choice display
-  if (info.max_ngpus !== 0) {
-    gpuDivSimple.removeAttribute('hidden');
-  } else {
-    gpuDivSimple.setAttribute('hidden', '');
-  }
+  setVisible(gpuDivSimple, info.max_ngpus !== 0);
 
   // Reset ngpus and GPUs choice
   gpuRadio0Simple.checked = true;
@@ -43,6 +48,16 @@ function setSimplePartition(name) {
   // Update nprocs according to current CPUs choice
   const selector = document.querySelector('input[name="nprocs_simple"]:checked');
   nprocsElem.value = selector ? selector.value : '1';
+
+  // Update available runtime options
+  // Reset to 1 hour if choice is not available with current partition
+  if (runtimeSelect.value * 3600 > info['max_runtime']) {
+    runtimeSelect.selectedIndex = 0;
+  };
+  for (i=0; i<runtimeSelect.options.length; i++) {
+    const element = runtimeSelect.options[i];
+    setVisible(element, element.value * 3600 <= info['max_runtime']);
+  };
 }
 
 function updatePartitionLimits() {
@@ -65,14 +80,9 @@ function updatePartitionLimits() {
 
   document.querySelectorAll('input[name="ngpus_simple"]').forEach(element =>
   {
-    const labelElem = document.querySelector(`label[for="${element.id}"]`)
-    if (element.value <= info.max_ngpus) {
-      element.removeAttribute('hidden');
-      labelElem.removeAttribute('hidden');
-    } else {
-      element.setAttribute('hidden', '');
-      labelElem.setAttribute('hidden', '');
-    }
+    const isVisible = element.value <= info.max_ngpus;
+    setVisible(element, isVisible);
+    setVisible(document.querySelector(`label[for="${element.id}"]`), isVisible);
   });
 }
 
@@ -114,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Runtime
   document.getElementById('runtime_simple').addEventListener(
     'change', e => {
-      runtime.value = e.target.value;
+      runtime.value = `${e.target.value}:00:00`;
   });
 
   // Reset when returning to simple tab

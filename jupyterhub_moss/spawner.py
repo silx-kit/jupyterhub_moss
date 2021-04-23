@@ -42,6 +42,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 "venv": traitlets.Unicode(),
                 "max_ngpus": traitlets.Int(),
                 "max_nprocs": traitlets.Int(),
+                "max_runtime": traitlets.Int(),
             },
         ),
         key_trait=traitlets.Unicode(),
@@ -56,28 +57,33 @@ class MOSlurmSpawner(SlurmSpawner):
         lstrip_blocks=True,
     )
 
-    def _options_form_default(self):
-        """Create a form for the user to choose the configuration for the SLURM job"""
-
+    def __get_slurm_info(self):
+        """Returns information about partitions from slurm"""
         # Get number of nodes and idle nodes for all partitions
         state = check_output(["sinfo", "-a", "-N", "--noheader", "-o", "%R %t"]).decode(
             "utf-8"
         )
-        partitions_info = defaultdict(lambda: {"nodes": 0, "idle": 0})
+        slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0})
         for line in state.splitlines():
             partition, state = line.split()
-            info = partitions_info[partition]
+            info = slurm_info[partition]
             info["nodes"] += 1
             if state == "idle":
                 info["idle"] += 1
+        return slurm_info
+
+    def _options_form_default(self):
+        """Create a form for the user to choose the configuration for the SLURM job"""
+
+        slurm_info = self.__get_slurm_info()
 
         # Combine all partition info as a dict
-        partitions_desc = {}
+        partitions = {}
         default_partition = None
         for name, info in self.partitions.items():
-            partitions_desc[name] = {
-                "max_nnodes": partitions_info[name]["nodes"],
-                "nnodes_idle": partitions_info[name]["idle"],
+            partitions[name] = {
+                "max_nnodes": slurm_info[name]["nodes"],
+                "nnodes_idle": slurm_info[name]["idle"],
                 **dict((k, v) for k, v in info.items() if k != "venv"),
             }
             if info["simple"] and default_partition is None:
@@ -86,14 +92,14 @@ class MOSlurmSpawner(SlurmSpawner):
         # Prepare json info
         jsondata = json.dumps(
             {
-                "partitions": partitions_desc,
+                "partitions": partitions,
                 "default_partition": default_partition,
             }
         )
 
         form_template = self.jinja_env.get_template("option_form.html")
         return form_template.render(
-            partitions=partitions_desc,
+            partitions=partitions,
             default_partition=default_partition,
             jsondata=jsondata,
         )
@@ -112,7 +118,7 @@ class MOSlurmSpawner(SlurmSpawner):
     }
 
     _RUNTIME_REGEXP = re.compile(
-        "^(?P<hour>(?:[0-1]?[0-9])|(?:2[0-3]))(?::(?P<minute>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
+        "^(?P<hours>[0-9]+)(?::(?P<minutes>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
     )
 
     def __validate_options(self, options):
@@ -120,21 +126,37 @@ class MOSlurmSpawner(SlurmSpawner):
         assert "partition" in options, "Partition information is missing"
         assert options["partition"] in self.partitions, "Partition is not supported"
 
+        partition_info = self.partitions[options["partition"]]
+        slurm_info = self.__get_slurm_info()[options["partition"]]
+
         if "runtime" in options:
             match = self._RUNTIME_REGEXP.match(options["runtime"])
             assert match is not None, "Error in runtime syntax"
-            runtime = datetime.time(*[int(v) for v in match.groups() if v is not None])
-            assert runtime <= datetime.time(12), "Maximum runtime is 12h"
+            runtime = datetime.timedelta(
+                **{k: int(v) for k, v in match.groupdict().items()}
+            )
+            max_runtime = datetime.timedelta(seconds=partition_info["max_runtime"])
+            assert runtime <= max_runtime, "Requested runtime is too long"
 
-        if "nprocs" in options and options["nprocs"] < 1:
+        if (
+            "nprocs" in options
+            and not 1 <= options["nprocs"] < partition_info["max_nprocs"]
+        ):
             raise AssertionError("Error in number of CPUs")
+
         if "reservation" in options and "\n" not in options["reservation"]:
             raise AssertionError("Error in reservation")
-        if "nnodes" in options and not 1 <= options["nnodes"] <= 30:
+
+        if "nnodes" in options and not 1 <= options["nnodes"] <= slurm_info["nodes"]:
             raise AssertionError("Error in number of nodes")
+
         if "ntasks" in options and options["ntasks"] < 1:
             raise AssertionError("Error in number ot tasks")
-        if "ngpus" in options and not 0 <= options["ngpus"] <= 2:
+
+        if (
+            "ngpus" in options
+            and not 0 <= options["ngpus"] <= partition_info["max_ngpus"]
+        ):
             raise AssertionError("Error in number of GPUs")
 
     def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
