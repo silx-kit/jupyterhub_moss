@@ -63,27 +63,27 @@ class MOSlurmSpawner(SlurmSpawner):
         state = check_output(["sinfo", "-a", "-N", "--noheader", "-o", "%R %t"]).decode(
             "utf-8"
         )
-        partitions_info = defaultdict(lambda: {"nodes": 0, "idle": 0})
+        slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0})
         for line in state.splitlines():
             partition, state = line.split()
-            info = partitions_info[partition]
+            info = slurm_info[partition]
             info["nodes"] += 1
             if state == "idle":
                 info["idle"] += 1
-        return partitions_info
+        return slurm_info
 
     def _options_form_default(self):
         """Create a form for the user to choose the configuration for the SLURM job"""
 
-        partitions_info = self.__get_slurm_info()
+        slurm_info = self.__get_slurm_info()
 
         # Combine all partition info as a dict
-        partitions_desc = {}
+        partitions = {}
         default_partition = None
         for name, info in self.partitions.items():
-            partitions_desc[name] = {
-                "max_nnodes": partitions_info[name]["nodes"],
-                "nnodes_idle": partitions_info[name]["idle"],
+            partitions[name] = {
+                "max_nnodes": slurm_info[name]["nodes"],
+                "nnodes_idle": slurm_info[name]["idle"],
                 **dict((k, v) for k, v in info.items() if k != "venv"),
             }
             if info["simple"] and default_partition is None:
@@ -92,14 +92,14 @@ class MOSlurmSpawner(SlurmSpawner):
         # Prepare json info
         jsondata = json.dumps(
             {
-                "partitions": partitions_desc,
+                "partitions": partitions,
                 "default_partition": default_partition,
             }
         )
 
         form_template = self.jinja_env.get_template("option_form.html")
         return form_template.render(
-            partitions=partitions_desc,
+            partitions=partitions,
             default_partition=default_partition,
             jsondata=jsondata,
         )
@@ -127,6 +127,7 @@ class MOSlurmSpawner(SlurmSpawner):
         assert options["partition"] in self.partitions, "Partition is not supported"
 
         partition_info = self.partitions[options["partition"]]
+        slurm_info = self.__get_slurm_info()[options["partition"]]
 
         if "runtime" in options:
             match = self._RUNTIME_REGEXP.match(options["runtime"])
@@ -146,8 +147,7 @@ class MOSlurmSpawner(SlurmSpawner):
         if "reservation" in options and "\n" not in options["reservation"]:
             raise AssertionError("Error in reservation")
 
-        max_nnodes = self.__get_slurm_info()[options["partition"]]["nodes"]
-        if "nnodes" in options and not 1 <= options["nnodes"] <= max_nnodes:
+        if "nnodes" in options and not 1 <= options["nnodes"] <= slurm_info["nodes"]:
             raise AssertionError("Error in number of nodes")
 
         if "ntasks" in options and options["ntasks"] < 1:
