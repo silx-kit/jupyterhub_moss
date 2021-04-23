@@ -57,9 +57,8 @@ class MOSlurmSpawner(SlurmSpawner):
         lstrip_blocks=True,
     )
 
-    def _options_form_default(self):
-        """Create a form for the user to choose the configuration for the SLURM job"""
-
+    def __get_slurm_info(self):
+        """Returns information about partitions from slurm"""
         # Get number of nodes and idle nodes for all partitions
         state = check_output(["sinfo", "-a", "-N", "--noheader", "-o", "%R %t"]).decode(
             "utf-8"
@@ -71,6 +70,12 @@ class MOSlurmSpawner(SlurmSpawner):
             info["nodes"] += 1
             if state == "idle":
                 info["idle"] += 1
+        return partitions_info
+
+    def _options_form_default(self):
+        """Create a form for the user to choose the configuration for the SLURM job"""
+
+        partitions_info = self.__get_slurm_info()
 
         # Combine all partition info as a dict
         partitions_desc = {}
@@ -113,7 +118,7 @@ class MOSlurmSpawner(SlurmSpawner):
     }
 
     _RUNTIME_REGEXP = re.compile(
-        "^(?P<hour>(?:[0-1]?[0-9])|(?:2[0-3]))(?::(?P<minute>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
+        "^(?P<hours>[0-9]+)(?::(?P<minutes>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
     )
 
     def __validate_options(self, options):
@@ -121,21 +126,37 @@ class MOSlurmSpawner(SlurmSpawner):
         assert "partition" in options, "Partition information is missing"
         assert options["partition"] in self.partitions, "Partition is not supported"
 
+        partition_info = self.partitions[options["partition"]]
+
         if "runtime" in options:
             match = self._RUNTIME_REGEXP.match(options["runtime"])
             assert match is not None, "Error in runtime syntax"
-            runtime = datetime.time(*[int(v) for v in match.groups() if v is not None])
-            assert runtime <= datetime.time(12), "Maximum runtime is 12h"
+            runtime = datetime.timedelta(
+                *{k: int(v) for k, v in match.groupdict().items()}
+            )
+            max_runtime = datetime.timedelta(seconds=partition_info["max_runtime"])
+            assert runtime <= max_runtime, "Requested runtime is too long"
 
-        if "nprocs" in options and options["nprocs"] < 1:
+        if (
+            "nprocs" in options
+            and not 1 <= options["nprocs"] < partition_info["max_nprocs"]
+        ):
             raise AssertionError("Error in number of CPUs")
+
         if "reservation" in options and "\n" not in options["reservation"]:
             raise AssertionError("Error in reservation")
-        if "nnodes" in options and not 1 <= options["nnodes"] <= 30:
+
+        max_nnodes = self.__get_slurm_info()[options["partition"]]["nodes"]
+        if "nnodes" in options and not 1 <= options["nnodes"] <= max_nnodes:
             raise AssertionError("Error in number of nodes")
+
         if "ntasks" in options and options["ntasks"] < 1:
             raise AssertionError("Error in number ot tasks")
-        if "ngpus" in options and not 0 <= options["ngpus"] <= 2:
+
+        if (
+            "ngpus" in options
+            and not 0 <= options["ngpus"] <= partition_info["max_ngpus"]
+        ):
             raise AssertionError("Error in number of GPUs")
 
     def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
