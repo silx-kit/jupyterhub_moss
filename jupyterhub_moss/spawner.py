@@ -132,7 +132,7 @@ class MOSlurmSpawner(SlurmSpawner):
             match = self._RUNTIME_REGEXP.match(options["runtime"])
             assert match is not None, "Error in runtime syntax"
             runtime = datetime.timedelta(
-                *{k: int(v) for k, v in match.groupdict().items()}
+                **{k: int(v) for k, v in match.groupdict().items()}
             )
             max_runtime = datetime.timedelta(seconds=partition_info["max_runtime"])
             assert runtime <= max_runtime, "Requested runtime is too long"

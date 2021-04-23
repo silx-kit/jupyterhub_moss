@@ -51,12 +51,13 @@ function setSimplePartition(name) {
 
   // Update available runtime options
   // Reset to 1 hour if choice is not available with current partition
-  if (runtimeSelection.value * 3600 > info['max_runtime']) {
+  if (runtimeSelect.value * 3600 > info['max_runtime']) {
     runtimeSelect.selectedIndex = 0;
-  }
-  runtimeSelect.options.forEach(element => {
+  };
+  for (i=0; i<runtimeSelect.options.length; i++) {
+    const element = runtimeSelect.options[i];
     setVisible(element, element.value * 3600 <= info['max_runtime']);
-  });
+  };
 }
 
 function updatePartitionLimits() {
