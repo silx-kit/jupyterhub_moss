@@ -1,8 +1,3 @@
-# Credits:
-# - Initial CometSpawner implementation: https://gist.github.com/zonca/aaed55502c4b16535fe947791d02ac32
-# - DESY jupyterhub slurm service: https://confluence.desy.de/display/IS/JupyterHub+on+Maxwell
-# - Ideas for the spawning page from: https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/JupyterHub
-
 from collections import defaultdict
 import datetime
 import json

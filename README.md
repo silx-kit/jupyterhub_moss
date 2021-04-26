@@ -101,3 +101,9 @@ The user can select any partition (`partition_3` is added in this case) and the 
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Credits:
+We would like acknowledge the following ressources that served as base for this project and thank their authors:
+ - This [gist](https://gist.github.com/zonca/aaed55502c4b16535fe947791d02ac32) for the initial spawner implementation.
+ - The [DESY JupyterHub Slurm service](https://confluence.desy.de/display/IS/JupyterHub+on+Maxwell) for the table of available resources.
+ - The [TUDresden JupyterHub Slurm service](https://doc.zih.tu-dresden.de/hpc-wiki/bin/view/Compendium/JupyterHub) for the spawn page design.
