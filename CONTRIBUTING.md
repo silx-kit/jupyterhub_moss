@@ -65,3 +65,5 @@ This will bump the version, commit the result and tag the current HEAD. You can 
 ```
 git push && git push --tags
 ```
+
+This will trigger a CI job that should release automatically the package on PyPI.
