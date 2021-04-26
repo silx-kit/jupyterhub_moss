@@ -57,7 +57,7 @@ class MOSlurmSpawner(SlurmSpawner):
         lstrip_blocks=True,
     )
 
-    def __get_slurm_info(self):
+    def _get_slurm_info(self):
         """Returns information about partitions from slurm"""
         # Get number of nodes and idle nodes for all partitions
         state = check_output(["sinfo", "-a", "-N", "--noheader", "-o", "%R %t"]).decode(
@@ -75,7 +75,7 @@ class MOSlurmSpawner(SlurmSpawner):
     def _options_form_default(self):
         """Create a form for the user to choose the configuration for the SLURM job"""
 
-        slurm_info = self.__get_slurm_info()
+        slurm_info = self._get_slurm_info()
 
         # Combine all partition info as a dict
         partitions = {}

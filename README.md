@@ -1,14 +1,19 @@
 # jupyterhub_moss: JupyterHub MOdular Slurm Spawner
 
 **jupyterhub_moss** is a Python package that provides:
-- A [JupyterHub](https://jupyterhub.readthedocs.io/) [Slurm](https://slurm.schedmd.com/) Spawner that can be configured by setting the available partitions. It is an extension of [`batchspawner.SlurmSpawner`](https://github.com/jupyterhub/batchspawner).
-- An associated spawn page that changes according to the partitions set in the Spawner and allows the user to select Slurm resources to use.
+- A [JupyterHub](https://jupyterhub.readthedocs.io/) [Slurm](https://slurm.schedmd.com/) Spawner that can be configured by [setting the available partitions](#partition-settings). It is an extension of [`batchspawner.SlurmSpawner`](https://github.com/jupyterhub/batchspawner).
+- An associated [spawn page](#spawn-page) that changes according to the partitions set in the Spawner and allows the user to select Slurm resources to use.
+
+<img style="margin:auto" src=https://user-images.githubusercontent.com/42204205/116039349-e85bb300-a66a-11eb-9056-7392cf7a7ba9.png width="50%">
+
 
 ## Install
 
 `pip install jupyterhub_moss`
 
 ## Usage
+
+### Partition settings
 
 To use **jupyterhub_moss**, you need first a working [JupyterHub](https://jupyterhub.readthedocs.io/) instance. **jupyterhub_moss** needs then to be imported in [your JupyterHub configuration file](https://jupyterhub.readthedocs.io/en/stable/getting-started/config-basics.html) (usually named `jupyterhub_conf.py`):
 
@@ -76,4 +81,23 @@ c.MOSlurmSpawner.partitions = {
 
 ### Spawn page
 
-`<To be added...>`
+The spawn page (available at `/hub/spawn`) will be generated according to the partition settings. For example, this is the spawn page generated for the partition settings above:
+
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/42204205/116039349-e85bb300-a66a-11eb-9056-7392cf7a7ba9.png width="50%">
+
+This spawn page is separated in two tabs: a _Simple_ and an _Advanced_ tab. On the _Simple_ tab, the user can choose between the partitions set though `simple: True` (`partition_1` and `partition_2` in this case), choose to take a minimum, a half or a maximum number of cores and choose the job duration. The available resources are checked using `sinfo` and displayed on the table below. Clicking on the **Start** button will request the job.
+
+The spawn page adapts to the chosen partition. This is the page when selecting the `partition_2`:
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/42204205/116039610-3bce0100-a66b-11eb-8413-73423a7a017e.png width="50%">
+
+As the maximum number of cores is different, the CPUs row change accordingly. Also, as `gpu` was set for `partition_2`, a new button row appears to enable GPU requests.
+
+The _Advanced_ tab allows finer control on the requested resources.
+
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/42204205/116039563-2c4eb800-a66b-11eb-81d9-79122ec771fa.png width="50%">
+
+The user can select any partition (`partition_3` is added in this case) and the table of available resources reflects this. The user can also choose any number of nodes (with the max given by `max_nprocs`), of GPUs (max: `max_gpus`) and have more control on the job duration (max: `max_runtime`).
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
