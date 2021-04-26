@@ -1,12 +1,14 @@
 # Contributing to jupyterlab_moss
 
+## Development
+
 The dependencies needed to contribute can be installed by
 
 ```
 pip install .[dev]
 ```
 
-## Linting
+### Linting
 
 [flake8](https://flake8.pycqa.org/en/latest/index.html) is used to lint the code. The config is located in [setup.cfg](./setup.cfg). Linting can be run using
 
@@ -14,7 +16,7 @@ pip install .[dev]
 flake8 .
 ```
 
-## Formatting
+### Formatting
 
 [black](https://black.readthedocs.io/en/stable/) is used to format Python files. Most editors can be configured to format on save but you can run the formatting manually using
 
@@ -22,14 +24,9 @@ flake8 .
 black .
 ```
 
-## CI
+### CI
 
 The CI will check that the lint check passes and that all files are correctly formatted (using `black --check .`). Before commiting, be sure to run `flake8` and `black` to ensure CI passes.
-
-
-## Build package from source
-
-From the project directory, run: `python3 -m build` to generate the wheel and tarball in `dist/`
 
 ## Generate the spawn page locally
 
@@ -49,3 +46,24 @@ set_config(c)
 c.JupyterHub.spawner_class = MOckSlurmSpawner
 c.MOckSlurmSpawner.partitions = {...}
 ```
+
+## Release
+
+### Build package from source
+
+From the project directory, run: `python3 -m build` to generate the wheel and tarball in `dist/`
+
+
+### Make a new release
+
+First, be sure to be up to date with the remote `main` and that your working tree is clean. Then, run `bumpversion`:
+```
+bumpversion [major|minor|patch]
+```
+
+This will bump the version, commit the result and tag the current HEAD. You can then push the commit and the tag to the repo:
+```
+git push && git push --tags
+```
+
+This will trigger a CI job that should release automatically the package on PyPI.
