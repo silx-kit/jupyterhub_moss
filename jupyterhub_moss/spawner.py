@@ -135,7 +135,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
         if (
             "nprocs" in options
-            and not 1 <= options["nprocs"] < partition_info["max_nprocs"]
+            and not 1 <= options["nprocs"] <= partition_info["max_nprocs"]
         ):
             raise AssertionError("Error in number of CPUs")
 
