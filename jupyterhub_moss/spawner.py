@@ -139,7 +139,7 @@ class MOSlurmSpawner(SlurmSpawner):
         ):
             raise AssertionError("Error in number of CPUs")
 
-        if "reservation" in options and "\n" not in options["reservation"]:
+        if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")
 
         if "nnodes" in options and not 1 <= options["nnodes"] <= slurm_info["nodes"]:
