@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const nprocs = document.getElementById('nprocs');
   const exclusive = document.getElementById('exclusive');
   const ngpus = document.getElementById('ngpus');
-  const jupyterlab = document.getElementById('jupyterlab');
+  const default_url = document.getElementById('default_url');
   const runtime = document.getElementById('runtime');
 
   // Update advanced form from Simple tab inputs
@@ -116,10 +116,10 @@ document.addEventListener("DOMContentLoaded", () => {
       ngpus.value = e.target.value;
     });
   });
-  // JupyterLab
+  // JupyterLab using default_url field
   document.getElementById('jupyterlab_simple').addEventListener(
     'change', e => {
-      jupyterlab.checked = e.target.checked;
+      default_url.checked = e.target.checked;
   });
   // Runtime
   document.getElementById('runtime_simple').addEventListener(

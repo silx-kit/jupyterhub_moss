@@ -109,7 +109,7 @@ class MOSlurmSpawner(SlurmSpawner):
         "ntasks": int,
         "exclusive": lambda v: v == "true",
         "ngpus": int,
-        "jupyterlab": lambda v: v == "true",
+        "default_url": str,
     }
 
     _RUNTIME_REGEXP = re.compile(
@@ -154,6 +154,11 @@ class MOSlurmSpawner(SlurmSpawner):
         ):
             raise AssertionError("Error in number of GPUs")
 
+        if "default_url" in options:
+            default_url = options["default_url"]
+            if default_url and not default_url.startswith("/"):
+                raise AssertionError("Must start with /")
+
     def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
         """Parse the form and add options to the SLURM job script"""
         # Convert expected input from List[str] to appropriate type
@@ -173,8 +178,8 @@ class MOSlurmSpawner(SlurmSpawner):
 
         partition = options["partition"]
 
-        # Specific handling of jupyterlab
-        self.default_url = "/lab" if options.get("jupyterlab", False) else ""
+        # Specific handling of landing URL (e.g., to start jupyterlab)
+        self.default_url = options.get("default_url", "")
 
         # Specific handling of ngpus as gres
         if options.get("ngpus", 0) > 0:
