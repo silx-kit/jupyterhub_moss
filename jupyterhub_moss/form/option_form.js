@@ -381,7 +381,7 @@ function storeConfigToLocalStorage() {
     'mem_input',
     'ngpus',
     'runtime',
-    'jupyterlab',
+    'default_url',
     'output',
     'reservation',
     'options',
@@ -457,7 +457,7 @@ function restoreConfigFromLocalStorage() {
     }
     runtimeSelect.value = config['simple']['runtime'];
     runtimeSelect.dispatchEvent(new Event('change'));
-    jupyterlabSimpleElem.checked = config['fields']['jupyterlab'];
+    jupyterlabSimpleElem.checked = config['fields']['default_url'];
     jupyterlabSimpleElem.dispatchEvent(new Event('change'));
   }
 
@@ -470,8 +470,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const nprocsElem = document.getElementById('nprocs');
   const ngpusElem = document.getElementById('ngpus');
-  const jupyterlabElem = document.getElementById('jupyterlab');
   const runtimeElem = document.getElementById('runtime');
+  const default_url = document.getElementById('default_url');
   const environmentAddRadio = document.getElementById('environment_add_radio');
   const environmentAddName = document.getElementById('environment_add_name');
   const environmentAddPath = document.getElementById('environment_add_path');
@@ -502,12 +502,11 @@ document.addEventListener('DOMContentLoaded', () => {
       ngpusElem.value = e.target.value;
     });
   });
-  // JupyterLab
-  document
-    .getElementById('jupyterlab_simple')
-    .addEventListener('change', (e) => {
-      jupyterlabElem.checked = e.target.checked;
-    });
+  // JupyterLab using default_url field
+  document.getElementById('jupyterlab_simple').addEventListener(
+    'change', e => {
+      default_url.checked = e.target.checked;
+  });
   // Runtime
   document.getElementById('runtime_simple').addEventListener('change', (e) => {
     runtimeElem.value = `${e.target.value}:00:00`;
