@@ -98,6 +98,26 @@ The _Advanced_ tab allows finer control on the requested resources.
 
 The user can select any partition (`partition_3` is added in this case) and the table of available resources reflects this. The user can also choose any number of nodes (with the max given by `max_nprocs`), of GPUs (max: `max_gpus`) and have more control on the job duration (max: `max_runtime`).
 
+### Spawn through URL
+
+It is also possible to pass the spawning options as query arguments to the spawn URL: `https://<server:port>/hub/spawn`.
+For example, `https://<server:port>/hub/spawn?partition=partition_1&nprocs=4` will directly spawn a Jupyter server on `partition_1` with 4 cores allocated.
+
+The following query argument is required:
+
+- `partition`: The name of the SLURM partition to use.
+
+The following optional query arguments are available:
+
+- `exclusive`: Set to `true` for exclusive node usage (``--exclusive``)
+- `jupyterlab`: Set to `true` to start with JupyterLab
+- `ngpus`: Number of GPUs (``--gres:<gpu>:``)
+- `nnodes`: Number of nodes (``--nodes``)
+- `nprocs`: Number of CPUs per task (``--cpus-per-task``)
+- `ntasks`: Number of tasks per node (``--ntasks-per-node``)
+- `reservation`: SLURM reservation name (``--reservation``)
+- `runtime`: Job duration as hh:mm:ss (``--time``)
+
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
