@@ -18,8 +18,10 @@ function setSimplePartition(name) {
   const gpuDivSimple = document.getElementById('gpu_simple');
   const gpuRadio0Simple = document.getElementById('0Gpu');
   const ngpusElem = document.getElementById('ngpus');
-  const mediumCpuFieldSimple = document.getElementById('mediumCpufield');
-  const mediumCoreSimple = document.getElementById('mediumCore');
+  const quarterCpuFieldSimple = document.getElementById('quarterCpufield');
+  const quarterCoreSimple = document.getElementById('quarterCore');
+  const halfCpuFieldSimple = document.getElementById('halfCpufield');
+  const halfCoreSimple = document.getElementById('halfCore');
   const maximumCpuFieldSimple = document.getElementById('maximumCpufield');
   const maximumCoreSimple = document.getElementById('maximumCore');
   const nprocsElem = document.getElementById('nprocs');
@@ -40,10 +42,13 @@ function setSimplePartition(name) {
   // Update displayed NProcs info and values
   // Get number of CPUs for given paritition choice
   const maxNProcs = info.max_nprocs;
+  const quarterNProcs = Math.floor(maxNProcs / 4);
   const halfNProcs = Math.floor(maxNProcs / 2);
 
-  mediumCpuFieldSimple.textContent = `${halfNProcs} cores`;
-  mediumCoreSimple.value = halfNProcs;
+  quarterCpuFieldSimple.textContent = `${quarterNProcs} cores`;
+  quarterCoreSimple.value = quarterNProcs;
+  halfCpuFieldSimple.textContent = `${halfNProcs} cores`;
+  halfCoreSimple.value = halfNProcs;
   maximumCpuFieldSimple.textContent = `${maxNProcs} cores`;
   maximumCoreSimple.value = maxNProcs;
 
