@@ -11,6 +11,7 @@
 {% endif %}{% if nnodes     %}#SBATCH --nodes={{nnodes}}
 {% endif %}{% if ntasks     %}#SBATCH --ntasks-per-node={{ntasks}}
 {% endif %}{% if exclusive  %}#SBATCH --exclusive
+{% endif %}{% if options %}#SBATCH {{options}}
 {% endif %}
 
 set -euo pipefail

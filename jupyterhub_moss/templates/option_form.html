@@ -190,6 +190,13 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       value="true"
     />
     <hr />
+   <label for="exclusive">Exclusive <span class="label-extra-info">(--exclusive)</span>:</label>
+    <input
+      type="checkbox"
+      id="exclusive"
+      name="exclusive"
+      value="true"
+    />
     <label for="reservation" accesskey="v">
       Reservation <span class="label-extra-info">(--reservation)</span>:
     </label>
@@ -209,7 +216,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       value="1"
     />
     <label for="ntasks" accesskey="t">
-      Number of tasks per node<span class="label-extra-info">(--ntasks-per-node)</span>:
+      Number of tasks per node <span class="label-extra-info">(--ntasks-per-node)</span>:
     </label>
     <input
       type="number"
@@ -218,12 +225,14 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       min="1"
       value="1"
     />
-   <label for="exclusive">Exclusive <span class="label-extra-info">(--exclusive)</span>:</label>
+    <label for="options">
+      Extra options <span class="label-extra-info">(space-separated)</span>:
+    </label>
     <input
-      type="checkbox"
-      id="exclusive"
-      name="exclusive"
-      value="true"
+      type="text"
+      id="options"
+      name="options"
+      placeholder="--option1=v1 --option2=v2"
     />
     </div>
 
