@@ -190,11 +190,18 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       value="true"
     />
     <hr />
-   <label for="exclusive">Exclusive <span class="label-extra-info">(--exclusive)</span>:</label>
+    <label for="exclusive">Exclusive <span class="label-extra-info">(--exclusive)</span>:</label>
     <input
       type="checkbox"
       id="exclusive"
       name="exclusive"
+      value="true"
+    />
+    <label for="output">Save session logs <span class="label-extra-info">to slurm-*.out</span>:</label>
+    <input
+      type="checkbox"
+      id="output"
+      name="output"
       value="true"
     />
     <label for="reservation" accesskey="v">

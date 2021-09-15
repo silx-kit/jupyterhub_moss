@@ -111,6 +111,7 @@ class MOSlurmSpawner(SlurmSpawner):
         "ngpus": int,
         "jupyterlab": lambda v: v == "true",
         "options": lambda v: v.strip(),
+        "output": lambda v: v == "true",
     }
 
     _RUNTIME_REGEXP = re.compile(

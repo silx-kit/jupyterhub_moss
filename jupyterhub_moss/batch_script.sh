@@ -11,6 +11,7 @@
 {% endif %}{% if nnodes     %}#SBATCH --nodes={{nnodes}}
 {% endif %}{% if ntasks     %}#SBATCH --ntasks-per-node={{ntasks}}
 {% endif %}{% if exclusive  %}#SBATCH --exclusive
+{% endif %}{% if output is not defined or not output %}#SBATCH --output=/dev/null
 {% endif %}{% if options %}#SBATCH {{options}}
 {% endif %}
 
