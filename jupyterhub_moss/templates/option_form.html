@@ -126,20 +126,22 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     <h4 style="text-align: center">List of available resources:</h4>
     <table width="100%" border="1" style="text-align: center">
       <tr style="text-align: center; background-color: orange">
-        <th style="text-align: center" colspan="4">Current Status</th>
+        <th style="text-align: center" colspan="5">Current Status</th>
       </tr>
 
       <tr style="text-align: center; background-color: gold">
-        <th width="25%" style="text-align: center">Partition</th>
-        <th width="25%" style="text-align: center"># nodes</th>
-        <th width="25%" style="text-align: center"># partly avail.</th>
-        <th width="25%" style="text-align: center"># fully avail.</th>
+        <th width="20%" style="text-align: center">Partition</th>
+        <th width="20%" style="text-align: center">Max CPUs/node</th>
+        <th width="20%" style="text-align: center"># nodes</th>
+        <th width="20%" style="text-align: center"># partly avail.</th>
+        <th width="20%" style="text-align: center"># fully avail.</th>
       </tr>
 
       {% for name, partition in partitions.items() %}
       {% if partition.simple %}
       <tr>
         <th style="text-align: center">{{ name }}</th>
+        <td>{{ partition.max_idle_cpus }}</td>
         <td>{{ partition.max_nnodes }}</td>
         <td>{{ partition.nnodes_mixed }}</td>
         <td>{{ partition.nnodes_idle }}</td>
@@ -256,17 +258,19 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     <h4 style="text-align: center">List of available resources:</h4>
     <table width="100%" border="1" style="text-align: center">
       <tr style="text-align: center; background-color: orange">
-        <th style="text-align: center" colspan="4">Current Status</th>
+        <th style="text-align: center" colspan="5">Current Status</th>
       </tr>
       <tr style="text-align: center; background-color: gold">
-        <th width="25%" style="text-align: center">Partition</th>
-        <th width="25%" style="text-align: center"># nodes</th>
-        <th width="25%" style="text-align: center"># partly avail.</th>
-        <th width="25%" style="text-align: center"># fully avail.</th>
+        <th width="20%" style="text-align: center">Partition</th>
+        <th width="20%" style="text-align: center">Max CPUs/node</th>
+        <th width="20%" style="text-align: center"># nodes</th>
+        <th width="20%" style="text-align: center"># partly avail.</th>
+        <th width="20%" style="text-align: center"># fully avail.</th>
       </tr>
       {% for name, partition in partitions.items() %}
       <tr>
         <th style="text-align: center">{{ name }}</th>
+        <td>{{ partition.max_idle_cpus }}</td>
         <td>{{ partition.max_nnodes }}</td>
         <td>{{ partition.nnodes_mixed }}</td>
         <td>{{ partition.nnodes_idle }}</td>

@@ -63,6 +63,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 "nodes": 0,
                 "idle": 0,
                 "mixed": 0,
+                "max_idle_cpus": 0,
             }
         )
 
@@ -81,6 +82,24 @@ class MOSlurmSpawner(SlurmSpawner):
             if state in ("idle", "mixed"):
                 info[state] = count
             info["nodes"] += count
+
+        output = check_output(
+            [
+                "sinfo",
+                f"--partition={','.join(partitions)}",
+                "--noheader",
+                "-N",
+                "-o",
+                "%R %C",
+            ]
+        )
+        for line in output.splitlines():
+            partition, cpus_info = line.split()
+            nidle_cpus = int(cpus_info.split('/')[1])
+            info = slurm_info[partition]
+            if info["max_idle_cpus"] < nidle_cpus:
+                info["max_idle_cpus"] = nidle_cpus
+
         return slurm_info
 
     @staticmethod
@@ -96,6 +115,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 "max_nnodes": slurm_info[name]["nodes"],
                 "nnodes_idle": slurm_info[name]["idle"],
                 "nnodes_mixed": slurm_info[name]["mixed"],
+                "max_idle_cpus": slurm_info[name]["max_idle_cpus"],
                 **dict((k, v) for k, v in info.items() if k != "venv"),
             }
             if info["simple"] and default_partition is None:
