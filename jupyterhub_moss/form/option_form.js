@@ -96,7 +96,7 @@ function storeConfigToLocalStorage() {
   // Retrieve form fields to store
   const fieldNames = ['partition', 'nprocs', 'ngpus', 'runtime', 'jupyterlab',
                       'exclusive', 'reservation', 'nnodes', 'ntasks'];
-  var fields = {}
+  const fields = {}
   for (const name of fieldNames) {
     const elem = document.getElementById(name);
     if (elem.type && elem.type === 'checkbox') {
