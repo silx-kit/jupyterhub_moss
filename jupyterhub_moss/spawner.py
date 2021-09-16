@@ -56,25 +56,37 @@ class MOSlurmSpawner(SlurmSpawner):
         super().__init__(*args, **kwargs)
         self.options_form = self.create_options_form
 
-    def _get_slurm_info(self):
-        """Returns information about partitions from slurm"""
-        # Get number of nodes and idle nodes for all partitions
-        state = check_output(["sinfo", "-a", "-N", "--noheader", "-o", "%R %t"]).decode(
-            "utf-8"
+    def _get_slurm_info(self, partitions):
+        """Returns information about given partitions from slurm"""
+        slurm_info = defaultdict(
+            lambda: {
+                "nodes": 0,
+                "idle": 0,
+                "mixed": 0,
+            }
         )
-        slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0})
-        for line in state.splitlines():
-            partition, state = line.split()
+
+        output = check_output(
+            [
+                "sinfo",
+                f"--partition={','.join(partitions)}",
+                "--noheader",
+                "-o",
+                "%R %T %D",
+            ]
+        )
+        for line in output.splitlines():
+            partition, state, count = line.split()
             info = slurm_info[partition]
-            info["nodes"] += 1
-            if state == "idle":
-                info["idle"] += 1
+            if state in ("idle", "mixed"):
+                info[state] = count
+            info["nodes"] += count
         return slurm_info
 
     @staticmethod
     def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
-        slurm_info = spawner._get_slurm_info()
+        slurm_info = spawner._get_slurm_info(tuple(spawner.partitions.keys()))
 
         # Combine all partition info as a dict
         partitions = {}
@@ -83,6 +95,7 @@ class MOSlurmSpawner(SlurmSpawner):
             partitions[name] = {
                 "max_nnodes": slurm_info[name]["nodes"],
                 "nnodes_idle": slurm_info[name]["idle"],
+                "nnodes_mixed": slurm_info[name]["mixed"],
                 **dict((k, v) for k, v in info.items() if k != "venv"),
             }
             if info["simple"] and default_partition is None:
@@ -127,7 +140,7 @@ class MOSlurmSpawner(SlurmSpawner):
         assert options["partition"] in self.partitions, "Partition is not supported"
 
         partition_info = self.partitions[options["partition"]]
-        slurm_info = self._get_slurm_info()[options["partition"]]
+        slurm_info = self._get_slurm_info([options["partition"]])[options["partition"]]
 
         if "runtime" in options:
             match = self._RUNTIME_REGEXP.match(options["runtime"])
