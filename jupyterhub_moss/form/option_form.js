@@ -90,11 +90,11 @@ function updatePartitionLimits() {
 document.addEventListener("DOMContentLoaded", () => {
   resetSpawnForm();  // Init
 
-  const nprocs = document.getElementById('nprocs');
-  const exclusive = document.getElementById('exclusive');
-  const ngpus = document.getElementById('ngpus');
-  const jupyterlab = document.getElementById('jupyterlab');
-  const runtime = document.getElementById('runtime');
+  const nprocsElem = document.getElementById('nprocs');
+  const exclusiveElem = document.getElementById('exclusive');
+  const ngpusElem = document.getElementById('ngpus');
+  const jupyterlabElem = document.getElementById('jupyterlab');
+  const runtimeElem = document.getElementById('runtime');
 
   // Update advanced form from Simple tab inputs
   // Partitions
@@ -106,25 +106,25 @@ document.addEventListener("DOMContentLoaded", () => {
   // CPUs
   document.querySelectorAll('input[name="nprocs_simple"]').forEach(element => {
     element.addEventListener('change', e => {
-      nprocs.value = e.target.value;
-      exclusive.checked = e.target.id === 'maximumCore';
+      nprocsElem.value = e.target.value;
+      exclusiveElem.checked = e.target.id === 'maximumCore';
     });
   });
   // GPUs
   document.querySelectorAll('input[name="ngpus_simple"]').forEach(element => {
     element.addEventListener('change', e => {
-      ngpus.value = e.target.value;
+      ngpusElem.value = e.target.value;
     });
   });
   // JupyterLab
   document.getElementById('jupyterlab_simple').addEventListener(
     'change', e => {
-      jupyterlab.checked = e.target.checked;
+      jupyterlabElem.checked = e.target.checked;
   });
   // Runtime
   document.getElementById('runtime_simple').addEventListener(
     'change', e => {
-      runtime.value = `${e.target.value}:00:00`;
+      runtimeElem.value = `${e.target.value}:00:00`;
   });
 
   // Reset when returning to simple tab
