@@ -1,3 +1,5 @@
+const CONFIG_SIMPLE_NAME = 'config:simple';
+
 function resetSpawnForm() {
   document.getElementById('spawn_form').reset();
   setSimplePartition(window.SLURM_DATA.default_partition);
@@ -22,6 +24,10 @@ function setSimplePartition(name) {
   const maximumCoreSimple = document.getElementById('maximumCore');
   const nprocsElem = document.getElementById('nprocs');
   const runtimeSelect = document.getElementById('runtime_simple');
+
+  if (!window.SLURM_DATA.partitions.hasOwnProperty(name)) {
+    return; // Not a supported partition
+  }
 
   partitionElem.value = name;
   updatePartitionLimits();
@@ -86,6 +92,47 @@ function updatePartitionLimits() {
   });
 }
 
+function saveSimpleConfigToLocalStorage() {
+  // Persist simple inputs
+  window.localStorage.setItem(CONFIG_SIMPLE_NAME, JSON.stringify({
+    'version': 1,
+    'partitionId': document.querySelector('input[name="partition_simple"]:checked').id,
+    'nprocsId': document.querySelector('input[name="nprocs_simple"]:checked').id,
+    'ngpusId': document.querySelector('input[name="ngpus_simple"]:checked').id,
+    'jupyterlab': document.getElementById('jupyterlab_simple').checked,
+    'runtime': document.getElementById('runtime_simple').value,
+  }));
+}
+
+function loadSimpleConfigFromLocalStorage() {
+  const jupyterlabSimpleElem = document.getElementById('jupyterlab_simple');
+  const runtimeSimpleElem = document.getElementById('runtime_simple');
+
+  // Load config
+  const configString = window.localStorage.getItem(CONFIG_SIMPLE_NAME);
+  if (configString === null) {
+    return;
+  }
+  const config = JSON.parse(configString);
+  if (!config.hasOwnProperty('version') || config['version'] !== 1) {
+    return;
+  }
+
+  ['partitionId', 'nprocsId', 'ngpusId'].forEach(
+    (key) => {
+      const element = document.getElementById(config[key]);
+      if (element !== null) {
+        element.checked = true;
+        element.dispatchEvent(new Event('change'));
+      }
+    }
+  );
+  jupyterlabSimpleElem.checked = config['jupyterlab'];
+  jupyterlabSimpleElem.dispatchEvent(new Event('change'));
+  runtimeSimpleElem.value = config['runtime'];
+  runtimeSimpleElem.dispatchEvent(new Event('change'));
+}
+
 // Handle document ready
 document.addEventListener("DOMContentLoaded", () => {
   resetSpawnForm();  // Init
@@ -137,4 +184,15 @@ document.addEventListener("DOMContentLoaded", () => {
     'change', updatePartitionLimits
   );
 
+  // Catch form submit
+  document.getElementById('spawn_form').addEventListener(
+    'submit', (e) => {
+      const simpleDiv = document.getElementById("home");
+      if (simpleDiv !== null && simpleDiv.classList.contains('active')) {
+        saveSimpleConfigToLocalStorage();
+      }
+    }
+  );
+
+  loadSimpleConfigFromLocalStorage();
 });
