@@ -1,4 +1,4 @@
-const CONFIG_SIMPLE_NAME = 'config:simple';
+const CONFIG_NAME = 'form-config:v1';
 
 function resetSpawnForm() {
   document.getElementById('spawn_form').reset();
@@ -59,6 +59,7 @@ function setSimplePartition(name) {
   // Reset to 1 hour if choice is not available with current partition
   if (runtimeSelect.value * 3600 > info['max_runtime']) {
     runtimeSelect.selectedIndex = 0;
+    runtimeSelect.dispatchEvent(new Event('change'));
   };
   for (i=0; i<runtimeSelect.options.length; i++) {
     const element = runtimeSelect.options[i];
@@ -92,45 +93,78 @@ function updatePartitionLimits() {
   });
 }
 
-function saveSimpleConfigToLocalStorage() {
+function storeConfigToLocalStorage() {
+  const advancedDiv = document.getElementById("menu1");
+  const runtimeSelect = document.getElementById('runtime_simple');
+
+  // Retrieve form fields to store
+  const fieldNames = ['partition', 'nprocs', 'ngpus', 'runtime', 'jupyterlab',
+                      'exclusive', 'reservation', 'nnodes', 'ntasks'];
+  var fields = {}
+  for (const name of fieldNames) {
+    const elem = document.getElementById(name);
+    if (elem.type && elem.type === 'checkbox') {
+      fields[name] = elem.checked;
+    } else {
+      fields[name] = elem.value;
+    }
+  }
+  console.log('fields', fields);
+
   // Persist simple inputs
-  window.localStorage.setItem(CONFIG_SIMPLE_NAME, JSON.stringify({
-    'version': 1,
-    'partitionId': document.querySelector('input[name="partition_simple"]:checked').id,
-    'nprocsId': document.querySelector('input[name="nprocs_simple"]:checked').id,
-    'ngpusId': document.querySelector('input[name="ngpus_simple"]:checked').id,
-    'jupyterlab': document.getElementById('jupyterlab_simple').checked,
-    'runtime': document.getElementById('runtime_simple').value,
+  window.localStorage.setItem(CONFIG_NAME, JSON.stringify({
+    'isAdvanced': advancedDiv !== null && advancedDiv.classList.contains('active'),
+    'simple': {
+      'partitionId': document.querySelector('input[name="partition_simple"]:checked').id,
+      'nprocsId': document.querySelector('input[name="nprocs_simple"]:checked').id,
+      'ngpusId': document.querySelector('input[name="ngpus_simple"]:checked').id,
+      'runtime': runtimeSelect.value,
+    },
+    'fields': fields,
   }));
 }
 
-function loadSimpleConfigFromLocalStorage() {
+function restoreConfigFromLocalStorage() {
+  const advancedLink = document.getElementById("advanced_tab_link");
   const jupyterlabSimpleElem = document.getElementById('jupyterlab_simple');
-  const runtimeSimpleElem = document.getElementById('runtime_simple');
+  const runtimeSelect = document.getElementById('runtime_simple');
+
+  resetSpawnForm();
 
   // Load config
-  const configString = window.localStorage.getItem(CONFIG_SIMPLE_NAME);
-  if (configString === null) {
-    return;
-  }
-  const config = JSON.parse(configString);
-  if (!config.hasOwnProperty('version') || config['version'] !== 1) {
+  const config = JSON.parse(window.localStorage.getItem(CONFIG_NAME));
+  if (config === null) {
     return;
   }
 
-  ['partitionId', 'nprocsId', 'ngpusId'].forEach(
-    (key) => {
-      const element = document.getElementById(config[key]);
+  if (config['isAdvanced']) { // Restore advanced tab
+    advancedLink.click();
+
+    const fields = config['fields'];
+    for (const name in fields) {
+      const elem = document.getElementById(name);
+      const value = fields[name];
+      if (typeof value === "boolean") {
+        elem.checked = value;
+      } else {
+        elem.value = value;
+      }
+      elem.dispatchEvent(new Event('change'));
+    }
+
+  } else { // Restore simple tab
+    for (const key of ['partitionId', 'nprocsId', 'ngpusId']) {
+      const element = document.getElementById(config['simple'][key]);
       if (element !== null) {
         element.checked = true;
         element.dispatchEvent(new Event('change'));
       }
     }
-  );
-  jupyterlabSimpleElem.checked = config['jupyterlab'];
-  jupyterlabSimpleElem.dispatchEvent(new Event('change'));
-  runtimeSimpleElem.value = config['runtime'];
-  runtimeSimpleElem.dispatchEvent(new Event('change'));
+    runtimeSelect.value = config['simple']['runtime'];
+    runtimeSelect.dispatchEvent(new Event('change'));
+    jupyterlabSimpleElem.checked = config['fields']['jupyterlab'];
+    jupyterlabSimpleElem.dispatchEvent(new Event('change'));
+  }
 }
 
 // Handle document ready
@@ -186,13 +220,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Catch form submit
   document.getElementById('spawn_form').addEventListener(
-    'submit', (e) => {
-      const simpleDiv = document.getElementById("home");
-      if (simpleDiv !== null && simpleDiv.classList.contains('active')) {
-        saveSimpleConfigToLocalStorage();
-      }
-    }
+    'submit', (e) => storeConfigToLocalStorage()
   );
 
-  loadSimpleConfigFromLocalStorage();
+  restoreConfigFromLocalStorage();
 });
