@@ -25,10 +25,6 @@ function setSimplePartition(name) {
   const nprocsElem = document.getElementById('nprocs');
   const runtimeSelect = document.getElementById('runtime_simple');
 
-  if (!window.SLURM_DATA.partitions.hasOwnProperty(name)) {
-    return; // Not a supported partition
-  }
-
   partitionElem.value = name;
   updatePartitionLimits();
 
@@ -109,7 +105,6 @@ function storeConfigToLocalStorage() {
       fields[name] = elem.value;
     }
   }
-  console.log('fields', fields);
 
   // Persist simple inputs
   window.localStorage.setItem(CONFIG_NAME, JSON.stringify({
