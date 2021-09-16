@@ -75,9 +75,10 @@ class MOSlurmSpawner(SlurmSpawner):
                 "-o",
                 "%R %T %D",
             ]
-        )
+        ).decode("utf-8")
         for line in output.splitlines():
-            partition, state, count = line.split()
+            partition, state, count_string = line.split()
+            count = int(count_string)
             info = slurm_info[partition]
             if state in ("idle", "mixed"):
                 info[state] = count
@@ -92,10 +93,10 @@ class MOSlurmSpawner(SlurmSpawner):
                 "-o",
                 "%R %C",
             ]
-        )
+        ).decode("utf-8")
         for line in output.splitlines():
             partition, cpus_info = line.split()
-            nidle_cpus = int(cpus_info.split('/')[1])
+            nidle_cpus = int(cpus_info.split("/")[1])
             info = slurm_info[partition]
             if info["max_idle_cpus"] < nidle_cpus:
                 info["max_idle_cpus"] = nidle_cpus
