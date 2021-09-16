@@ -116,6 +116,7 @@ The following optional query arguments are available:
 - `nprocs`: Number of CPUs per task (``--cpus-per-task``)
 - `ntasks`: Number of tasks per node (``--ntasks-per-node``)
 - `options`: Extra SLURM options
+- `output`: Set to `true` to save logs to `slurm-*.out` files.
 - `reservation`: SLURM reservation name (``--reservation``)
 - `runtime`: Job duration as hh:mm:ss (``--time``)
 
