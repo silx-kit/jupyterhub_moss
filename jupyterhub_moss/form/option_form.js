@@ -1,3 +1,5 @@
+const CONFIG_NAME = 'form-config:v1';
+
 function resetSpawnForm() {
   document.getElementById('spawn_form').reset();
   setSimplePartition(window.SLURM_DATA.default_partition);
@@ -53,6 +55,7 @@ function setSimplePartition(name) {
   // Reset to 1 hour if choice is not available with current partition
   if (runtimeSelect.value * 3600 > info['max_runtime']) {
     runtimeSelect.selectedIndex = 0;
+    runtimeSelect.dispatchEvent(new Event('change'));
   };
   for (i=0; i<runtimeSelect.options.length; i++) {
     const element = runtimeSelect.options[i];
@@ -86,15 +89,88 @@ function updatePartitionLimits() {
   });
 }
 
+function storeConfigToLocalStorage() {
+  const advancedDiv = document.getElementById("menu1");
+  const runtimeSelect = document.getElementById('runtime_simple');
+
+  // Retrieve form fields to store
+  const fieldNames = ['partition', 'nprocs', 'ngpus', 'runtime', 'jupyterlab',
+                      'exclusive', 'reservation', 'nnodes', 'ntasks'];
+  const fields = {}
+  for (const name of fieldNames) {
+    const elem = document.getElementById(name);
+    if (elem.type && elem.type === 'checkbox') {
+      fields[name] = elem.checked;
+    } else {
+      fields[name] = elem.value;
+    }
+  }
+
+  // Persist simple inputs
+  window.localStorage.setItem(CONFIG_NAME, JSON.stringify({
+    'isAdvanced': advancedDiv !== null && advancedDiv.classList.contains('active'),
+    'simple': {
+      'partitionId': document.querySelector('input[name="partition_simple"]:checked').id,
+      'nprocsId': document.querySelector('input[name="nprocs_simple"]:checked').id,
+      'ngpusId': document.querySelector('input[name="ngpus_simple"]:checked').id,
+      'runtime': runtimeSelect.value,
+    },
+    'fields': fields,
+  }));
+}
+
+function restoreConfigFromLocalStorage() {
+  const advancedLink = document.getElementById("advanced_tab_link");
+  const jupyterlabSimpleElem = document.getElementById('jupyterlab_simple');
+  const runtimeSelect = document.getElementById('runtime_simple');
+
+  resetSpawnForm();
+
+  // Load config
+  const config = JSON.parse(window.localStorage.getItem(CONFIG_NAME));
+  if (config === null) {
+    return;
+  }
+
+  if (config['isAdvanced']) { // Restore advanced tab
+    advancedLink.click();
+
+    const fields = config['fields'];
+    for (const name in fields) {
+      const elem = document.getElementById(name);
+      const value = fields[name];
+      if (typeof value === "boolean") {
+        elem.checked = value;
+      } else {
+        elem.value = value;
+      }
+      elem.dispatchEvent(new Event('change'));
+    }
+
+  } else { // Restore simple tab
+    for (const key of ['partitionId', 'nprocsId', 'ngpusId']) {
+      const element = document.getElementById(config['simple'][key]);
+      if (element !== null) {
+        element.checked = true;
+        element.dispatchEvent(new Event('change'));
+      }
+    }
+    runtimeSelect.value = config['simple']['runtime'];
+    runtimeSelect.dispatchEvent(new Event('change'));
+    jupyterlabSimpleElem.checked = config['fields']['jupyterlab'];
+    jupyterlabSimpleElem.dispatchEvent(new Event('change'));
+  }
+}
+
 // Handle document ready
 document.addEventListener("DOMContentLoaded", () => {
   resetSpawnForm();  // Init
 
-  const nprocs = document.getElementById('nprocs');
-  const exclusive = document.getElementById('exclusive');
-  const ngpus = document.getElementById('ngpus');
-  const jupyterlab = document.getElementById('jupyterlab');
-  const runtime = document.getElementById('runtime');
+  const nprocsElem = document.getElementById('nprocs');
+  const exclusiveElem = document.getElementById('exclusive');
+  const ngpusElem = document.getElementById('ngpus');
+  const jupyterlabElem = document.getElementById('jupyterlab');
+  const runtimeElem = document.getElementById('runtime');
 
   // Update advanced form from Simple tab inputs
   // Partitions
@@ -106,25 +182,25 @@ document.addEventListener("DOMContentLoaded", () => {
   // CPUs
   document.querySelectorAll('input[name="nprocs_simple"]').forEach(element => {
     element.addEventListener('change', e => {
-      nprocs.value = e.target.value;
-      exclusive.checked = e.target.id === 'maximumCore';
+      nprocsElem.value = e.target.value;
+      exclusiveElem.checked = e.target.id === 'maximumCore';
     });
   });
   // GPUs
   document.querySelectorAll('input[name="ngpus_simple"]').forEach(element => {
     element.addEventListener('change', e => {
-      ngpus.value = e.target.value;
+      ngpusElem.value = e.target.value;
     });
   });
   // JupyterLab
   document.getElementById('jupyterlab_simple').addEventListener(
     'change', e => {
-      jupyterlab.checked = e.target.checked;
+      jupyterlabElem.checked = e.target.checked;
   });
   // Runtime
   document.getElementById('runtime_simple').addEventListener(
     'change', e => {
-      runtime.value = `${e.target.value}:00:00`;
+      runtimeElem.value = `${e.target.value}:00:00`;
   });
 
   // Reset when returning to simple tab
@@ -137,4 +213,10 @@ document.addEventListener("DOMContentLoaded", () => {
     'change', updatePartitionLimits
   );
 
+  // Catch form submit
+  document.getElementById('spawn_form').addEventListener(
+    'submit', (e) => storeConfigToLocalStorage()
+  );
+
+  restoreConfigFromLocalStorage();
 });
