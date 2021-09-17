@@ -78,6 +78,10 @@
   justify-self: start;
 }
 
+.form-container hr {
+  grid-column: 1 / 3;
+}
+
 @media (max-width: 768px) {
   .form-container label {
     grid-column: 1;

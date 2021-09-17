@@ -151,27 +151,8 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       <option value="{{ name }}">{{ name }}</option>
       {% endfor %}
     </select>
-    <label for="nnodes" accesskey="n">
-      Number of nodes <span class="label-extra-info">(--nodes)</span>:</label>
-    <input
-      type="number"
-      id="nnodes"
-      name="nnodes"
-      min="1"
-      value="1"
-    />
-    <label for="ntasks" accesskey="t">
-      Number of tasks per node<span class="label-extra-info">(--ntasks-per-node)</span>:
-    </label>
-    <input
-      type="number"
-      id="ntasks"
-      name="ntasks"
-      min="1"
-      value="1"
-    />
     <label for="nprocs" accesskey="c">
-      CPUs per task <span class="label-extra-info">(--cpus-per-task)</span>:
+      Number of CPUs <span class="label-extra-info">per task (--cpus-per-task)</span>:
     </label>
     <input
       type="number"
@@ -201,6 +182,14 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       placeholder="hh:mm:ss"
       pattern="[0-9]+:[0-5][0-9]:[0-5][0-9]"
     />
+    <label for="jupyterlab">Launch JupyterLab:</label>
+    <input
+      type="checkbox"
+      id="jupyterlab"
+      name="jupyterlab"
+      value="true"
+    />
+    <hr />
     <label for="reservation" accesskey="v">
       Reservation <span class="label-extra-info">(--reservation)</span>:
     </label>
@@ -210,18 +199,30 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       name="reservation"
       placeholder="no reservation"
     />
-    <label for="exclusive">Exclusive <span class="label-extra-info">(--exclusive)</span>:</label>
+    <label for="nnodes" accesskey="n">
+      Number of nodes <span class="label-extra-info">(--nodes)</span>:</label>
+    <input
+      type="number"
+      id="nnodes"
+      name="nnodes"
+      min="1"
+      value="1"
+    />
+    <label for="ntasks" accesskey="t">
+      Number of tasks per node<span class="label-extra-info">(--ntasks-per-node)</span>:
+    </label>
+    <input
+      type="number"
+      id="ntasks"
+      name="ntasks"
+      min="1"
+      value="1"
+    />
+   <label for="exclusive">Exclusive <span class="label-extra-info">(--exclusive)</span>:</label>
     <input
       type="checkbox"
       id="exclusive"
       name="exclusive"
-      value="true"
-    />
-    <label for="jupyterlab">Launch JupyterLab:</label>
-    <input
-      type="checkbox"
-      id="jupyterlab"
-      name="jupyterlab"
       value="true"
     />
     </div>
