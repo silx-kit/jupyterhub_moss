@@ -110,6 +110,7 @@ class MOSlurmSpawner(SlurmSpawner):
         "exclusive": lambda v: v == "true",
         "ngpus": int,
         "jupyterlab": lambda v: v == "true",
+        "options": lambda v: v.strip(),
     }
 
     _RUNTIME_REGEXP = re.compile(
@@ -153,6 +154,9 @@ class MOSlurmSpawner(SlurmSpawner):
             and not 0 <= options["ngpus"] <= partition_info["max_ngpus"]
         ):
             raise AssertionError("Error in number of GPUs")
+
+        if "options" in options and "\n" in options["options"]:
+            raise AssertionError("Error in extra options")
 
     def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
         """Parse the form and add options to the SLURM job script"""
