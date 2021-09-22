@@ -10,11 +10,16 @@ import traitlets
 from subprocess import check_output
 from jinja2 import Environment, FileSystemLoader
 
-from .utils import local_path
+from .utils import local_path, file_hash
 
 
 TEMPLATE_PATH = local_path("templates")
 
+# Compute resources hash once at start-up
+RESOURCES_HASH = {
+    name: file_hash(local_path(os.path.join("form", name)))
+    for name in ("option_form.css", "option_form.js")
+}
 
 with open(local_path("batch_script.sh")) as f:
     BATCH_SCRIPT = f.read()
@@ -94,6 +99,8 @@ class MOSlurmSpawner(SlurmSpawner):
 
         form_template = self.jinja_env.get_template("option_form.html")
         return form_template.render(
+            hash_option_form_css=RESOURCES_HASH["option_form.css"],
+            hash_option_form_js=RESOURCES_HASH["option_form.js"],
             partitions=partitions,
             default_partition=default_partition,
             jsondata=jsondata,
