@@ -45,12 +45,16 @@ class MOSlurmSpawner(SlurmSpawner):
         help="Information on supported partitions",
     ).tag(config=True)
 
-    jinja_env = Environment(
+    FORM_TEMPLATE = Environment(
         loader=FileSystemLoader(TEMPLATE_PATH),
         autoescape=False,
         trim_blocks=True,
         lstrip_blocks=True,
-    )
+    ).get_template("option_form.html")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.options_form = self.create_options_form
 
     def _get_slurm_info(self):
         """Returns information about partitions from slurm"""
@@ -67,15 +71,15 @@ class MOSlurmSpawner(SlurmSpawner):
                 info["idle"] += 1
         return slurm_info
 
-    def _options_form_default(self):
+    @staticmethod
+    def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
-
-        slurm_info = self._get_slurm_info()
+        slurm_info = spawner._get_slurm_info()
 
         # Combine all partition info as a dict
         partitions = {}
         default_partition = None
-        for name, info in self.partitions.items():
+        for name, info in spawner.partitions.items():
             partitions[name] = {
                 "max_nnodes": slurm_info[name]["nodes"],
                 "nnodes_idle": slurm_info[name]["idle"],
@@ -92,8 +96,7 @@ class MOSlurmSpawner(SlurmSpawner):
             }
         )
 
-        form_template = self.jinja_env.get_template("option_form.html")
-        return form_template.render(
+        return spawner.FORM_TEMPLATE.render(
             partitions=partitions,
             default_partition=default_partition,
             jsondata=jsondata,
