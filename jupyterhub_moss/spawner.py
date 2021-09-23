@@ -54,7 +54,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.options_form = self._get_options_form
+        self.options_form = self.create_options_form
 
     def _get_slurm_info(self):
         """Returns information about partitions from slurm"""
@@ -72,7 +72,7 @@ class MOSlurmSpawner(SlurmSpawner):
         return slurm_info
 
     @staticmethod
-    def _get_options_form(spawner):
+    def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
         slurm_info = spawner._get_slurm_info()
 
