@@ -30,21 +30,10 @@ The CI will check that the lint check passes and that all files are correctly fo
 
 ## Generate the spawn page locally
 
-Even if you do not have access to a Slurm cluster, it is possible to mock the Slurm info to generate the spawn page for a local development JupyterHub instance. For this, use this `jupyterhub_conf.py`:
-
-```python
-class MOckSlurmSpawner(MOSlurmSpawner):
-    def _get_slurm_info(self):
-        return {
-            k: {"nodes": v["max_nprocs"], "idle": v["max_nprocs"] // 2}
-            for k, v in self.partitions.items()
-        }
-
-
-c = get_config()
-set_config(c)
-c.JupyterHub.spawner_class = MOckSlurmSpawner
-c.MOckSlurmSpawner.partitions = {...}
+Even if you do not have access to a Slurm cluster, it is possible to mock the Slurm info to generate the spawn page for a local development JupyterHub instance.
+For instance, see the [`demo_jupyterhub_conf.py`](demo_jupyterhub_conf.py) file which which you can use to start jupyterhub using jupyterhub_moss:
+```
+jupyterhub -f demo_jupyterhub_conf.py
 ```
 
 ## Release
