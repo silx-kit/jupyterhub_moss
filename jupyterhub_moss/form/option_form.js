@@ -210,7 +210,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Reset when returning to simple tab
   document.getElementById('simple_tab_link').addEventListener(
-    'click', resetSpawnForm
+    'click', () => {
+      const config = JSON.parse(window.localStorage.getItem(CONFIG_NAME));
+      if (config !== null && !config['isAdvanced']) {
+        restoreConfigFromLocalStorage();
+      } else {
+        resetSpawnForm();
+      }
+    }
   );
 
   // Update limits when partition is changed
