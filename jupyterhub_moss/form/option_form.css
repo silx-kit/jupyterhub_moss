@@ -82,6 +82,12 @@
   grid-column: 1 / 3;
 }
 
+.form-offset-row {
+  justify-self: end;
+  width: calc(100% - 2em);
+  grid-column: 1 / 3;
+}
+
 @media (max-width: 768px) {
   .form-container label {
     grid-column: 1;
@@ -92,5 +98,9 @@
   }
   .form-container input[type="checkbox"] {
     grid-column: 2;
+  }
+
+  .form-offset-row {
+    width: 100%;
   }
 }

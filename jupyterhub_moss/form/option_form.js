@@ -13,6 +13,14 @@ function setVisible(element, visible) {
   }
 }
 
+function setReadOnly(element, readonly) {
+  if (readonly) {
+    element.setAttribute('readonly', '');
+  } else {
+    element.removeAttribute('readonly');
+  }
+}
+
 function setSimplePartition(name) {
   const partitionElem = document.getElementById('partition');
   const gpuDivSimple = document.getElementById('gpu_simple');
@@ -29,6 +37,7 @@ function setSimplePartition(name) {
 
   partitionElem.value = name;
   updatePartitionLimits();
+  updateEnvironmentSelect();
 
   const info = window.SLURM_DATA.partitions[name];
 
@@ -66,6 +75,64 @@ function setSimplePartition(name) {
     const element = runtimeSelect.options[i];
     setVisible(element, element.value * 3600 <= info['max_runtime']);
   };
+}
+
+function updateEnvironmentPath() {
+  const environmentElem = document.getElementById('environment');
+  const environmentPathElem = document.getElementById('environment_path');
+  const environmentCustomOptionElem = document.getElementById('environment_custom');
+
+  const isCustom = environmentElem.options[environmentElem.selectedIndex].id === 'environment_custom';
+  setReadOnly(environmentPathElem, !isCustom);
+  environmentPathElem.style.borderColor = isCustom ? null : 'transparent';
+  environmentPathElem.value = isCustom ? environmentCustomOptionElem.value : environmentElem.value;
+}
+
+function updateEnvironmentSelect() {
+  const environmentElem = document.getElementById("environment");
+  const environmentSimpleElem = document.getElementById("environment_simple");
+
+  const partition = document.getElementById('partition').value;
+  const info = window.SLURM_DATA.partitions[partition];
+
+  // Store currently selected Jupyter environment
+  const previousSelectedOptionText = environmentElem.selectedIndex === -1 ? undefined : environmentElem.options[environmentElem.selectedIndex].text;
+
+  for (const select of [environmentElem, environmentSimpleElem]) {
+    // Remove all but custom option
+    for (let index = select.length - 1; index >= 0; index--) {
+      if (select.options[index].id !== "environment_custom") {
+        select.remove(index);
+      }
+    }
+
+    // Add options for current partition
+    const insertBeforeElem = select.length === 0 ? null : select.options[select.length - 1];
+    for (const envName in info.jupyter_environments) {
+      var option = document.createElement("option");
+      option.text = envName;
+      option.value = info.jupyter_environments[envName];
+      select.add(option, insertBeforeElem);
+    }
+
+    // Restore selected option keep name unchanged
+    var selectedIndex = 0;
+    if (previousSelectedOptionText !== undefined) {
+      for (let index = 0; index < select.length; index++) {
+        if (select.options[index].text === previousSelectedOptionText) {
+          selectedIndex = index;
+          break;
+        }
+      }
+    }
+    select.selectedIndex = selectedIndex;
+  }
+  updateEnvironmentPath();
+
+  //Hide environment_simple if there is only one environment.
+  const isVisible = environmentSimpleElem.length !== 1;
+  setVisible(environmentSimpleElem, isVisible);
+  setVisible(document.querySelector(`label[for="${environmentSimpleElem.id}"]`), isVisible);
 }
 
 function updatePartitionLimits() {
@@ -174,6 +241,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const nprocsElem = document.getElementById('nprocs');
   const exclusiveElem = document.getElementById('exclusive');
   const ngpusElem = document.getElementById('ngpus');
+  const environmentElem = document.getElementById('environment');
+  const environmentCustomOptionElem = document.getElementById('environment_custom');
+
   const jupyterlabElem = document.getElementById('jupyterlab');
   const runtimeElem = document.getElementById('runtime');
 
@@ -196,6 +266,12 @@ document.addEventListener("DOMContentLoaded", () => {
     element.addEventListener('change', e => {
       ngpusElem.value = e.target.value;
     });
+  });
+  // Jupyter environment
+  document.getElementById('environment_simple').addEventListener(
+    'change', e => {
+      environmentElem.selectedIndex = e.target.selectedIndex;
+      updateEnvironmentPath();
   });
   // JupyterLab
   document.getElementById('jupyterlab_simple').addEventListener(
@@ -223,6 +299,23 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update limits when partition is changed
   document.getElementById('partition').addEventListener(
     'change', updatePartitionLimits
+  );
+
+  // Update Jupyter environments when partition is changed
+  document.getElementById('partition').addEventListener(
+    'change', updateEnvironmentSelect
+  );
+
+  // Update environment_path when environment is changed
+  document.getElementById('environment').addEventListener(
+    'change', updateEnvironmentPath
+  );
+
+  // Persist env path in environment_custom's value
+  document.getElementById('environment_path').addEventListener(
+    'change', e => {
+      environmentCustomOptionElem.value = e.target.value;
+    }
   );
 
   // Catch form submit
