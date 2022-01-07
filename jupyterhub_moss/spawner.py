@@ -90,7 +90,7 @@ class MOSlurmSpawner(SlurmSpawner):
             partitions[name] = {
                 "max_nnodes": slurm_info[name]["nodes"],
                 "nnodes_idle": slurm_info[name]["idle"],
-                **info
+                **info,
             }
             if info["simple"] and default_partition is None:
                 default_partition = name
@@ -205,7 +205,9 @@ class MOSlurmSpawner(SlurmSpawner):
             options["gres"] = gpu_gres_template.format(options["ngpus"])
 
         # Virtualenv is not activated, we need to provide full path
-        default_venv_path = tuple(self.partitions[partition]["jupyter_environments"].values())[0]
+        default_venv_path = tuple(
+            self.partitions[partition]["jupyter_environments"].values()
+        )[0]
         venv_dir = options.get("environment_path", default_venv_path)
         self.batchspawner_singleuser_cmd = os.path.join(
             venv_dir, "batchspawner-singleuser"
