@@ -35,7 +35,10 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 28,
         "max_runtime": 12 * 3600,
         "simple": True,
-        "venv": "/jupyter_env_path/bin/",
+        "jupyter_environments": {
+            "default": "/default/jupyter_env_path/bin/",
+            "new-x86": "/new-x86/jupyter_env_path/bin/",
+        },
     },
     "partition_2": {
         "architecture": "ppc64le",
@@ -45,7 +48,10 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 128,
         "max_runtime": 1 * 3600,
         "simple": True,
-        "venv": "/path/to/jupyter/env/for/partition_2/bin/",
+        "jupyter_environments": {
+            "default": "/path/to/jupyter/env/for/partition_2/bin/",
+            "new-ppx64le": "/new-ppc64le/jupyter_env_path/bin/",
+        },
     },
     "partition_3": {
         "architecture": "x86_86",
@@ -55,7 +61,10 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 28,
         "max_runtime": 12 * 3600,
         "simple": False,
-        "venv": "/path/to/jupyter/env/for/partition_3/bin/",
+        "jupyter_environments": {
+            "default": "/path/to/jupyter/env/for/partition_3/bin/",
+            "new-x86": "/new-x86/jupyter_env_path/bin/",
+        },
     },
 }
 

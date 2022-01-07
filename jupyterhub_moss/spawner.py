@@ -39,7 +39,9 @@ class MOSlurmSpawner(SlurmSpawner):
                 "architecture": traitlets.Unicode(),
                 "gpu": traitlets.Unicode(allow_none=True, default_value=None),
                 "simple": traitlets.Bool(),
-                "venv": traitlets.Unicode(),
+                "jupyter_environments": traitlets.Dict(
+                    key_trait=traitlets.Unicode(), value_trait=traitlets.Unicode()
+                ),
                 "max_ngpus": traitlets.Int(),
                 "max_nprocs": traitlets.Int(),
                 "max_runtime": traitlets.Int(),
@@ -88,7 +90,7 @@ class MOSlurmSpawner(SlurmSpawner):
             partitions[name] = {
                 "max_nnodes": slurm_info[name]["nodes"],
                 "nnodes_idle": slurm_info[name]["idle"],
-                **dict((k, v) for k, v in info.items() if k != "venv"),
+                **info
             }
             if info["simple"] and default_partition is None:
                 default_partition = name
@@ -122,6 +124,7 @@ class MOSlurmSpawner(SlurmSpawner):
         "jupyterlab": lambda v: v == "true",
         "options": lambda v: v.strip(),
         "output": lambda v: v == "true",
+        "environment_path": str,
     }
 
     _RUNTIME_REGEXP = re.compile(
@@ -169,6 +172,9 @@ class MOSlurmSpawner(SlurmSpawner):
         if "options" in options and "\n" in options["options"]:
             raise AssertionError("Error in extra options")
 
+        if "environment_path" in options and "\n" in options["environment_path"]:
+            raise AssertionError("Error in environment_path")
+
     def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
         """Parse the form and add options to the SLURM job script"""
         # Convert expected input from List[str] to appropriate type
@@ -199,7 +205,8 @@ class MOSlurmSpawner(SlurmSpawner):
             options["gres"] = gpu_gres_template.format(options["ngpus"])
 
         # Virtualenv is not activated, we need to provide full path
-        venv_dir = self.partitions[partition]["venv"]
+        default_venv_path = tuple(self.partitions[partition]["jupyter_environments"].values())[0]
+        venv_dir = options.get("environment_path", default_venv_path)
         self.batchspawner_singleuser_cmd = os.path.join(
             venv_dir, "batchspawner-singleuser"
         )
