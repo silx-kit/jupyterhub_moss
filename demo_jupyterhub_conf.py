@@ -42,7 +42,7 @@ c.MOSlurmSpawner.partitions = {
             },
             "new-x86": {
                 "path": "/new-x86/jupyter_env_path/bin/",
-                "description": "New environment x86 (latest)"
+                "description": "New environment x86 (latest)",
             },
             "latest": {
                 "path": "/latest/jupyter_env_path/bin/",
@@ -88,7 +88,7 @@ c.MOSlurmSpawner.partitions = {
             },
             "new-x86": {
                 "path": "/new-x86/jupyter_env_path/bin/",
-                "description": "New environment x86 (latest)"
+                "description": "New environment x86 (latest)",
             },
         },
     },
