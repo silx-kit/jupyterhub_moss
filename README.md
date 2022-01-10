@@ -128,7 +128,7 @@ The following query argument is required:
 
 The following optional query arguments are available:
 
-- `environment_path`: Path to Python environment bin/ used to start jupyter
+- `environment_path`: Path to Python environment bin/ used to start Jupyter
 - `exclusive`: Set to `true` for exclusive node usage (``--exclusive``)
 - `jupyterlab`: Set to `true` to start with JupyterLab
 - `ngpus`: Number of GPUs (``--gres:<gpu>:``)
