@@ -40,7 +40,14 @@ class MOSlurmSpawner(SlurmSpawner):
                 "gpu": traitlets.Unicode(allow_none=True, default_value=None),
                 "simple": traitlets.Bool(),
                 "jupyter_environments": traitlets.Dict(
-                    key_trait=traitlets.Unicode(), value_trait=traitlets.Unicode()
+                    key_trait=traitlets.Unicode(),
+                    value_trait=traitlets.Dict(
+                        key_trait=traitlets.Unicode(),
+                        per_key_traits={
+                            "path": traitlets.Unicode(),
+                            "description": traitlets.Unicode(),
+                        },
+                    ),
                 ),
                 "max_ngpus": traitlets.Int(),
                 "max_nprocs": traitlets.Int(),
@@ -205,10 +212,10 @@ class MOSlurmSpawner(SlurmSpawner):
             options["gres"] = gpu_gres_template.format(options["ngpus"])
 
         # Virtualenv is not activated, we need to provide full path
-        default_venv_path = tuple(
+        default_venv = tuple(
             self.partitions[partition]["jupyter_environments"].values()
         )[0]
-        venv_dir = options.get("environment_path", default_venv_path)
+        venv_dir = options.get("environment_path", default_venv["path"])
         self.batchspawner_singleuser_cmd = os.path.join(
             venv_dir, "batchspawner-singleuser"
         )
