@@ -1,4 +1,4 @@
-const CONFIG_NAME = 'form-config:v1';
+const CONFIG_NAME = 'form-config:v2';
 const CUSTOM_ENV_CONFIG_NAME = 'custom-environment-config:v1';
 
 
