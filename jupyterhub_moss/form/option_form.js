@@ -303,7 +303,7 @@ function storeConfigToLocalStorage() {
 
   // Retrieve form fields to store
   const fieldNames = ['partition', 'nprocs', 'ngpus', 'runtime', 'jupyterlab',
-                      'exclusive', 'output', 'reservation', 'ntasks', 'options'];
+                      'exclusive', 'output', 'reservation', 'options'];
   const fields = {}
   for (const name of fieldNames) {
     const elem = document.getElementById(name);

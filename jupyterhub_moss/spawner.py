@@ -124,7 +124,6 @@ class MOSlurmSpawner(SlurmSpawner):
         "runtime": str,
         "nprocs": int,
         "reservation": str,
-        "ntasks": int,
         "exclusive": lambda v: v == "true",
         "ngpus": int,
         "jupyterlab": lambda v: v == "true",
@@ -162,9 +161,6 @@ class MOSlurmSpawner(SlurmSpawner):
 
         if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")
-
-        if "ntasks" in options and options["ntasks"] < 1:
-            raise AssertionError("Error in number ot tasks")
 
         if (
             "ngpus" in options
