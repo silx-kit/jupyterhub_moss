@@ -45,7 +45,10 @@ c.MOSlurmSpawner.partitions = {
         "max_runtime": 12*3600,            # Maximum time limit in seconds (Must be at least 1hour)
         "simple": True,                    # True to show in Simple tab
         "jupyter_environments": {
-            "default": "/jupyter_env_path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
+            "default": {                   # Name of Jupyter environment used to persist it
+                "path": "/env/path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
+                "description": "Default",  # Text displayed for this environment select option
+            },
         },
     },
     "partition_2": {
@@ -57,7 +60,10 @@ c.MOSlurmSpawner.partitions = {
         "max_runtime": 1*3600,
         "simple": True,
         "jupyter_environments": {
-            "default": "/path/to/jupyter/env/for/partition_2/bin/",
+            "default": {
+                "path": "/path/to/jupyter/env/for/partition_2/bin/",
+                "description": "Default",
+            },
         },
     },
     "partition_3": {
@@ -69,7 +75,9 @@ c.MOSlurmSpawner.partitions = {
         "max_runtime": 12*3600,
         "simple": False,
         "jupyter_environments": {
-            "default": "/path/to/jupyter/env/for/partition_3/bin/",
+            "default": {
+                "path": "/path/to/jupyter/env/for/partition_3/bin/",
+                "description": "Partition 3 default",
         },
     },
 }
