@@ -142,7 +142,6 @@ class MOSlurmSpawner(SlurmSpawner):
         assert options["partition"] in self.partitions, "Partition is not supported"
 
         partition_info = self.partitions[options["partition"]]
-        slurm_info = self._get_slurm_info()[options["partition"]]
 
         if "runtime" in options:
             match = self._RUNTIME_REGEXP.match(options["runtime"])
