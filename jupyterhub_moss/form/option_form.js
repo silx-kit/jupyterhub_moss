@@ -77,28 +77,45 @@ function setSimplePartition(name) {
   };
 }
 
-function updateEnvironmentPath() {
+function isCustomEnvironment() {
   const environmentElem = document.getElementById('environment');
-  const environmentPathElem = document.getElementById('environment_path');
-  const environmentPathNoteElem = document.getElementById('environment_path_note');
-  const environmentCustomOptionElem = document.getElementById('environment_custom');
-
-  const isCustom = environmentElem.options[environmentElem.selectedIndex].id === 'environment_custom';
-  setReadOnly(environmentPathElem, !isCustom);
-  setVisible(environmentPathNoteElem, isCustom);
-  environmentPathElem.style.borderColor = isCustom ? null : 'transparent';
-  environmentPathElem.value = isCustom ? environmentCustomOptionElem.value : environmentElem.value;
+  const index = environmentElem.selectedIndex;
+  return index !== -1 && environmentElem.options[index].id === 'environment_custom';
 }
 
-function updateEnvironmentSelect() {
+function getEnvironmentPath() {
+  const environmentElem = document.getElementById('environment');
+  const environmentCustomOptionElem = document.getElementById('environment_custom');
+
+  const partition = document.getElementById('partition').value;
+  const info = window.SLURM_DATA.partitions[partition];
+
+  return isCustomEnvironment() ? environmentCustomOptionElem.value : info.jupyter_environments[environmentElem.value]['path'];
+}
+
+function updateEnvironmentPath() {
+  const environmentPathElem = document.getElementById('environment_path');
+  const environmentPathNoteElem = document.getElementById('environment_path_note');
+
+  setReadOnly(environmentPathElem, !isCustomEnvironment());
+  setVisible(environmentPathNoteElem, isCustomEnvironment());
+  environmentPathElem.style.borderColor = isCustomEnvironment() ? null : 'transparent';
+  environmentPathElem.value = getEnvironmentPath();
+}
+
+function updateEnvironmentSelect(selection = undefined) {
   const environmentElem = document.getElementById("environment");
   const environmentSimpleElem = document.getElementById("environment_simple");
 
   const partition = document.getElementById('partition').value;
   const info = window.SLURM_DATA.partitions[partition];
 
-  // Store currently selected Jupyter environment
-  const previousSelectedOptionText = environmentElem.selectedIndex === -1 ? undefined : environmentElem.options[environmentElem.selectedIndex].text;
+  // Define option value to select
+  const selectionValue = selection !== undefined ?
+    selection :
+    (environmentElem.selectedIndex === -1 ?
+      undefined : environmentElem.options[environmentElem.selectedIndex].value);
+  console.log(`selected ${selectionValue}`);
 
   for (const select of [environmentElem, environmentSimpleElem]) {
     // Remove all but custom option
@@ -112,16 +129,17 @@ function updateEnvironmentSelect() {
     const insertBeforeElem = select.length === 0 ? null : select.options[select.length - 1];
     for (const envName in info.jupyter_environments) {
       var option = document.createElement("option");
-      option.text = envName;
-      option.value = info.jupyter_environments[envName];
+      option.text = info.jupyter_environments[envName]['description'];
+      option.value = envName;
       select.add(option, insertBeforeElem);
     }
 
-    // Restore selected option keep name unchanged
+    // Set selected option
     var selectedIndex = 0;
-    if (previousSelectedOptionText !== undefined) {
+    if (selectionValue !== undefined) {
       for (let index = 0; index < select.length; index++) {
-        if (select.options[index].text === previousSelectedOptionText) {
+        console.log(`test ${select.options[index].value}`);
+        if (select.options[index].value === selectionValue) {
           selectedIndex = index;
           break;
         }
@@ -166,6 +184,7 @@ function updatePartitionLimits() {
 function storeConfigToLocalStorage() {
   const advancedDiv = document.getElementById("menu1");
   const runtimeSelect = document.getElementById('runtime_simple');
+  const environmentElem = document.getElementById('environment');
 
   // Retrieve form fields to store
   const fieldNames = ['partition', 'nprocs', 'ngpus', 'runtime', 'jupyterlab',
@@ -180,7 +199,7 @@ function storeConfigToLocalStorage() {
     }
   }
 
-  // Persist simple inputs
+  // Persist simple inputs and environment
   window.localStorage.setItem(CONFIG_NAME, JSON.stringify({
     'isAdvanced': advancedDiv !== null && advancedDiv.classList.contains('active'),
     'simple': {
@@ -190,6 +209,10 @@ function storeConfigToLocalStorage() {
       'runtime': runtimeSelect.value,
     },
     'fields': fields,
+    'environment': {
+      'isCustom': isCustomEnvironment(),
+      'value': environmentElem.value,
+    },
   }));
 }
 
@@ -197,6 +220,7 @@ function restoreConfigFromLocalStorage() {
   const advancedLink = document.getElementById("advanced_tab_link");
   const jupyterlabSimpleElem = document.getElementById('jupyterlab_simple');
   const runtimeSelect = document.getElementById('runtime_simple');
+  const environmentCustomOptionElem = document.getElementById('environment_custom');
 
   resetSpawnForm();
 
@@ -233,6 +257,18 @@ function restoreConfigFromLocalStorage() {
     runtimeSelect.dispatchEvent(new Event('change'));
     jupyterlabSimpleElem.checked = config['fields']['jupyterlab'];
     jupyterlabSimpleElem.dispatchEvent(new Event('change'));
+  }
+
+  // Restore Jupyter environment
+  const environment = config['environment'];
+  if (environment === undefined || (environment['isCustom'] && !config['isAdvanced'])) {
+    // Do not restore environment if it was not save or if custom was save for simple tab.
+    updateEnvironmentSelect();
+  } else {
+    if (environment['isCustom']) {
+      environmentCustomOptionElem.value = environment['value'];
+    }
+    updateEnvironmentSelect(environment['value']);
   }
 }
 
@@ -305,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Update Jupyter environments when partition is changed
   document.getElementById('partition').addEventListener(
-    'change', updateEnvironmentSelect
+    'change', e => updateEnvironmentSelect()
   );
 
   // Update environment_path when environment is changed
