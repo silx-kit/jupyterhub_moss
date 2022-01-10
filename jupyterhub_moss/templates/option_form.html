@@ -214,6 +214,9 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       name="environment_path"
       placeholder="/path/to/jupyter/environment/bin"
     />
+    <p id="environment_path_note" class="form-offset-row" hidden>
+      &#9888; The <a href="https://pypi.org/project/batchspawner/">batchspawner</a> package must be installed in this environment.
+    </p>
     <label for="jupyterlab">Launch JupyterLab:</label>
     <input
       type="checkbox"

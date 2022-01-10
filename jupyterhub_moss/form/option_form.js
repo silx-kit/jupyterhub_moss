@@ -80,10 +80,12 @@ function setSimplePartition(name) {
 function updateEnvironmentPath() {
   const environmentElem = document.getElementById('environment');
   const environmentPathElem = document.getElementById('environment_path');
+  const environmentPathNoteElem = document.getElementById('environment_path_note');
   const environmentCustomOptionElem = document.getElementById('environment_custom');
 
   const isCustom = environmentElem.options[environmentElem.selectedIndex].id === 'environment_custom';
   setReadOnly(environmentPathElem, !isCustom);
+  setVisible(environmentPathNoteElem, isCustom);
   environmentPathElem.style.borderColor = isCustom ? null : 'transparent';
   environmentPathElem.value = isCustom ? environmentCustomOptionElem.value : environmentElem.value;
 }
