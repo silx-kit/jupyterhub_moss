@@ -80,6 +80,7 @@ function setSimplePartition(name) {
 function isCustomEnvironment() {
   const environmentElem = document.getElementById('environment');
   const index = environmentElem.selectedIndex;
+
   return index !== -1 && environmentElem.options[index].id === 'environment_custom';
 }
 
@@ -98,9 +99,9 @@ function updateEnvironmentPath() {
   const environmentPathNoteElem = document.getElementById('environment_path_note');
 
   setReadOnly(environmentPathElem, !isCustomEnvironment());
-  setVisible(environmentPathNoteElem, isCustomEnvironment());
   environmentPathElem.style.borderColor = isCustomEnvironment() ? null : 'transparent';
   environmentPathElem.value = getEnvironmentPath();
+  setVisible(environmentPathNoteElem, isCustomEnvironment());
 }
 
 function updateEnvironmentSelect(selection = undefined) {
@@ -115,7 +116,6 @@ function updateEnvironmentSelect(selection = undefined) {
     selection :
     (environmentElem.selectedIndex === -1 ?
       undefined : environmentElem.options[environmentElem.selectedIndex].value);
-  console.log(`selected ${selectionValue}`);
 
   for (const select of [environmentElem, environmentSimpleElem]) {
     // Remove all but custom option
@@ -138,7 +138,6 @@ function updateEnvironmentSelect(selection = undefined) {
     var selectedIndex = 0;
     if (selectionValue !== undefined) {
       for (let index = 0; index < select.length; index++) {
-        console.log(`test ${select.options[index].value}`);
         if (select.options[index].value === selectionValue) {
           selectedIndex = index;
           break;
@@ -262,7 +261,7 @@ function restoreConfigFromLocalStorage() {
   // Restore Jupyter environment
   const environment = config['environment'];
   if (environment === undefined || (environment['isCustom'] && !config['isAdvanced'])) {
-    // Do not restore environment if it was not save or if custom was save for simple tab.
+    // Do not restore environment if it was not saved or if custom was saved for simple tab.
     updateEnvironmentSelect();
   } else {
     if (environment['isCustom']) {
