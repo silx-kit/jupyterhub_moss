@@ -276,15 +276,11 @@ function setSimplePartition(name) {
 }
 
 function updatePartitionLimits() {
-  const nnodesElem = document.getElementById("nnodes");
   const nprocsElem = document.getElementById("nprocs");
   const ngpusElem = document.getElementById("ngpus");
 
   const partition = document.getElementById('partition').value;
   const info = window.SLURM_DATA.partitions[partition];
-
-  if (nnodesElem.value > info.max_nnodes) nnodesElem.value = info.max_nnodes;
-  nnodesElem.max = info.max_nnodes;
 
   if (nprocsElem.value > info.max_nprocs) nprocsElem.value = info.max_nprocs;
   nprocsElem.max = info.max_nprocs;
@@ -307,7 +303,7 @@ function storeConfigToLocalStorage() {
 
   // Retrieve form fields to store
   const fieldNames = ['partition', 'nprocs', 'ngpus', 'runtime', 'jupyterlab',
-                      'exclusive', 'output', 'reservation', 'nnodes', 'ntasks', 'options'];
+                      'exclusive', 'output', 'reservation', 'ntasks', 'options'];
   const fields = {}
   for (const name of fieldNames) {
     const elem = document.getElementById(name);

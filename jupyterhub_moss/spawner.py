@@ -124,7 +124,6 @@ class MOSlurmSpawner(SlurmSpawner):
         "runtime": str,
         "nprocs": int,
         "reservation": str,
-        "nnodes": int,
         "ntasks": int,
         "exclusive": lambda v: v == "true",
         "ngpus": int,
@@ -163,9 +162,6 @@ class MOSlurmSpawner(SlurmSpawner):
 
         if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")
-
-        if "nnodes" in options and not 1 <= options["nnodes"] <= slurm_info["nodes"]:
-            raise AssertionError("Error in number of nodes")
 
         if "ntasks" in options and options["ntasks"] < 1:
             raise AssertionError("Error in number ot tasks")
