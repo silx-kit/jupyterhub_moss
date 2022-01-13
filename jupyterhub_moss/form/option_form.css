@@ -57,6 +57,7 @@
 
 #environment_simple {
   text-overflow: ellipsis;
+  max-width: 20em;
 }
 
 .form-container {
