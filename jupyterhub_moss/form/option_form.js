@@ -10,7 +10,7 @@ function removeAllChildren(node) {
 
 function createEnvironmentDiv(key, description, path, checked=false) {
   const div = document.createElement('div');
-  div.setAttribute('class', 'environment-div');
+  div.classList.add('environment-div');
 
   // Store env key in hidden input
   const hidden_input = document.createElement('input');
