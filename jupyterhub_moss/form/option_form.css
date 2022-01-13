@@ -120,5 +120,9 @@
 
 .environment-div label,
 .environment-div #environment_add_path {
-  flex: 1
+  flex: 1;
+}
+
+#environment_add_button:disabled {
+  color: lightgray;
 }
