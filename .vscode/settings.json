@@ -1,0 +1,24 @@
+{
+  "javascript.format.enable": false,
+  "json.format.enable": false,
+  "css.validate": false,
+
+  "editor.formatOnSave": true,
+
+  "[javascript, html, css, json, markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    }
+  },
+
+  "eslint.codeAction.disableRuleComment": { "location": "sameLine" },
+  "eslint.workingDirectories": [{ "pattern": "./jupyterhub_moss/*/" }],
+
+  "python.formatting.provider": "black",
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  }
+}
