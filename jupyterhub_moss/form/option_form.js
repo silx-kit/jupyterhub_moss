@@ -1,7 +1,175 @@
 const CONFIG_NAME = 'form-config:v1';
+const CUSTOM_ENV_CONFIG_NAME = 'custom-environment-config:v1';
+
+function createEnvironmentDiv(key, description, path, checked=false) {
+  const div = document.createElement('div');
+  div.setAttribute('class', 'environment-div');
+
+  // Store env key in hidden input
+  const hidden_input = document.createElement('input');
+  hidden_input.setAttribute('type', 'hidden');
+  hidden_input.setAttribute('value', key);
+  div.appendChild(hidden_input);
+
+  const radio_id = `environment_radio_${key}`;
+  const title = `Environment path: ${path}`
+
+  const input = document.createElement('input');
+  input.setAttribute('type', 'radio');
+  input.setAttribute('id', radio_id);
+  input.setAttribute('title', title)
+  input.setAttribute('name', 'environment_path');
+  input.setAttribute('value', path);
+  if (checked) {
+    input.setAttribute('checked', '');
+  }
+  div.appendChild(input);
+
+  const label = document.createElement('label');
+  label.setAttribute('for', radio_id);
+  label.setAttribute('title', title);
+  label.textContent = description === '' ? path : description;
+  div.appendChild(label);
+
+  return div;
+}
+
+function resetEnvironmentSelection() {
+  const environmentsDiv = document.getElementById('jupyter_environments');
+  environmentsDiv.querySelector('input[type="radio"]').checked = true;
+}
+
+function selectEnvironment(key) {
+  const environmentsDiv = document.getElementById('jupyter_environments');
+  const customEnvironmentsDiv = document.getElementById('jupyter_environments_custom');
+
+  if (key !== null) {
+    for (const div of [environmentsDiv, customEnvironmentsDiv]) {
+      for (let keyInput of div.querySelectorAll('input[type="hidden"]')) {
+        if (keyInput.value === key) {
+          keyInput.parentNode.querySelector('input[type="radio"]').checked = true;
+          return;
+        }
+      }
+    }
+  }
+  resetEnvironmentSelection();
+}
+
+function getSelectedEnvironment() {
+  const environmentsDiv = document.getElementById('jupyter_environments');
+  const customEnvironmentsDiv = document.getElementById('jupyter_environments_custom');
+
+  // Get selected environment if any
+  for (const div of [environmentsDiv, customEnvironmentsDiv]) {
+    const selectedRadio = div.querySelector('input[type="radio"]:checked');
+    if (selectedRadio !== null && selectedRadio.parentNode !== null) {
+      const hiddenInput = selectedRadio.parentNode.querySelector('input[type="hidden"]');
+      if (hiddenInput !== null) {
+        return hiddenInput.value;
+      }
+    }
+  }
+  return null;
+}
+
+function addCustomEnvironment(key, description, path, persist=true) {
+  const customEnvironmentDiv = document.getElementById('jupyter_environments_custom');
+
+  const div = createEnvironmentDiv(key, description, path);
+
+  button = document.createElement('button');
+  button.setAttribute('type', 'button');
+  button.setAttribute('title', 'Remove this environment from the custom environments');
+  button.innerHTML = '&#xff0d;';
+  button.addEventListener(
+    'click', e => removeCustomEnvironmentDiv(e.target.parentNode)
+  )
+  div.appendChild(button);
+
+  customEnvironmentDiv.appendChild(div);
+
+  if (persist) {
+    storeCustomEnvironmentsToLocalStorage();
+  }
+}
+
+function removeCustomEnvironmentDiv(div, persist=true) {
+  if (div == null || div.parentNode === null) {
+    return;
+  }
+
+  // If removed env was selected, change to default selection
+  if (div.querySelector('input[type="radio"]').checked) {
+    resetEnvironmentSelection();
+  }
+  div.parentNode.removeChild(div);
+  if (persist) {
+    storeCustomEnvironmentsToLocalStorage();
+  }
+}
+
+function storeCustomEnvironmentsToLocalStorage() {
+  const customEnvironmentDiv = document.getElementById('jupyter_environments_custom');
+
+  // Get key from hidden input, description from label and path from radiobutton
+  const customEnvs = {};
+  customEnvironmentDiv.querySelectorAll('.environment-div').forEach(
+    div => {
+      customEnvs[div.querySelector('input[type=hidden]').value] = {
+        'description': div.querySelector('label').textContent,
+        'path': div.querySelector('input[type="radio"]').value,
+      }
+    }
+  );
+
+  window.localStorage.setItem(CUSTOM_ENV_CONFIG_NAME, JSON.stringify(customEnvs));
+}
+
+function restoreCustomEnvironmentsFromLocalStorage() {
+  const customEnvironmentDiv = document.getElementById('jupyter_environments_custom');
+
+  // Remove previous custom environments
+  while (customEnvironmentDiv.firstChild) {
+    removeCustomEnvironmentDiv(customEnvironmentDiv.firstChild, false);
+  }
+
+  const config = JSON.parse(window.localStorage.getItem(CUSTOM_ENV_CONFIG_NAME));
+  if (config === null) {
+    return;
+  }
+
+  for (const key in config) {
+    addCustomEnvironment(key, config[key].description, config[key].path, false);
+  }
+}
+
+
+function updateDefaultEnvironments() {
+  const environmentsDiv = document.getElementById('jupyter_environments');
+
+  // Get selected default environment if any
+  const selectedKey = getSelectedEnvironment();
+
+  // Remove previous default partition environments
+  while (environmentsDiv.firstChild) {
+    environmentsDiv.removeChild(environmentsDiv.firstChild);
+  }
+
+  const partition = document.getElementById('partition').value;
+  const partitionInfo = window.SLURM_DATA.partitions[partition];
+
+  // Populate default partition environments
+  for (const key in partitionInfo.jupyter_environments) {
+    const info = partitionInfo.jupyter_environments[key];
+    environmentsDiv.appendChild(createEnvironmentDiv(key, info.description, info.path));
+  }
+  selectEnvironment(selectedKey);
+}
 
 function resetSpawnForm() {
   document.getElementById('spawn_form').reset();
+  restoreCustomEnvironmentsFromLocalStorage();
   setSimplePartition(window.SLURM_DATA.default_partition);
 }
 
@@ -29,6 +197,7 @@ function setSimplePartition(name) {
 
   partitionElem.value = name;
   updatePartitionLimits();
+  updateDefaultEnvironments();
 
   const info = window.SLURM_DATA.partitions[name];
 
@@ -121,6 +290,7 @@ function storeConfigToLocalStorage() {
       'runtime': runtimeSelect.value,
     },
     'fields': fields,
+    'environmentId': getSelectedEnvironment(),
   }));
 }
 
@@ -165,6 +335,8 @@ function restoreConfigFromLocalStorage() {
     jupyterlabSimpleElem.checked = config['fields']['jupyterlab'];
     jupyterlabSimpleElem.dispatchEvent(new Event('change'));
   }
+
+  selectEnvironment(config['environmentId']);
 }
 
 // Handle document ready
@@ -176,6 +348,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const ngpusElem = document.getElementById('ngpus');
   const jupyterlabElem = document.getElementById('jupyterlab');
   const runtimeElem = document.getElementById('runtime');
+  const environmentAddRadio = document.getElementById('environment_add_radio');
+  const environmentAddName = document.getElementById('environment_add_name');
+  const environmentAddPath = document.getElementById('environment_add_path');
+  const environmentAddButton = document.getElementById('environment_add_button');
 
   // Update advanced form from Simple tab inputs
   // Partitions
@@ -225,9 +401,50 @@ document.addEventListener("DOMContentLoaded", () => {
     'change', updatePartitionLimits
   );
 
+  // Update default jupyter envs when partition is changed
+  document.getElementById('partition').addEventListener(
+    'change', updateDefaultEnvironments
+  );
+
+  // Handle add custom environment
+  document.getElementById('environment_add_path').addEventListener(
+    'input', e => {
+      const isInputEmpty = e.target.value === "";
+      if (!environmentAddRadio.disabled && isInputEmpty && environmentAddRadio.checked) {
+        // Path just cleared while its radio button was selected
+        resetEnvironmentSelection();
+      }
+      if (environmentAddRadio.disabled && !isInputEmpty) {
+        // First input in the path: select its radio button
+        environmentAddRadio.checked = true;
+      }
+      environmentAddRadio.value = e.target.value;
+      environmentAddRadio.disabled = isInputEmpty;
+      environmentAddButton.disabled = isInputEmpty;
+    }
+  );
+
+  environmentAddButton.addEventListener(
+    'click', e => {
+      const key = `custom-${Date.now()}`; // Poor man's UUID
+      addCustomEnvironment(key, environmentAddName.value, environmentAddPath.value);
+      if (environmentAddRadio.checked) {
+        selectEnvironment(key);
+      }
+      environmentAddName.value = "";
+      environmentAddPath.value = "";
+      environmentAddPath.dispatchEvent(new Event('input'));
+    }
+  );
+
   // Catch form submit
   document.getElementById('spawn_form').addEventListener(
-    'submit', (e) => storeConfigToLocalStorage()
+    'submit', e => {
+      if (environmentAddRadio.checked) {
+        environmentAddButton.dispatchEvent(new Event('click'));
+      }
+      storeConfigToLocalStorage();
+    }
   );
 
   restoreConfigFromLocalStorage();

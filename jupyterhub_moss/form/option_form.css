@@ -82,6 +82,13 @@
   grid-column: 1 / 3;
 }
 
+.form-offset-row {
+  justify-self: end;
+  width: calc(100% - 2em);
+  grid-column: 1 / 3;
+  text-align: left;
+}
+
 @media (max-width: 768px) {
   .form-container label {
     grid-column: 1;
@@ -93,4 +100,20 @@
   .form-container input[type="checkbox"] {
     grid-column: 2;
   }
+
+  .form-offset-row {
+    width: 100%;
+  }
+}
+
+.environment-div {
+  padding: 0.15rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.environment-div label,
+.environment-div #environment_add_path {
+  flex: 1
 }
