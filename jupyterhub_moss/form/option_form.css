@@ -115,7 +115,10 @@
   padding: 0.15rem;
   display: flex;
   align-items: flex-start;
-  gap: 0.3rem;
+}
+
+.environment-div > * {
+  margin-left: 0.3rem;
 }
 
 .environment-div label,
