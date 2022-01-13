@@ -95,7 +95,7 @@ c.MOSlurmSpawner.partitions = {
   This information is a mapping containing:
   - `path`: The path to a Python environment bin/ used to start jupyter on the Slurm nodes.
     **jupyterhub_moss** expects that a virtual (or conda) environment is used to start Jupyter.
-    This path can be changed according the partitions.
+    This path can be changed according to the partitions.
   - `description`: Text used for display in the selection options.
 
 ### Spawn page
