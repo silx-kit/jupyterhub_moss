@@ -1,6 +1,13 @@
 const CONFIG_NAME = 'form-config:v1';
 const CUSTOM_ENV_CONFIG_NAME = 'custom-environment-config:v1';
 
+
+function removeAllChildren(node) {
+  while (node.firstChild) {
+    node.removeChild(node.firstChild);
+  }
+}
+
 function createEnvironmentDiv(key, description, path, checked=false) {
   const div = document.createElement('div');
   div.setAttribute('class', 'environment-div');
@@ -36,30 +43,23 @@ function createEnvironmentDiv(key, description, path, checked=false) {
 
 function resetEnvironmentSelection() {
   const environmentsDiv = document.getElementById('jupyter_environments');
+  const environmentSimpleSelect = document.getElementById('environment_simple')
+
   environmentsDiv.querySelector('input[type="radio"]').checked = true;
+  environmentSimpleSelect.selectedIndex = 0;
 }
 
 function selectEnvironment(key) {
   const environmentsDiv = document.getElementById('jupyter_environments');
-  const customEnvironmentsDiv = document.getElementById('jupyter_environments_custom');
   const environmentSimpleSelect = document.getElementById('environment_simple');
 
   if (key !== null) {
-    var selectedIndex = 0;
-    for (let index = 0; index < environmentSimpleSelect.length; index++) {
-      if (environmentSimpleSelect.options[index].value === key) {
-        selectedIndex = index;
-        break;
-      }
-    }
-    environmentSimpleSelect.selectedIndex = selectedIndex;
-
-    for (const div of [environmentsDiv, customEnvironmentsDiv]) {
-      for (let keyInput of div.querySelectorAll('input[type="hidden"]')) {
-        if (keyInput.value === key) {
-          keyInput.parentNode.querySelector('input[type="radio"]').checked = true;
-          return;
-        }
+    const keyInputs = environmentsDiv.querySelectorAll('input[type="hidden"]');
+    for (let index = 0; index < keyInputs.length; index++) {
+      if (keyInputs[index].value === key) {
+        keyInputs[index].parentNode.querySelector('input[type="radio"]').checked = true;
+        environmentSimpleSelect.selectedIndex = index;
+        return;
       }
     }
   }
@@ -68,16 +68,13 @@ function selectEnvironment(key) {
 
 function getSelectedEnvironment() {
   const environmentsDiv = document.getElementById('jupyter_environments');
-  const customEnvironmentsDiv = document.getElementById('jupyter_environments_custom');
 
   // Get selected environment if any
-  for (const div of [environmentsDiv, customEnvironmentsDiv]) {
-    const selectedRadio = div.querySelector('input[type="radio"]:checked');
-    if (selectedRadio !== null && selectedRadio.parentNode !== null) {
-      const hiddenInput = selectedRadio.parentNode.querySelector('input[type="hidden"]');
-      if (hiddenInput !== null) {
-        return hiddenInput.value;
-      }
+  const selectedRadio = environmentsDiv.querySelector('input[type="radio"]:checked');
+  if (selectedRadio !== null) {
+    const hiddenInput = selectedRadio.parentNode.querySelector('input[type="hidden"]');
+    if (hiddenInput !== null) {
+      return hiddenInput.value;
     }
   }
   return null;
@@ -85,45 +82,71 @@ function getSelectedEnvironment() {
 
 function addCustomEnvironment(key, description, path, persist=true) {
   const customEnvironmentDiv = document.getElementById('jupyter_environments_custom');
+  const environmentSimpleCustomOptGroup = document.getElementById('environment_simple_custom');
 
   const div = createEnvironmentDiv(key, description, path);
 
   button = document.createElement('button');
   button.setAttribute('type', 'button');
   button.setAttribute('title', 'Remove this environment from the custom environments');
+  button.setAttribute('value', key);
   button.innerHTML = '&#xff0d;';
   button.addEventListener(
-    'click', e => removeCustomEnvironmentDiv(e.target.parentNode)
+    'click', e => removeCustomEnvironment(e.target.value)
   )
   div.appendChild(button);
 
   customEnvironmentDiv.appendChild(div);
 
+  const option = document.createElement("option");
+  option.text = description;
+  option.value = key;
+  environmentSimpleCustomOptGroup.appendChild(option);
+  setVisible(environmentSimpleCustomOptGroup, true);
+
   if (persist) {
     storeCustomEnvironmentsToLocalStorage();
   }
 }
 
-function removeCustomEnvironmentDiv(div, persist=true) {
-  if (div == null || div.parentNode === null) {
+function removeCustomEnvironment(key, persist=true) {
+  const customEnvironmentDiv = document.getElementById('jupyter_environments_custom');
+  const environmentSimpleCustomOptGroup = document.getElementById('environment_simple_custom');
+
+  if (key === null) {
     return;
   }
-
-  // If removed env was selected, change to default selection
-  if (div.querySelector('input[type="radio"]').checked) {
-    resetEnvironmentSelection();
+  const option = environmentSimpleCustomOptGroup.querySelector(`option[value=${key}]`);
+  if (option !== null) {
+    if (option.selected) {
+      resetEnvironmentSelection();
+    }
+    option.parentNode.removeChild(option);
   }
-  div.parentNode.removeChild(div);
+  const hiddenInput = customEnvironmentDiv.querySelector(`input[type="hidden"][value=${key}]`);
+  if (hiddenInput !== null) {
+    const div = hiddenInput.parentNode;
+    if (div.querySelector('input[type="radio"]').checked) {
+      resetEnvironmentSelection();
+    }
+    div.parentNode.removeChild(div);
+  }
+
+  if (Object.keys(getCustomEnvironments()).length === 0) {
+    setVisible(environmentSimpleCustomOptGroup, false);
+  }
+
   if (persist) {
     storeCustomEnvironmentsToLocalStorage();
   }
 }
 
-function storeCustomEnvironmentsToLocalStorage() {
+function getCustomEnvironments() {
   const customEnvironmentDiv = document.getElementById('jupyter_environments_custom');
 
-  // Get key from hidden input, description from label and path from radiobutton
   const customEnvs = {};
+
+  // Get key from hidden input, description from label and path from radiobutton
   customEnvironmentDiv.querySelectorAll('.environment-div').forEach(
     div => {
       customEnvs[div.querySelector('input[type=hidden]').value] = {
@@ -132,17 +155,21 @@ function storeCustomEnvironmentsToLocalStorage() {
       }
     }
   );
+  return customEnvs;
+}
 
-  window.localStorage.setItem(CUSTOM_ENV_CONFIG_NAME, JSON.stringify(customEnvs));
+function storeCustomEnvironmentsToLocalStorage() {
+  window.localStorage.setItem(CUSTOM_ENV_CONFIG_NAME, JSON.stringify(getCustomEnvironments()));
 }
 
 function restoreCustomEnvironmentsFromLocalStorage() {
   const customEnvironmentDiv = document.getElementById('jupyter_environments_custom');
+  const environmentSimpleCustomOptGroup = document.getElementById('environment_simple_custom');
 
   // Remove previous custom environments
-  while (customEnvironmentDiv.firstChild) {
-    removeCustomEnvironmentDiv(customEnvironmentDiv.firstChild, false);
-  }
+  resetEnvironmentSelection();
+  removeAllChildren(customEnvironmentDiv);
+  removeAllChildren(environmentSimpleCustomOptGroup);
 
   const config = JSON.parse(window.localStorage.getItem(CUSTOM_ENV_CONFIG_NAME));
   if (config === null) {
@@ -154,21 +181,14 @@ function restoreCustomEnvironmentsFromLocalStorage() {
   }
 }
 
-
 function updateDefaultEnvironments() {
-  const environmentsDiv = document.getElementById('jupyter_environments');
-  const environmentSimpleSelect = document.getElementById("environment_simple");
+  const defaultEnvironmentsDiv = document.getElementById('jupyter_environments_default');
+  const environmentSimpleDefaultOptGroup = document.getElementById("environment_simple_default");
 
-  // Get selected default environment if any
   const selectedKey = getSelectedEnvironment();
 
-  // Remove previous default partition environments
-  while (environmentsDiv.firstChild) {
-    environmentsDiv.removeChild(environmentsDiv.firstChild);
-  }
-  for (let index = environmentSimpleSelect.length - 1; index >= 0; index--) {
-    environmentSimpleSelect.remove(index);
-  }
+  removeAllChildren(defaultEnvironmentsDiv);
+  removeAllChildren(environmentSimpleDefaultOptGroup);
 
   const partition = document.getElementById('partition').value;
   const partitionInfo = window.SLURM_DATA.partitions[partition];
@@ -177,12 +197,12 @@ function updateDefaultEnvironments() {
   for (const key in partitionInfo.jupyter_environments) {
     const info = partitionInfo.jupyter_environments[key];
 
-    environmentsDiv.appendChild(createEnvironmentDiv(key, info.description, info.path));
+    defaultEnvironmentsDiv.appendChild(createEnvironmentDiv(key, info.description, info.path));
 
-    var option = document.createElement("option");
+    const option = document.createElement("option");
     option.text = info.description;
     option.value = key;
-    environmentSimpleSelect.add(option);
+    environmentSimpleDefaultOptGroup.appendChild(option);
   }
   selectEnvironment(selectedKey);
 }

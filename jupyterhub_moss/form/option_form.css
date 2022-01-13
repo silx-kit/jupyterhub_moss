@@ -55,6 +55,10 @@
   font-weight: normal;
 }
 
+#environment_simple {
+  text-overflow: ellipsis;
+}
+
 .form-container {
   padding: 0.3em;
   display: grid;
