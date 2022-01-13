@@ -42,8 +42,18 @@ function resetEnvironmentSelection() {
 function selectEnvironment(key) {
   const environmentsDiv = document.getElementById('jupyter_environments');
   const customEnvironmentsDiv = document.getElementById('jupyter_environments_custom');
+  const environmentSimpleSelect = document.getElementById('environment_simple');
 
   if (key !== null) {
+    var selectedIndex = 0;
+    for (let index = 0; index < environmentSimpleSelect.length; index++) {
+      if (environmentSimpleSelect.options[index].value === key) {
+        selectedIndex = index;
+        break;
+      }
+    }
+    environmentSimpleSelect.selectedIndex = selectedIndex;
+
     for (const div of [environmentsDiv, customEnvironmentsDiv]) {
       for (let keyInput of div.querySelectorAll('input[type="hidden"]')) {
         if (keyInput.value === key) {
@@ -147,6 +157,7 @@ function restoreCustomEnvironmentsFromLocalStorage() {
 
 function updateDefaultEnvironments() {
   const environmentsDiv = document.getElementById('jupyter_environments');
+  const environmentSimpleSelect = document.getElementById("environment_simple");
 
   // Get selected default environment if any
   const selectedKey = getSelectedEnvironment();
@@ -155,6 +166,9 @@ function updateDefaultEnvironments() {
   while (environmentsDiv.firstChild) {
     environmentsDiv.removeChild(environmentsDiv.firstChild);
   }
+  for (let index = environmentSimpleSelect.length - 1; index >= 0; index--) {
+    environmentSimpleSelect.remove(index);
+  }
 
   const partition = document.getElementById('partition').value;
   const partitionInfo = window.SLURM_DATA.partitions[partition];
@@ -162,7 +176,13 @@ function updateDefaultEnvironments() {
   // Populate default partition environments
   for (const key in partitionInfo.jupyter_environments) {
     const info = partitionInfo.jupyter_environments[key];
+
     environmentsDiv.appendChild(createEnvironmentDiv(key, info.description, info.path));
+
+    var option = document.createElement("option");
+    option.text = info.description;
+    option.value = key;
+    environmentSimpleSelect.add(option);
   }
   selectEnvironment(selectedKey);
 }
@@ -404,6 +424,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update default jupyter envs when partition is changed
   document.getElementById('partition').addEventListener(
     'change', updateDefaultEnvironments
+  );
+
+  // Handle update of environment simple
+  document.getElementById('environment_simple').addEventListener(
+    'change', e => selectEnvironment(e.target.value)
   );
 
   // Handle add custom environment

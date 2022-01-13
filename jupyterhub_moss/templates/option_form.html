@@ -104,6 +104,14 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     </div>
     <p class="subheading">Options</p>
     <div class="form-container">
+      <label for="environment_simple" accesskey="e">
+        Jupyter environment:
+      </label>
+      <select
+        name="environment_simple"
+        id="environment_simple"
+      >
+      </select>
       <label for="jupyterlab_simple">Launch JupyterLab:</label>
       <input
         type="checkbox"
