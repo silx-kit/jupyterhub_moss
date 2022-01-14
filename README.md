@@ -45,7 +45,7 @@ c.MOSlurmSpawner.partitions = {
         "max_runtime": 12*3600,            # Maximum time limit in seconds (Must be at least 1hour)
         "simple": True,                    # True to show in Simple tab
         "jupyter_environments": {
-            "default": {                   # Name of Jupyter environment used to persist it
+            "default": {                   # Jupyter environment internal identifier
                 "path": "/env/path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
                 "description": "Default",  # Text displayed for this environment select option
             },
@@ -94,7 +94,7 @@ c.MOSlurmSpawner.partitions = {
 - `jupyter_environments`: Mapping of identifer name to information about Python environment used to run Jupyter on the Slurm nodes.
   This information is a mapping containing:
   - `path`: The path to a Python environment bin/ used to start jupyter on the Slurm nodes.
-    **jupyterhub_moss** expects that a virtual (or conda) environment is used to start Jupyter.
+    **jupyterhub_moss** needs that a virtual (or conda) environment is used to start Jupyter.
     This path can be changed according to the partitions.
   - `description`: Text used for display in the selection options.
 
