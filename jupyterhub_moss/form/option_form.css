@@ -126,6 +126,13 @@
   flex: 1;
 }
 
+.environment-remove-button {
+  height: 1.8rem;
+  line-height: 0.9rem;
+  align-self: baseline;
+}
+
 #environment_add_button:disabled {
   color: lightgray;
+  height: auto;
 }

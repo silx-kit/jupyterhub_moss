@@ -85,6 +85,7 @@ function addCustomEnvironment(key, description, path, persist=true) {
 
   button = document.createElement('button');
   button.setAttribute('type', 'button');
+  button.classList.add('environment-remove-button');
   button.setAttribute('title', 'Remove this environment from the custom environments');
   button.setAttribute('value', key);
   button.innerHTML = '&#xff0d;';
