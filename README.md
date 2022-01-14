@@ -44,7 +44,12 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 28,                  # Maximum number of CPUs per node
         "max_runtime": 12*3600,            # Maximum time limit in seconds (Must be at least 1hour)
         "simple": True,                    # True to show in Simple tab
-        "venv": "/jupyter_env_path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes 
+        "jupyter_environments": {
+            "default": {                   # Jupyter environment internal identifier
+                "path": "/env/path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
+                "description": "Default",  # Text displayed for this environment select option
+            },
+        },
     },
     "partition_2": {
         "architecture": "ppc64le",
@@ -54,7 +59,12 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 128,
         "max_runtime": 1*3600,
         "simple": True,
-        "venv": "/path/to/jupyter/env/for/partition_2/bin/",
+        "jupyter_environments": {
+            "default": {
+                "path": "/path/to/jupyter/env/for/partition_2/bin/",
+                "description": "Default",
+            },
+        },
     },
     "partition_3": {
         "architecture": "x86_86",
@@ -64,7 +74,11 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 28,
         "max_runtime": 12*3600,
         "simple": False,
-        "venv": "/path/to/jupyter/env/for/partition_3/bin/",
+        "jupyter_environments": {
+            "default": {
+                "path": "/path/to/jupyter/env/for/partition_3/bin/",
+                "description": "Partition 3 default",
+        },
     },
 }
 ```
@@ -77,7 +91,12 @@ c.MOSlurmSpawner.partitions = {
 - `max_nprocs`: The maximum number of processors that can be requested for this partition. The spawn page will use this to generate appropriate bounds for the user inputs.
 - `max_runtime`: The maximum job runtime for this partition in seconds. It should be of minimum 1 hour as the _Simple_ tab only display buttons for runtimes greater than 1 hour.
 - `simple`: Whether the partition should be available in the _Simple_ tab. The spawn page that will be generated is organized in a two tabs: a _Simple_ tab with minimal settings that will be enough for most users and an _Advanced_ tab where almost all Slurm job settings can be set. Some partitions can be hidden from the _Simple_ tab with setting `simple` to `False`.
-- `venv`: Path to Python environment bin/ used to start jupyter on the Slurm nodes. **jupyterhub_moss** expects that a virtual environment is used to start jupyter. The path of this venv is set in the `venv` field and can be changed according to the partition. If there is only one venv, simply set the same path to all partitions.
+- `jupyter_environments`: Mapping of identifer name to information about Python environment used to run Jupyter on the Slurm nodes.
+  This information is a mapping containing:
+  - `path`: The path to a Python environment bin/ used to start jupyter on the Slurm nodes.
+    **jupyterhub_moss** needs that a virtual (or conda) environment is used to start Jupyter.
+    This path can be changed according to the partitions.
+  - `description`: Text used for display in the selection options.
 
 ### Spawn page
 
@@ -109,6 +128,7 @@ The following query argument is required:
 
 The following optional query arguments are available:
 
+- `environment_path`: Path to Python environment bin/ used to start Jupyter
 - `exclusive`: Set to `true` for exclusive node usage (``--exclusive``)
 - `jupyterlab`: Set to `true` to start with JupyterLab
 - `ngpus`: Number of GPUs (``--gres:<gpu>:``)

@@ -35,7 +35,20 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 28,
         "max_runtime": 12 * 3600,
         "simple": True,
-        "venv": "/jupyter_env_path/bin/",
+        "jupyter_environments": {
+            "default": {
+                "path": "/default/jupyter_env_path/bin/",
+                "description": "Operating system (default)",
+            },
+            "new-x86": {
+                "path": "/new-x86/jupyter_env_path/bin/",
+                "description": "New environment x86 (latest)",
+            },
+            "latest": {
+                "path": "/latest/jupyter_env_path/bin/",
+                "description": "Operating system (latest)",
+            },
+        },
     },
     "partition_2": {
         "architecture": "ppc64le",
@@ -45,7 +58,20 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 128,
         "max_runtime": 1 * 3600,
         "simple": True,
-        "venv": "/path/to/jupyter/env/for/partition_2/bin/",
+        "jupyter_environments": {
+            "default": {
+                "path": "/path/to/jupyter/env/for/partition_2/bin/",
+                "description": "Current environment (default)",
+            },
+            "latest": {
+                "path": "/latest/path/to/jupyter/env/for/partition_2/bin/",
+                "description": "Current environment (latest)",
+            },
+            "new-ppx64le": {
+                "path": "/new-ppc64le/jupyter_env_path/bin/",
+                "description": "New environment ppc64le (latest)",
+            },
+        },
     },
     "partition_3": {
         "architecture": "x86_86",
@@ -55,7 +81,16 @@ c.MOSlurmSpawner.partitions = {
         "max_nprocs": 28,
         "max_runtime": 12 * 3600,
         "simple": False,
-        "venv": "/path/to/jupyter/env/for/partition_3/bin/",
+        "jupyter_environments": {
+            "default": {
+                "path": "/path/to/jupyter/env/for/partition_3/bin/",
+                "description": "Operating system (default)",
+            },
+            "new-x86": {
+                "path": "/new-x86/jupyter_env_path/bin/",
+                "description": "New environment x86 (latest)",
+            },
+        },
     },
 }
 

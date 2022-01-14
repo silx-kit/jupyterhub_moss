@@ -104,6 +104,16 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     </div>
     <p class="subheading">Options</p>
     <div class="form-container">
+      <label for="environment_simple" accesskey="e">
+        Jupyter environment:
+      </label>
+      <select
+        name="environment_simple"
+        id="environment_simple"
+      >
+      <optgroup id="environment_simple_default" label="Default"></optgroup>
+      <optgroup id="environment_simple_custom" label="Custom" hidden></optgroup>
+      </select>
       <label for="jupyterlab_simple">Launch JupyterLab:</label>
       <input
         type="checkbox"
@@ -197,6 +207,40 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       name="jupyterlab"
       value="true"
     />
+    <label>Jupyter environment:</label>
+    <div id="jupyter_environments" class="form-offset-row">
+      <div id="jupyter_environments_default"></div>
+      <div>Custom:</div>
+      <div id="jupyter_environments_custom"></div>
+      <div class="environment-div">
+        <input type="hidden" value="custom"/>
+        <input
+          type="radio"
+          id="environment_add_radio"
+          name="environment_path"
+          value=""
+          disabled
+        />
+        <input
+          type="text"
+          id="environment_add_name"
+          placeholder="Environment name"
+        />
+        <input
+          type="text"
+          id="environment_add_path"
+          placeholder="/path/to/jupyter/env/bin *"
+        />
+        <button
+          type="button"
+          id="environment_add_button"
+          title="Add this environment to &#13;the list of custom environments"
+          disabled
+        >
+          &#xff0b;
+        </button>
+      </div>
+    </div>
     <hr />
     <label for="exclusive">Exclusive <span class="label-extra-info">(--exclusive)</span>:</label>
     <input
