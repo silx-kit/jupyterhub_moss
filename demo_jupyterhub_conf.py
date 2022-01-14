@@ -3,6 +3,7 @@
 import os
 import random
 import sys
+
 import batchspawner  # noqa
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
