@@ -124,8 +124,6 @@ class MOSlurmSpawner(SlurmSpawner):
         "runtime": str,
         "nprocs": int,
         "reservation": str,
-        "nnodes": int,
-        "ntasks": int,
         "exclusive": lambda v: v == "true",
         "ngpus": int,
         "jupyterlab": lambda v: v == "true",
@@ -144,7 +142,6 @@ class MOSlurmSpawner(SlurmSpawner):
         assert options["partition"] in self.partitions, "Partition is not supported"
 
         partition_info = self.partitions[options["partition"]]
-        slurm_info = self._get_slurm_info()[options["partition"]]
 
         if "runtime" in options:
             match = self._RUNTIME_REGEXP.match(options["runtime"])
@@ -163,12 +160,6 @@ class MOSlurmSpawner(SlurmSpawner):
 
         if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")
-
-        if "nnodes" in options and not 1 <= options["nnodes"] <= slurm_info["nodes"]:
-            raise AssertionError("Error in number of nodes")
-
-        if "ntasks" in options and options["ntasks"] < 1:
-            raise AssertionError("Error in number ot tasks")
 
         if (
             "ngpus" in options

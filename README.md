@@ -132,9 +132,7 @@ The following optional query arguments are available:
 - `exclusive`: Set to `true` for exclusive node usage (``--exclusive``)
 - `jupyterlab`: Set to `true` to start with JupyterLab
 - `ngpus`: Number of GPUs (``--gres:<gpu>:``)
-- `nnodes`: Number of nodes (``--nodes``)
 - `nprocs`: Number of CPUs per task (``--cpus-per-task``)
-- `ntasks`: Number of tasks per node (``--ntasks-per-node``)
 - `options`: Extra SLURM options
 - `output`: Set to `true` to save logs to `slurm-*.out` files.
 - `reservation`: SLURM reservation name (``--reservation``)
