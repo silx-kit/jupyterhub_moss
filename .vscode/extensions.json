@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "editorconfig.editorconfig",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint"
+  ]
+}

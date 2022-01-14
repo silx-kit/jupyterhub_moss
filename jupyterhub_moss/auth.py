@@ -1,5 +1,5 @@
-from oauthenticator.generic import GenericOAuthenticator
 from jupyterhub.handlers.login import LogoutHandler
+from oauthenticator.generic import GenericOAuthenticator
 from tornado.httputil import url_concat
 from traitlets import Unicode
 

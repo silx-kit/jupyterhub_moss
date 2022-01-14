@@ -1,17 +1,16 @@
-from collections import defaultdict
 import datetime
 import json
 import os.path
 import re
+from collections import defaultdict
+from subprocess import check_output
 from typing import Dict, List
 
-from batchspawner import SlurmSpawner
 import traitlets
-from subprocess import check_output
+from batchspawner import SlurmSpawner
 from jinja2 import Environment, FileSystemLoader
 
-from .utils import local_path, file_hash
-
+from .utils import file_hash, local_path
 
 TEMPLATE_PATH = local_path("templates")
 
