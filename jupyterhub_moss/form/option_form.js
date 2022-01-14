@@ -54,13 +54,12 @@ function selectEnvironment(key) {
   const environmentSimpleSelect = document.getElementById('environment_simple');
 
   if (key !== null) {
-    const keyInputs = environmentsDiv.querySelectorAll('input[type="hidden"]');
-    for (let index = 0; index < keyInputs.length; index++) {
-      if (keyInputs[index].value === key) {
+    const keyInputs = Array.from(environmentsDiv.querySelectorAll('input[type="hidden"]'));
+    const index = keyInputs.findIndex(element => element.value === key);
+    if (index >= 0) {
         keyInputs[index].parentNode.querySelector('input[type="radio"]').checked = true;
         environmentSimpleSelect.selectedIndex = index;
         return;
-      }
     }
   }
   resetEnvironmentSelection();
@@ -71,13 +70,11 @@ function getSelectedEnvironment() {
 
   // Get selected environment if any
   const selectedRadio = environmentsDiv.querySelector('input[type="radio"]:checked');
-  if (selectedRadio !== null) {
-    const hiddenInput = selectedRadio.parentNode.querySelector('input[type="hidden"]');
-    if (hiddenInput !== null) {
-      return hiddenInput.value;
-    }
+  if (!selectedRadio) {
+    return null;
   }
-  return null;
+  const hiddenInput = selectedRadio.parentNode.querySelector('input[type="hidden"]');
+  return hiddenInput ? hiddenInput.value : null;
 }
 
 function addCustomEnvironment(key, description, path, persist=true) {
