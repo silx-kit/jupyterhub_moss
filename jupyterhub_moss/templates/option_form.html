@@ -243,7 +243,9 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
             </button>
           </div>
           <div>
-            &#9888; The <a href="https://pypi.org/project/batchspawner/">batchspawner</a> package{% if batchspawner_version %} (version {{batchspawner_version}}){% endif %} must be installed in this environment.
+            &#9888; Required packages in custom environments:<br>
+            <a href="https://pypi.org/project/batchspawner/">batchspawner</a>{% if batchspawner_version %}~={{batchspawner_version}}{% endif %} and
+            <a href="https://pypi.org/project/jupyterhub/">jupyterhub</a>{% if jupyterhub_version %}~={{jupyterhub_version}}{% endif %}.
           </div>
         </div>
       </div>
