@@ -121,8 +121,11 @@
   margin-left: 0.3rem;
 }
 
-.environment-div label,
-.environment-div #environment_add_path {
+.environment-div > div {
+  width: 100%;
+}
+
+.environment-div label {
   flex: 1;
 }
 
@@ -132,7 +135,20 @@
   align-self: baseline;
 }
 
+.environment-add-div {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.environment-add-div > * {
+  margin-left: 0.3rem;
+}
+
+#environment_add_path {
+  flex: 1;
+}
+
 #environment_add_button:disabled {
   color: lightgray;
-  height: auto;
 }

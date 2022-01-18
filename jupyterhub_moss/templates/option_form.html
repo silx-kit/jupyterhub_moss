@@ -221,24 +221,31 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
           value=""
           disabled
         />
-        <input
-          type="text"
-          id="environment_add_name"
-          placeholder="Environment name"
-        />
-        <input
-          type="text"
-          id="environment_add_path"
-          placeholder="/path/to/jupyter/env/bin *"
-        />
-        <button
-          type="button"
-          id="environment_add_button"
-          title="Add this environment to &#13;the list of custom environments"
-          disabled
-        >
-          &#xff0b;
-        </button>
+        <div>
+          <div class="environment-add-div">
+            <input
+              type="text"
+              id="environment_add_name"
+              placeholder="Environment name"
+            />
+            <input
+              type="text"
+              id="environment_add_path"
+              placeholder="/path/to/jupyter/env/bin *"
+            />
+            <button
+              type="button"
+              id="environment_add_button"
+              title="Add this environment to &#13;the list of custom environments"
+              disabled
+            >
+              &#xff0b;
+            </button>
+          </div>
+          <div>
+            &#9888; The <a href="https://pypi.org/project/batchspawner/">batchspawner</a> package{% if batchspawner_version %} (version {{batchspawner_version}}){% endif %} must be installed in this environment.
+          </div>
+        </div>
       </div>
     </div>
     <hr />

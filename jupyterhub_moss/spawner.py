@@ -1,4 +1,5 @@
 import datetime
+import importlib.metadata
 import json
 import os.path
 import re
@@ -22,6 +23,11 @@ RESOURCES_HASH = {
 
 with open(local_path("batch_script.sh")) as f:
     BATCH_SCRIPT = f.read()
+
+try:
+    BATCHSPAWNER_VERSION = importlib.metadata.version("batchspawner")
+except importlib.metadata.PackageNotFoundError:
+    BATCHSPAWNER_VERSION = None
 
 
 class MOSlurmSpawner(SlurmSpawner):
@@ -114,6 +120,7 @@ class MOSlurmSpawner(SlurmSpawner):
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
             partitions=partitions,
             default_partition=default_partition,
+            batchspawner_version=BATCHSPAWNER_VERSION,
             jsondata=jsondata,
         )
 
