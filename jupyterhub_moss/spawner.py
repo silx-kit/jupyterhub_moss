@@ -28,6 +28,10 @@ try:
     BATCHSPAWNER_VERSION = importlib.metadata.version("batchspawner")
 except importlib.metadata.PackageNotFoundError:
     BATCHSPAWNER_VERSION = None
+try:
+    JUPYTERHUB_VERSION = importlib.metadata.version("jupyterhub")
+except importlib.metadata.PackageNotFoundError:
+    JUPYTERHUB_VERSION = None
 
 
 class MOSlurmSpawner(SlurmSpawner):
@@ -121,6 +125,7 @@ class MOSlurmSpawner(SlurmSpawner):
             partitions=partitions,
             default_partition=default_partition,
             batchspawner_version=BATCHSPAWNER_VERSION,
+            jupyterhub_version=JUPYTERHUB_VERSION,
             jsondata=jsondata,
         )
 
