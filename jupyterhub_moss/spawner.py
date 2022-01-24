@@ -213,14 +213,22 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             options["gres"] = gpu_gres_template.format(options["ngpus"])
 
+        if "environment_path" not in options:
+            # Set path to use from first environment for the current partition
+            default_venv = tuple(
+                self.partitions[partition]["jupyter_environments"].values()
+            )[0]
+            options["environment_path"] = default_venv["path"]
+
         # Virtualenv is not activated, we need to provide full path
-        default_venv = tuple(
-            self.partitions[partition]["jupyter_environments"].values()
-        )[0]
-        venv_dir = options.get("environment_path", default_venv["path"])
         self.batchspawner_singleuser_cmd = os.path.join(
-            venv_dir, "batchspawner-singleuser"
+            options["environment_path"], "batchspawner-singleuser"
         )
-        self.cmd = [os.path.join(venv_dir, "jupyterhub-singleuser")]
+        self.cmd = [os.path.join(options["environment_path"], "jupyterhub-singleuser")]
 
         return options
+
+    async def submit_batch_script(self):
+        self.log.info(f"Used environment: {self.user_options['environment_path']}")
+        self.log.info(f"Used default URL: {self.default_url}")
+        return await super().submit_batch_script()
