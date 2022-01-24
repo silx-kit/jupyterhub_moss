@@ -227,3 +227,8 @@ class MOSlurmSpawner(SlurmSpawner):
         self.cmd = [os.path.join(options["environment_path"], "jupyterhub-singleuser")]
 
         return options
+
+    async def submit_batch_script(self):
+        self.log.info(f"Used environment: {self.user_options['environment_path']}")
+        self.log.info(f"Used default URL: {self.default_url}")
+        return await super().submit_batch_script()
