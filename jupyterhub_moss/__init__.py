@@ -4,7 +4,7 @@ from .auth import KeycloakAuthenticator  # noqa: F401
 from .spawner import MOSlurmSpawner
 from .utils import local_path as _local_path
 
-version = "1.1.1"
+version = "2.0.0"
 
 STATIC_FORM_REGEX = r"/form/(.*)"
 STATIC_FORM_PATH = _local_path("form")
