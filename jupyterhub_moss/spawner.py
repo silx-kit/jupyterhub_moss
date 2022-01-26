@@ -55,6 +55,7 @@ class MOSlurmSpawner(SlurmSpawner):
                         per_key_traits={
                             "path": traitlets.Unicode(),
                             "description": traitlets.Unicode(),
+                            "add_to_path": traitlets.Bool(default_value=True),
                         },
                     ),
                 ),
@@ -219,6 +220,13 @@ class MOSlurmSpawner(SlurmSpawner):
                 self.partitions[partition]["jupyter_environments"].values()
             )[0]
             options["environment_path"] = default_venv["path"]
+
+        for env in self.partitions[partition]["jupyter_environments"].values():
+            if env["path"] == options["environment_path"] and not env["add_to_path"]:
+                break  # Do not add environment_path to PATH
+        else:
+            # Add environment_path to PATH
+            options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
 
         # Virtualenv is not activated, we need to provide full path
         self.batchspawner_singleuser_cmd = os.path.join(
