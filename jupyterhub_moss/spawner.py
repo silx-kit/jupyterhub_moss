@@ -214,17 +214,20 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             options["gres"] = gpu_gres_template.format(options["ngpus"])
 
+        partition_environments = tuple(
+            self.partitions[partition]["jupyter_environments"].values()
+        )
         if "environment_path" not in options:
             # Set path to use from first environment for the current partition
-            default_venv = tuple(
-                self.partitions[partition]["jupyter_environments"].values()
-            )[0]
-            options["environment_path"] = default_venv["path"]
+            options["environment_path"] = partition_environments[0]["path"]
 
-        for env in self.partitions[partition]["jupyter_environments"].values():
-            if env["path"] == options["environment_path"] and not env["add_to_path"]:
-                break  # Do not add environment_path to PATH
-        else:
+        matching_envs_without_add_to_path = [
+            env
+            for env in partition_environments
+            if env["path"] == options["environment_path"]
+            and not env.get("add_to_path", True)
+        ]
+        if not matching_envs_without_add_to_path:
             # Add environment_path to PATH
             options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
 
