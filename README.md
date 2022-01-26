@@ -58,6 +58,7 @@ c.MOSlurmSpawner.partitions = {
             "default": {                   # Jupyter environment internal identifier
                 "path": "/env/path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
                 "description": "Default",  # Text displayed for this environment select option
+                "add_to_path": True,       # Toggle adding the environment to shell PATH (optional, default: True)
             },
         },
     },
@@ -73,6 +74,7 @@ c.MOSlurmSpawner.partitions = {
             "default": {
                 "path": "/path/to/jupyter/env/for/partition_2/bin/",
                 "description": "Default",
+                "add_to_path": True,
             },
         },
     },
@@ -88,6 +90,7 @@ c.MOSlurmSpawner.partitions = {
             "default": {
                 "path": "/path/to/jupyter/env/for/partition_3/bin/",
                 "description": "Partition 3 default",
+                "add_to_path": True,
         },
     },
 }
@@ -125,6 +128,8 @@ c.MOSlurmSpawner.partitions = {
     is used to start Jupyter. This path can be changed according to the
     partitions.
   - `description`: Text used for display in the selection options.
+  - `add_to_path`: Whether or not to prepend the environment `path` to shell
+    `PATH`.
 
 ### Spawn page
 
