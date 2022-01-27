@@ -11,7 +11,7 @@ import traitlets
 from batchspawner import SlurmSpawner
 from jinja2 import Environment, FileSystemLoader
 
-from .utils import file_hash, local_path
+from .utils import file_hash, find, local_path
 
 TEMPLATE_PATH = local_path("templates")
 
@@ -221,14 +221,12 @@ class MOSlurmSpawner(SlurmSpawner):
             # Set path to use from first environment for the current partition
             options["environment_path"] = partition_environments[0]["path"]
 
-        matching_envs_without_add_to_path = [
-            env
-            for env in partition_environments
-            if env["path"] == options["environment_path"]
-            and not env.get("add_to_path", True)
-        ]
-        if not matching_envs_without_add_to_path:
-            # Add environment_path to PATH
+        # Add environment_path to PATH unless it is in the settings with add_to_path=False
+        corresponding_env = find(
+            lambda env: env["path"] == options["environment_path"],
+            partition_environments,
+        )
+        if corresponding_env is None or corresponding_env.get("add_to_path", True):
             options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
 
         # Virtualenv is not activated, we need to provide full path
