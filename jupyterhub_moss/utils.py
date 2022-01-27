@@ -1,7 +1,6 @@
 import hashlib
 import os.path
-from collections.abc import Iterable
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 
 def local_path(path: str) -> str:
