@@ -1,5 +1,7 @@
 import hashlib
 import os.path
+from collections.abc import Iterable
+from typing import Any, Callable, Optional
 
 
 def local_path(path: str) -> str:
@@ -10,3 +12,10 @@ def local_path(path: str) -> str:
 def file_hash(filename: str) -> str:
     with open(filename, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest()
+
+
+def find(function: Callable[[Any], bool], iterable: Iterable[Any]) -> Optional[Any]:
+    for item in iterable:
+        if function(item):
+            return item
+    return None
