@@ -40,10 +40,12 @@ c.MOSlurmSpawner.partitions = {
             "default": {
                 "path": "/default/jupyter_env_path/bin/",
                 "description": "Operating system (default)",
+                "add_to_path": False,
             },
             "new-x86": {
                 "path": "/new-x86/jupyter_env_path/bin/",
                 "description": "New environment x86 (latest)",
+                "add_to_path": True,
             },
             "latest": {
                 "path": "/latest/jupyter_env_path/bin/",
