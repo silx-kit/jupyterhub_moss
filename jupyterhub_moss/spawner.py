@@ -4,6 +4,7 @@ import json
 import os.path
 import re
 from collections import defaultdict
+from copy import deepcopy
 from subprocess import check_output
 from typing import Dict, List
 
@@ -55,7 +56,7 @@ class MOSlurmSpawner(SlurmSpawner):
                         per_key_traits={
                             "path": traitlets.Unicode(),
                             "description": traitlets.Unicode(),
-                            "add_to_path": traitlets.Bool(default_value=True),
+                            "add_to_path": traitlets.Bool(),
                         },
                     ),
                 ),
@@ -68,6 +69,15 @@ class MOSlurmSpawner(SlurmSpawner):
         config=True,
         help="Information on supported partitions",
     ).tag(config=True)
+
+    @traitlets.validate("partitions")
+    def _validate_partitions(self, proposal):
+        # Set add_to_path if missing in jupyter_environments
+        partitions = deepcopy(proposal["value"])
+        for partition in partitions.values():
+            for env in partition["jupyter_environments"].values():
+                env.setdefault("add_to_path", True)
+        return partitions
 
     FORM_TEMPLATE = Environment(
         loader=FileSystemLoader(TEMPLATE_PATH),
@@ -226,8 +236,9 @@ class MOSlurmSpawner(SlurmSpawner):
             partition_environments,
         )
         # custom envs are always added to PATH, defaults ones only if add_to_path is True
-        if corresponding_default_env is None or corresponding_default_env.get(
-            "add_to_path", True
+        if (
+            corresponding_default_env is None
+            or corresponding_default_env["add_to_path"]
         ):
             options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
 
