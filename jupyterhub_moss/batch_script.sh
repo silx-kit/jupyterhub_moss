@@ -16,5 +16,5 @@
 set -euo pipefail
 
 trap 'echo SIGTERM received' TERM
-
+{{prologue}}
 {{cmd}}

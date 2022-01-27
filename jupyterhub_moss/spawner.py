@@ -4,6 +4,7 @@ import json
 import os.path
 import re
 from collections import defaultdict
+from copy import deepcopy
 from subprocess import check_output
 from typing import Dict, List
 
@@ -11,7 +12,7 @@ import traitlets
 from batchspawner import SlurmSpawner
 from jinja2 import Environment, FileSystemLoader
 
-from .utils import file_hash, local_path
+from .utils import file_hash, find, local_path
 
 TEMPLATE_PATH = local_path("templates")
 
@@ -55,6 +56,7 @@ class MOSlurmSpawner(SlurmSpawner):
                         per_key_traits={
                             "path": traitlets.Unicode(),
                             "description": traitlets.Unicode(),
+                            "add_to_path": traitlets.Bool(),
                         },
                     ),
                 ),
@@ -67,6 +69,15 @@ class MOSlurmSpawner(SlurmSpawner):
         config=True,
         help="Information on supported partitions",
     ).tag(config=True)
+
+    @traitlets.validate("partitions")
+    def _validate_partitions(self, proposal):
+        # Set add_to_path if missing in jupyter_environments
+        partitions = deepcopy(proposal["value"])
+        for partition in partitions.values():
+            for env in partition["jupyter_environments"].values():
+                env.setdefault("add_to_path", True)
+        return partitions
 
     FORM_TEMPLATE = Environment(
         loader=FileSystemLoader(TEMPLATE_PATH),
@@ -213,12 +224,23 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             options["gres"] = gpu_gres_template.format(options["ngpus"])
 
+        partition_environments = tuple(
+            self.partitions[partition]["jupyter_environments"].values()
+        )
         if "environment_path" not in options:
             # Set path to use from first environment for the current partition
-            default_venv = tuple(
-                self.partitions[partition]["jupyter_environments"].values()
-            )[0]
-            options["environment_path"] = default_venv["path"]
+            options["environment_path"] = partition_environments[0]["path"]
+
+        corresponding_default_env = find(
+            lambda env: env["path"] == options["environment_path"],
+            partition_environments,
+        )
+        # custom envs are always added to PATH, defaults ones only if add_to_path is True
+        if (
+            corresponding_default_env is None
+            or corresponding_default_env["add_to_path"]
+        ):
+            options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
 
         # Virtualenv is not activated, we need to provide full path
         self.batchspawner_singleuser_cmd = os.path.join(
