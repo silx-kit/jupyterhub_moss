@@ -221,12 +221,14 @@ class MOSlurmSpawner(SlurmSpawner):
             # Set path to use from first environment for the current partition
             options["environment_path"] = partition_environments[0]["path"]
 
-        # Add environment_path to PATH unless it is in the settings with add_to_path=False
-        corresponding_env = find(
+        corresponding_default_env = find(
             lambda env: env["path"] == options["environment_path"],
             partition_environments,
         )
-        if corresponding_env is None or corresponding_env.get("add_to_path", True):
+        # custom envs are always added to PATH, defaults ones only if add_to_path is True
+        if corresponding_default_env is None or corresponding_default_env.get(
+            "add_to_path", True
+        ):
             options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
 
         # Virtualenv is not activated, we need to provide full path
