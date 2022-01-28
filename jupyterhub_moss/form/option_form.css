@@ -130,6 +130,7 @@
 }
 
 .environment-remove-button {
+  padding: 0;
   height: 1.8rem;
   line-height: 0.9rem;
   align-self: baseline;
@@ -147,6 +148,10 @@
 
 #environment_add_path {
   flex: 1;
+}
+
+#environment_add_button {
+  padding: 0;
 }
 
 #environment_add_button:disabled {
