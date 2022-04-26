@@ -94,12 +94,18 @@
   text-align: left;
 }
 
+.form-field-div {
+  display: flex;
+  flex: 0 1 0;
+}
+
 @media (max-width: 768px) {
   .form-container label {
     grid-column: 1;
   }
   .form-container input,
-  .form-container select {
+  .form-container select,
+  .form-field-div {
     grid-column: 1 / 3;
   }
   .form-container input[type='checkbox'] {
