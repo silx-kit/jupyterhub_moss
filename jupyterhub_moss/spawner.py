@@ -103,7 +103,7 @@ class MOSlurmSpawner(SlurmSpawner):
             info["nodes"] += 1
             if state == "idle":
                 info["idle"] += 1
-            info["max_mem"] = max(info["max_mem"], memory)
+            info["max_mem"] = max(info["max_mem"], int(memory))
         return slurm_info
 
     @staticmethod
