@@ -19,8 +19,12 @@ jupyterhub_moss.set_config(c)
 class MOckSlurmSpawner(jupyterhub_moss.MOSlurmSpawner):
     def _get_slurm_info(self):
         return {
-            k: {"nodes": v["max_nprocs"], "idle": random.randint(0, v["max_nprocs"])}
-            for k, v in self.partitions.items()
+            k: {
+                "nodes": v["max_nprocs"],
+                "idle": random.randint(0, v["max_nprocs"]),
+                "max_mem": 128000 * (index + 1),
+            }
+            for index, (k, v) in enumerate(self.partitions.items())
         }
 
 
