@@ -1,6 +1,5 @@
 from tornado.web import StaticFileHandler as _StaticFileHandler
 
-from .auth import KeycloakAuthenticator  # noqa: F401
 from .spawner import MOSlurmSpawner
 from .utils import local_path as _local_path
 
