@@ -170,7 +170,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       {% endfor %}
     </select>
     <label for="nprocs" accesskey="c">
-      Number of CPUs <span class="label-extra-info">per task (--cpus-per-task)</span>:
+      Number of CPUs <span class="label-extra-info">per task (--cpus-per-task, max: <span id="max_nprocs_span"></span>)</span>:
     </label>
     <input
       type="number"
@@ -179,8 +179,22 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       min="1"
       value="1"
     />
+    <label for="mem">
+      Memory <span class="label-extra-info">per node (--mem, max: <span id="max_memory_span"></span>)</span>:
+    </label>
+    <div class="form-field-div" title="Memory in GigaBytes">
+      <input type="hidden" id="mem" name="mem" value=""/>
+      <input
+        type="number"
+        id="mem_input"
+        min="0"
+        value=""
+        placeholder="Default"
+      />
+      <span class="label-extra-info">&nbsp;GB</span>
+    </div>
     <label for="ngpus">
-      Number of GPUs <span class="label-extra-info">(--gres:&lt;gpu&gt;:)</span>:
+      Number of GPUs <span class="label-extra-info">(--gres:&lt;gpu&gt;:, max: <span id="max_ngpus_span"></span>)</span>:
     </label>
     <input
       type="number"

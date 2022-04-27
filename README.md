@@ -177,14 +177,21 @@ The following query argument is required:
 The following optional query arguments are available:
 
 - `environment_path`: Path to Python environment bin/ used to start Jupyter
-- `exclusive`: Set to `true` for exclusive node usage (`--exclusive`)
+- `exclusive`: Set to `true` for exclusive node usage
+  ([`--exclusive`](https://slurm.schedmd.com/sbatch.html#OPT_exclusive))
 - `jupyterlab`: Set to `true` to start with JupyterLab
-- `ngpus`: Number of GPUs (`--gres:<gpu>:`)
-- `nprocs`: Number of CPUs per task (`--cpus-per-task`)
+- `mem`: Total amount of memory per node
+  ([`--mem`](https://slurm.schedmd.com/sbatch.html#OPT_mem))
+- `ngpus`: Number of GPUs
+  ([`--gres:<gpu>:`](https://slurm.schedmd.com/sbatch.html#OPT_gres))
+- `nprocs`: Number of CPUs per task
+  ([`--cpus-per-task`](https://slurm.schedmd.com/sbatch.html#OPT_cpus-per-task))
 - `options`: Extra SLURM options
 - `output`: Set to `true` to save logs to `slurm-*.out` files.
-- `reservation`: SLURM reservation name (`--reservation`)
-- `runtime`: Job duration as hh:mm:ss (`--time`)
+- `reservation`: SLURM reservation name
+  ([`--reservation`](https://slurm.schedmd.com/sbatch.html#OPT_reservation))
+- `runtime`: Job duration as hh:mm:ss
+  ([`--time`](https://slurm.schedmd.com/sbatch.html#OPT_time))
 
 ## Development
 

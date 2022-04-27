@@ -93,16 +93,17 @@ class MOSlurmSpawner(SlurmSpawner):
     def _get_slurm_info(self):
         """Returns information about partitions from slurm"""
         # Get number of nodes and idle nodes for all partitions
-        state = check_output(["sinfo", "-a", "-N", "--noheader", "-o", "%R %t"]).decode(
-            "utf-8"
-        )
-        slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0})
+        state = check_output(
+            ["sinfo", "-a", "-N", "--noheader", "-o", "%R %t %m"]
+        ).decode("utf-8")
+        slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0, "max_mem": 0})
         for line in state.splitlines():
-            partition, state = line.split()
+            partition, state, memory = line.split()
             info = slurm_info[partition]
             info["nodes"] += 1
             if state == "idle":
                 info["idle"] += 1
+            info["max_mem"] = max(info["max_mem"], int(memory))
         return slurm_info
 
     @staticmethod
@@ -117,6 +118,7 @@ class MOSlurmSpawner(SlurmSpawner):
             partitions[name] = {
                 "max_nnodes": slurm_info[name]["nodes"],
                 "nnodes_idle": slurm_info[name]["idle"],
+                "max_mem": slurm_info[name]["max_mem"],
                 **info,
             }
             if info["simple"] and default_partition is None:
@@ -145,6 +147,7 @@ class MOSlurmSpawner(SlurmSpawner):
         "partition": str,
         "runtime": str,
         "nprocs": int,
+        "mem": str,
         "reservation": str,
         "exclusive": lambda v: v == "true",
         "ngpus": int,
@@ -157,6 +160,8 @@ class MOSlurmSpawner(SlurmSpawner):
     _RUNTIME_REGEXP = re.compile(
         "^(?P<hours>[0-9]+)(?::(?P<minutes>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
     )
+
+    _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
 
     def __validate_options(self, options):
         """Check validity of options"""
@@ -179,6 +184,9 @@ class MOSlurmSpawner(SlurmSpawner):
             and not 1 <= options["nprocs"] <= partition_info["max_nprocs"]
         ):
             raise AssertionError("Error in number of CPUs")
+
+        if "mem" in options and self._MEM_REGEXP.match(options["mem"]) is None:
+            raise AssertionError("Error in memory syntax")
 
         if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")

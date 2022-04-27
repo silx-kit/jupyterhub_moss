@@ -314,19 +314,42 @@ function setSimplePartition(name) {
   }
 }
 
+function updateMemValue() {
+  const memHiddenElem = document.getElementById('mem');
+  const memInputElem = document.getElementById('mem_input');
+  const value = memInputElem.value;
+
+  // Pass empty field and 0 as is, append G for others
+  memHiddenElem.value = value && value !== '0' ? `${value}G` : value;
+}
+
 function updatePartitionLimits() {
   const nprocsElem = document.getElementById('nprocs');
+  const nprocsSpanElem = document.getElementById('max_nprocs_span');
+  const memSpanElem = document.getElementById('max_memory_span');
+  const memInputElem = document.getElementById('mem_input');
   const ngpusElem = document.getElementById('ngpus');
+  const ngpusSpanElem = document.getElementById('max_ngpus_span');
 
   const partition = document.getElementById('partition').value;
   const info = window.SLURM_DATA.partitions[partition];
 
   if (nprocsElem.value > info.max_nprocs) nprocsElem.value = info.max_nprocs;
   nprocsElem.max = info.max_nprocs;
+  nprocsSpanElem.textContent = info.max_nprocs;
+
+  const max_mem = Math.floor(info.max_mem / 1024);
+  if (memInputElem.value && memInputElem.value > max_mem) {
+    memInputElem.value = max_mem;
+  }
+  memInputElem.max = max_mem;
+  memSpanElem.textContent = `${max_mem} GB`;
+  updateMemValue();
 
   if (ngpusElem.value > info.max_ngpus) ngpusElem.value = info.max_ngpus;
   ngpusElem.max = info.max_ngpus;
   ngpusElem.disabled = info.max_ngpus === 0;
+  ngpusSpanElem.textContent = info.max_ngpus;
 
   document.querySelectorAll('input[name="ngpus_simple"]').forEach((element) => {
     const isVisible = element.value <= info.max_ngpus;
@@ -343,6 +366,7 @@ function storeConfigToLocalStorage() {
   const fieldNames = [
     'partition',
     'nprocs',
+    'mem_input',
     'ngpus',
     'runtime',
     'jupyterlab',
@@ -504,6 +528,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document
     .getElementById('environment_simple')
     .addEventListener('change', (e) => selectEnvironment(e.target.value));
+
+  // Update mem when mem_input changes
+  document
+    .getElementById('mem_input')
+    .addEventListener('change', (e) => updateMemValue());
 
   // Handle add custom environment
   document

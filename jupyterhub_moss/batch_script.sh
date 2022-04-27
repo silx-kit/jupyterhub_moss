@@ -7,6 +7,7 @@
 {% if runtime    %}#SBATCH --time={{runtime}}
 {% endif %}{% if gres       %}#SBATCH --gres={{gres}}
 {% endif %}{% if nprocs     %}#SBATCH --cpus-per-task={{nprocs}}
+{% endif %}{% if mem        %}#SBATCH --mem={{mem}}
 {% endif %}{% if reservation%}#SBATCH --reservation={{reservation}}
 {% endif %}{% if exclusive  %}#SBATCH --exclusive
 {% endif %}{% if not output %}#SBATCH --output=/dev/null
