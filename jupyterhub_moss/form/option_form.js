@@ -326,7 +326,7 @@ function updateMemValue() {
 function updatePartitionLimits() {
   const nprocsElem = document.getElementById('nprocs');
   const nprocsSpanElem = document.getElementById('max_nprocs_span');
-  const memSpanElem = document.getElementById('max_memory_span');
+  const memSpanElem = document.getElementById('max_mem_span');
   const memInputElem = document.getElementById('mem_input');
   const ngpusElem = document.getElementById('ngpus');
   const ngpusSpanElem = document.getElementById('max_ngpus_span');
@@ -343,7 +343,7 @@ function updatePartitionLimits() {
     memInputElem.value = max_mem;
   }
   memInputElem.max = max_mem;
-  memSpanElem.textContent = `${max_mem} GB`;
+  memSpanElem.textContent = `${max_mem}GB`;
   updateMemValue();
 
   if (ngpusElem.value > info.max_ngpus) ngpusElem.value = info.max_ngpus;
