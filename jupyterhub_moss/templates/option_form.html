@@ -170,17 +170,20 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       {% endfor %}
     </select>
     <label for="nprocs" accesskey="c">
-      Number of CPUs <span class="label-extra-info">per task (--cpus-per-task, max: <span id="max_nprocs_span"></span>)</span>:
+      Number of CPUs <span class="label-extra-info">(--cpus-per-task)</span>:
     </label>
-    <input
-      type="number"
-      id="nprocs"
-      name="nprocs"
-      min="1"
-      value="1"
-    />
+    <div class="form-field-div">
+      <input
+        type="number"
+        id="nprocs"
+        name="nprocs"
+        min="1"
+        value="1"
+      />
+      <span class="label-extra-info">&nbsp;/&nbsp;<span id="max_nprocs_span">-</span></span>
+    </div>
     <label for="mem">
-      Memory <span class="label-extra-info">per node (--mem, max: <span id="max_memory_span"></span>)</span>:
+      Total memory <span class="label-extra-info">(--mem)</span>:
     </label>
     <div class="form-field-div" title="Memory in GigaBytes">
       <input type="hidden" id="mem" name="mem" value=""/>
@@ -191,18 +194,21 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         value=""
         placeholder="Default"
       />
-      <span class="label-extra-info">&nbsp;GB</span>
+      <span class="label-extra-info">&nbsp;/&nbsp;<span id="max_mem_span">-</span></span>
     </div>
     <label for="ngpus">
-      Number of GPUs <span class="label-extra-info">(--gres:&lt;gpu&gt;:, max: <span id="max_ngpus_span"></span>)</span>:
+      Number of GPUs <span class="label-extra-info">(--gres:&lt;gpu&gt;:)</span>:
     </label>
-    <input
-      type="number"
-      id="ngpus"
-      name="ngpus"
-      min="0"
-      value="0"
-    />
+    <div class="form-field-div">
+      <input
+        type="number"
+        id="ngpus"
+        name="ngpus"
+        min="0"
+        value="0"
+      />
+      <span class="label-extra-info">&nbsp;/&nbsp;<span id="max_ngpus_span">-</span></span>
+    </div>
     <label for="runtime" accesskey="r">
       Job duration <span class="label-extra-info">(as hh:mm:ss, --time)</span>:
     </label>
