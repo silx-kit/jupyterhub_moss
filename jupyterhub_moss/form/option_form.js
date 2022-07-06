@@ -1,4 +1,4 @@
-const CONFIG_NAME = 'form-config:v2';
+const CONFIG_NAME = 'form-config:v3';
 const CUSTOM_ENV_CONFIG_NAME = 'custom-environment-config:v1';
 
 function removeAllChildren(node) {
@@ -370,7 +370,6 @@ function storeConfigToLocalStorage() {
     'ngpus',
     'runtime',
     'jupyterlab',
-    'exclusive',
     'output',
     'reservation',
     'options',
@@ -458,7 +457,6 @@ document.addEventListener('DOMContentLoaded', () => {
   resetSpawnForm(); // Init
 
   const nprocsElem = document.getElementById('nprocs');
-  const exclusiveElem = document.getElementById('exclusive');
   const ngpusElem = document.getElementById('ngpus');
   const jupyterlabElem = document.getElementById('jupyterlab');
   const runtimeElem = document.getElementById('runtime');
@@ -484,7 +482,6 @@ document.addEventListener('DOMContentLoaded', () => {
     .forEach((element) => {
       element.addEventListener('change', (e) => {
         nprocsElem.value = e.target.value;
-        exclusiveElem.checked = e.target.id === 'maximumCore';
       });
     });
   // GPUs

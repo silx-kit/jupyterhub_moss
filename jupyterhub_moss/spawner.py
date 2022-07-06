@@ -149,7 +149,6 @@ class MOSlurmSpawner(SlurmSpawner):
         "nprocs": int,
         "mem": str,
         "reservation": str,
-        "exclusive": lambda v: v == "true",
         "ngpus": int,
         "jupyterlab": lambda v: v == "true",
         "options": lambda v: v.strip(),
@@ -221,6 +220,14 @@ class MOSlurmSpawner(SlurmSpawner):
         self.__validate_options(options)
 
         partition = options["partition"]
+
+        # Specific handling of exclusive flag
+        # When mem=0 or all CPU are requested, set the exclusive flag
+        if (
+            options["nprocs"] == self.partitions[partition]["max_nprocs"]
+            or options.get("mem", None) == "0"
+        ):
+            options["exclusive"] = True
 
         # Specific handling of jupyterlab
         self.default_url = "/lab" if options.get("jupyterlab", False) else ""
