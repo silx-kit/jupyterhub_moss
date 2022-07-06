@@ -177,8 +177,6 @@ The following query argument is required:
 The following optional query arguments are available:
 
 - `environment_path`: Path to Python environment bin/ used to start Jupyter
-- `exclusive`: Set to `true` for exclusive node usage
-  ([`--exclusive`](https://slurm.schedmd.com/sbatch.html#OPT_exclusive))
 - `jupyterlab`: Set to `true` to start with JupyterLab
 - `mem`: Total amount of memory per node
   ([`--mem`](https://slurm.schedmd.com/sbatch.html#OPT_mem))
