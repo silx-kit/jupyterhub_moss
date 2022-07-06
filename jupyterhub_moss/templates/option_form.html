@@ -119,6 +119,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         type="checkbox"
         id="jupyterlab_simple"
         name="jupyterlab_simple"
+        checked
       />
       <label for="runtime_simple">Job duration:</label>
       <select
@@ -226,6 +227,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       id="jupyterlab"
       name="jupyterlab"
       value="true"
+      checked
     />
     <label>Jupyter environment:</label>
     <div id="jupyter_environments" class="form-offset-row">
