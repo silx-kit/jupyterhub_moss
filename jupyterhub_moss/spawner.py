@@ -79,6 +79,12 @@ class MOSlurmSpawner(SlurmSpawner):
                 env.setdefault("add_to_path", True)
         return partitions
 
+    singularity_cmd = traitlets.List(
+        trait=traitlets.Unicode(),
+        default_value=["singularity", "exec"],
+        help="Singularity command to use for starting jupyter server in container",
+    ).tag(config=True)
+
     FORM_TEMPLATE = Environment(
         loader=FileSystemLoader(TEMPLATE_PATH),
         autoescape=False,
@@ -245,6 +251,17 @@ class MOSlurmSpawner(SlurmSpawner):
         if "environment_path" not in options:
             # Set path to use from first environment for the current partition
             options["environment_path"] = partition_environments[0]["path"]
+
+        if options["environment_path"].endswith(".sif"):
+            # Use singularity image
+            self.batchspawner_singleuser_cmd = " ".join(
+                [
+                    *self.singularity_cmd,
+                    options["environment_path"],
+                    "batchspawner-singleuser",
+                ]
+            )
+            return options
 
         corresponding_default_env = find(
             lambda env: env["path"] == options["environment_path"],
