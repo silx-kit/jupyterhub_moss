@@ -26,6 +26,8 @@ function createEnvironmentDiv(key, description, path, checked = false) {
   input.setAttribute('title', title);
   input.setAttribute('name', 'environment_path');
   input.setAttribute('value', path);
+
+  input.addEventListener('change', updateEnvironmentAddPathRequired);
   if (checked) {
     input.setAttribute('checked', '');
   }
@@ -253,6 +255,16 @@ function setVisible(element, visible) {
     element.removeAttribute('hidden');
   } else {
     element.setAttribute('hidden', '');
+  }
+}
+
+function updateEnvironmentAddPathRequired() {
+  const environmentAddRadio = document.getElementById('environment_add_radio');
+  const environmentAddPath = document.getElementById('environment_add_path');
+  if (environmentAddRadio.checked) {
+    environmentAddPath.setAttribute('required', '');
+  } else {
+    environmentAddPath.removeAttribute('required');
   }
 }
 
@@ -536,22 +548,18 @@ document.addEventListener('DOMContentLoaded', () => {
     .getElementById('environment_add_path')
     .addEventListener('input', (e) => {
       const isInputEmpty = e.target.value === '';
-      if (
-        !environmentAddRadio.disabled &&
-        isInputEmpty &&
-        environmentAddRadio.checked
-      ) {
-        // Path just cleared while its radio button was selected
-        resetEnvironmentSelection();
-      }
-      if (environmentAddRadio.disabled && !isInputEmpty) {
+      if (environmentAddRadio.value === '' && !isInputEmpty) {
         // First input in the path: select its radio button
         environmentAddRadio.checked = true;
       }
       environmentAddRadio.value = e.target.value;
-      environmentAddRadio.disabled = isInputEmpty;
       environmentAddButton.disabled = isInputEmpty;
     });
+
+  environmentAddRadio.addEventListener(
+    'change',
+    updateEnvironmentAddPathRequired
+  );
 
   environmentAddButton.addEventListener('click', (e) => {
     const key = `custom-${Date.now()}`; // Poor man's UUID
@@ -562,6 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     if (environmentAddRadio.checked) {
       selectEnvironment(key);
+      updateEnvironmentAddPathRequired();
     }
     environmentAddName.value = '';
     environmentAddPath.value = '';
