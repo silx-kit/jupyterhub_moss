@@ -160,6 +160,7 @@ class MOSlurmSpawner(SlurmSpawner):
         "output": lambda v: v == "true",
         "environment_path": str,
         "default_url": str,
+        "root_dir": str,
     }
 
     _RUNTIME_REGEXP = re.compile(
@@ -213,6 +214,9 @@ class MOSlurmSpawner(SlurmSpawner):
             if default_url and not default_url.startswith("/"):
                 raise AssertionError("Must start with /")
 
+        if "root_dir" in options and "\n" in options["root_dir"]:
+            raise AssertionError("Error in root_dir")
+
     def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
         """Parse the form and add options to the SLURM job script"""
         # Convert expected input from List[str] to appropriate type
@@ -242,6 +246,9 @@ class MOSlurmSpawner(SlurmSpawner):
 
         # Specific handling of landing URL (e.g., to start jupyterlab)
         self.default_url = options.get("default_url", "")
+
+        if "root_dir" in options:
+            self.notebook_dir = options["root_dir"]
 
         # Specific handling of ngpus as gres
         if options.get("ngpus", 0) > 0:
