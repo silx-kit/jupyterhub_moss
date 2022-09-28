@@ -176,20 +176,28 @@ The following query argument is required:
 
 The following optional query arguments are available:
 
-- `environment_path`: Path to Python environment bin/ used to start Jupyter
-- `jupyterlab`: Set to `true` to start with JupyterLab
-- `mem`: Total amount of memory per node
-  ([`--mem`](https://slurm.schedmd.com/sbatch.html#OPT_mem))
-- `ngpus`: Number of GPUs
-  ([`--gres:<gpu>:`](https://slurm.schedmd.com/sbatch.html#OPT_gres))
-- `nprocs`: Number of CPUs per task
-  ([`--cpus-per-task`](https://slurm.schedmd.com/sbatch.html#OPT_cpus-per-task))
-- `options`: Extra SLURM options
-- `output`: Set to `true` to save logs to `slurm-*.out` files.
-- `reservation`: SLURM reservation name
-  ([`--reservation`](https://slurm.schedmd.com/sbatch.html#OPT_reservation))
-- `runtime`: Job duration as hh:mm:ss
-  ([`--time`](https://slurm.schedmd.com/sbatch.html#OPT_time))
+- SLURM configuration:
+
+  - `mem`: Total amount of memory per node
+    ([`--mem`](https://slurm.schedmd.com/sbatch.html#OPT_mem))
+  - `ngpus`: Number of GPUs
+    ([`--gres:<gpu>:`](https://slurm.schedmd.com/sbatch.html#OPT_gres))
+  - `nprocs`: Number of CPUs per task
+    ([`--cpus-per-task`](https://slurm.schedmd.com/sbatch.html#OPT_cpus-per-task))
+  - `options`: Extra SLURM options
+  - `output`: Set to `true` to save logs to `slurm-*.out` files.
+  - `reservation`: SLURM reservation name
+    ([`--reservation`](https://slurm.schedmd.com/sbatch.html#OPT_reservation))
+  - `runtime`: Job duration as hh:mm:ss
+    ([`--time`](https://slurm.schedmd.com/sbatch.html#OPT_time))
+
+- Jupyter(Lab) configuration:
+  - `default_url`: The URL to open the Jupyter environment with: use `/lab` to
+    start [JupyterLab](https://jupyterlab.readthedocs.io/en/stable/) or use
+    [JupyterLab URLs](https://jupyterlab.readthedocs.io/en/stable/user/urls.html)
+  - `environment_path`: Path to Python environment bin/ used to start Jupyter
+  - `root_dir`: The path of the "root" folder browsable from Jupyter(Lab)
+    (user's home directory if not provided)
 
 ## Development
 
