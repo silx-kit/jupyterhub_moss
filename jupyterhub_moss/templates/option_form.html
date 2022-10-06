@@ -53,32 +53,34 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
 
       <input
         type="radio"
+        id="twoCores"
+        name="nprocs_simple"
+        value="2"
+      />
+      <label for="twoCores">
+        <p>Small</p>
+        <p class="label-extra-info">2 cores</p>
+      </label>
+
+      <input
+        type="radio"
+        id="fourCores"
+        name="nprocs_simple"
+        value="4"
+      />
+      <label for="fourCores">
+        <p>Medium</p>
+        <p class="label-extra-info">4 cores</p>
+      </label>
+
+      <input
+        type="radio"
         id="quarterCore"
         name="nprocs_simple"
       />
       <label for="quarterCore">
         <p>Quarter&nbsp;node</p>
         <p id="quarterCpufield" class="label-extra-info"></p>
-      </label>
-
-      <input
-        type="radio"
-        id="halfCore"
-        name="nprocs_simple"
-      />
-      <label for="halfCore">
-        <p>Half&nbsp;node</p>
-        <p id="halfCpufield" class="label-extra-info"></p>
-      </label>
-
-      <input
-        type="radio"
-        id="maximumCore"
-        name="nprocs_simple"
-      />
-      <label for="maximumCore">
-        <p>Entire&nbsp;node</p>
-        <p id="maximumCpufield" class="label-extra-info"></p>
       </label>
     </div>
 
