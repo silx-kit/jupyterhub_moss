@@ -273,12 +273,11 @@ function setSimplePartition(name) {
   const gpuDivSimple = document.getElementById('gpu_simple');
   const gpuRadio0Simple = document.getElementById('0Gpu');
   const ngpusElem = document.getElementById('ngpus');
-  const quarterCpuFieldSimple = document.getElementById('quarterCpufield');
+  const fourCoreSimple = document.getElementById('fourCores');
   const quarterCoreSimple = document.getElementById('quarterCore');
-  const halfCpuFieldSimple = document.getElementById('halfCpufield');
-  const halfCoreSimple = document.getElementById('halfCore');
-  const maximumCpuFieldSimple = document.getElementById('maximumCpufield');
-  const maximumCoreSimple = document.getElementById('maximumCore');
+  const quarterCoresLabel = document.querySelector(
+    `label[for="${quarterCoreSimple.id}"]`
+  );
   const nprocsElem = document.getElementById('nprocs');
   const runtimeSelect = document.getElementById('runtime_simple');
 
@@ -297,16 +296,16 @@ function setSimplePartition(name) {
 
   // Update displayed NProcs info and values
   // Get number of CPUs for given paritition choice
-  const maxNProcs = info.max_nprocs;
-  const quarterNProcs = Math.floor(maxNProcs / 4);
-  const halfNProcs = Math.floor(maxNProcs / 2);
+  const quarterNProcs = Math.floor(info.max_nprocs / 4);
 
-  quarterCpuFieldSimple.textContent = `${quarterNProcs} cores`;
+  quarterCoresLabel.textContent = `${quarterNProcs} cores`;
   quarterCoreSimple.value = quarterNProcs;
-  halfCpuFieldSimple.textContent = `${halfNProcs} cores`;
-  halfCoreSimple.value = halfNProcs;
-  maximumCpuFieldSimple.textContent = `${maxNProcs} cores`;
-  maximumCoreSimple.value = maxNProcs;
+  const quarterCoreIsVisible = quarterNProcs > 4;
+  setVisible(quarterCoresLabel, quarterCoreIsVisible);
+  if (quarterCoreSimple.checked && !quarterCoreIsVisible) {
+    fourCoreSimple.checked = true;
+    fourCoreSimple.dispatchEvent(new Event('change'));
+  }
 
   // Update nprocs according to current CPUs choice
   const selector = document.querySelector(
@@ -503,10 +502,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   // JupyterLab using default_url field
-  document.getElementById('jupyterlab_simple').addEventListener(
-    'change', e => {
+  document
+    .getElementById('jupyterlab_simple')
+    .addEventListener('change', (e) => {
       default_url.checked = e.target.checked;
-  });
+    });
   // Runtime
   document.getElementById('runtime_simple').addEventListener('change', (e) => {
     runtimeElem.value = `${e.target.value}:00:00`;

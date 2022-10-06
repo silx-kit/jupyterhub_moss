@@ -27,13 +27,13 @@
   width: 0;
 }
 
-.radio-toolbar input[type='radio']:focus + label {
-  border: 2px dashed #444;
-}
-
 .radio-toolbar input[type='radio']:checked + label {
   background-color: #d3d3d3;
   border-color: #d3d3d3;
+}
+
+.radio-toolbar input[type='radio']:focus + label {
+  border: 1px dashed #444;
 }
 
 .radio-toolbar input[type='radio']:disabled + label {
