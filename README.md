@@ -10,7 +10,7 @@
   partitions set in the Spawner and allows the user to select Slurm resources to
   use.
 
-<img style="margin:auto" src=https://user-images.githubusercontent.com/9449698/133999344-0a940981-fd97-41d3-a717-c01f103776f7.png width="50%">
+<img style="margin:auto" src=https://user-images.githubusercontent.com/9449698/194308511-f0e6d6a9-ba7a-4086-a871-23b08523c61a.png width="50%">
 
 ## Install
 
@@ -137,7 +137,7 @@ The spawn page (available at `/hub/spawn`) will be generated according to the
 partition settings. For example, this is the spawn page generated for the
 partition settings above:
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/133999344-0a940981-fd97-41d3-a717-c01f103776f7.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/194308454-697c717f-daf0-4927-9fa6-6b96ba09dba6.png width="50%">
 
 This spawn page is separated in two tabs: a _Simple_ and an _Advanced_ tab. On
 the _Simple_ tab, the user can choose between the partitions set though
@@ -148,7 +148,8 @@ Clicking on the **Start** button will request the job.
 
 The spawn page adapts to the chosen partition. This is the page when selecting
 the `partition_2`:
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/133999397-68dc7487-a449-4dbf-a82e-b5ca9b3a5010.png width="50%">
+
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/194308524-38417bb8-f520-4940-9c94-af960f11e535.png width="50%">
 
 As the maximum number of cores is different, the CPUs row change accordingly.
 Also, as `gpu` was set for `partition_2`, a new button row appears to enable GPU
