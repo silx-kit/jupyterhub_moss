@@ -46,10 +46,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         value="1"
         checked
       />
-      <label for="minimumCore">
-        <p>Minimum</p>
-        <p class="label-extra-info">1 core</p>
-      </label>
+      <label for="minimumCore">1 core</label>
 
       <input
         type="radio"
@@ -57,10 +54,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         name="nprocs_simple"
         value="2"
       />
-      <label for="twoCores">
-        <p>Small</p>
-        <p class="label-extra-info">2 cores</p>
-      </label>
+      <label for="twoCores">2 cores</label>
 
       <input
         type="radio"
@@ -68,20 +62,14 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         name="nprocs_simple"
         value="4"
       />
-      <label for="fourCores">
-        <p>Medium</p>
-        <p class="label-extra-info">4 cores</p>
-      </label>
+      <label for="fourCores">4 cores</label>
 
       <input
         type="radio"
         id="quarterCore"
         name="nprocs_simple"
       />
-      <label for="quarterCore">
-        <p>Quarter&nbsp;node</p>
-        <p id="quarterCpufield" class="label-extra-info"></p>
-      </label>
+      <label for="quarterCore"></label>
     </div>
 
     <div id="gpu_simple" hidden>

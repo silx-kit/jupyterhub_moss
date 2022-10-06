@@ -274,8 +274,10 @@ function setSimplePartition(name) {
   const gpuRadio0Simple = document.getElementById('0Gpu');
   const ngpusElem = document.getElementById('ngpus');
   const fourCoreSimple = document.getElementById('fourCores');
-  const quarterCpuFieldSimple = document.getElementById('quarterCpufield');
   const quarterCoreSimple = document.getElementById('quarterCore');
+  const quarterCoresLabel = document.querySelector(
+    `label[for="${quarterCoreSimple.id}"]`
+  );
   const nprocsElem = document.getElementById('nprocs');
   const runtimeSelect = document.getElementById('runtime_simple');
 
@@ -296,13 +298,10 @@ function setSimplePartition(name) {
   // Get number of CPUs for given paritition choice
   const quarterNProcs = Math.floor(info.max_nprocs / 4);
 
-  quarterCpuFieldSimple.textContent = `${quarterNProcs} cores`;
+  quarterCoresLabel.textContent = `${quarterNProcs} cores`;
   quarterCoreSimple.value = quarterNProcs;
   const quarterCoreIsVisible = quarterNProcs > 4;
-  setVisible(
-    document.querySelector(`label[for="${quarterCoreSimple.id}"]`),
-    quarterCoreIsVisible
-  );
+  setVisible(quarterCoresLabel, quarterCoreIsVisible);
   if (quarterCoreSimple.checked && !quarterCoreIsVisible) {
     fourCoreSimple.checked = true;
     fourCoreSimple.dispatchEvent(new Event('change'));
