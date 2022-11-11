@@ -78,6 +78,12 @@ class MOSlurmSpawner(SlurmSpawner):
                 env.setdefault("add_to_path", True)
         return partitions
 
+    slurm_info_cmd = traitlets.Unicode(
+        # Get number of nodes and cores for all partitions
+        r"sinfo -a -N --noheader -o \'%R %C %m\'",
+        help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}.",
+    ).tag(config=True)
+
     singularity_cmd = traitlets.List(
         trait=traitlets.Unicode(),
         default_value=["singularity", "exec"],
@@ -97,10 +103,8 @@ class MOSlurmSpawner(SlurmSpawner):
 
     async def _get_slurm_info(self):
         """Returns information about partitions from slurm"""
-        # Get number of nodes and idle nodes for all partitions
-        cmd = " ".join(["sinfo", "-a", "-N", "--noheader", "-o", r"\'%R %t %m\'"])
-        self.log.debug("Slurm info command:", cmd)
-        state = await self.run_command(cmd)
+        self.log.debug("Slurm info command:", self.slurm_info_cmd)
+        state = await self.run_command(self.slurm_info_cmd)
         slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0, "max_mem": 0})
         for line in state.splitlines():
             partition, state, memory = line.split()
