@@ -5,7 +5,6 @@ import os.path
 import re
 from collections import defaultdict
 from copy import deepcopy
-from subprocess import check_output
 from typing import Dict, List
 
 import traitlets
@@ -96,12 +95,12 @@ class MOSlurmSpawner(SlurmSpawner):
         super().__init__(*args, **kwargs)
         self.options_form = self.create_options_form
 
-    def _get_slurm_info(self):
+    async def _get_slurm_info(self):
         """Returns information about partitions from slurm"""
         # Get number of nodes and idle nodes for all partitions
-        state = check_output(
-            ["sinfo", "-a", "-N", "--noheader", "-o", "%R %t %m"]
-        ).decode("utf-8")
+        cmd = " ".join(["sinfo", "-a", "-N", "--noheader", "-o", r"\'%R %t %m\'"])
+        self.log.debug("Slurm info command:", cmd)
+        state = await self.run_command(cmd)
         slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0, "max_mem": 0})
         for line in state.splitlines():
             partition, state, memory = line.split()
@@ -113,9 +112,9 @@ class MOSlurmSpawner(SlurmSpawner):
         return slurm_info
 
     @staticmethod
-    def create_options_form(spawner):
+    async def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
-        slurm_info = spawner._get_slurm_info()
+        slurm_info = await spawner._get_slurm_info()
 
         # Combine all partition info as a dict
         partitions = {}
