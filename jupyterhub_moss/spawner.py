@@ -8,7 +8,7 @@ from copy import deepcopy
 from typing import Dict, List
 
 import traitlets
-from batchspawner import SlurmSpawner
+from batchspawner import format_template, SlurmSpawner
 from jinja2 import Environment, FileSystemLoader
 
 from .utils import file_hash, find, local_path
@@ -103,8 +103,15 @@ class MOSlurmSpawner(SlurmSpawner):
 
     async def _get_slurm_info(self):
         """Returns information about partitions from slurm"""
-        self.log.debug("Slurm info command:", self.slurm_info_cmd)
-        state = await self.run_command(self.slurm_info_cmd)
+        subvars = self.get_req_subvars()
+        cmd = " ".join(
+            (
+                format_template(self.exec_prefix, **subvars),
+                format_template(self.slurm_info_cmd, **subvars),
+            )
+        )
+        self.log.info("Slurm info command: %s", cmd)
+        state = await self.run_command(cmd)
         slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0, "max_mem": 0})
         for line in state.splitlines():
             partition, state, memory = line.split()
