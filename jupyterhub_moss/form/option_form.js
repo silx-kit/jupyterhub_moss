@@ -456,8 +456,9 @@ function restoreConfigFromLocalStorage() {
     }
     runtimeSelect.value = config['simple']['runtime'];
     runtimeSelect.dispatchEvent(new Event('change'));
-    jupyterlabSimpleElem.checked = config['fields']['default_url'];
-    jupyterlabSimpleElem.dispatchEvent(new Event('change'));
+    // (hardcoded with hidden form element)
+    // jupyterlabSimpleElem.checked = config['fields']['default_url'];
+    // jupyterlabSimpleElem.dispatchEvent(new Event('change'));
   }
 
   selectEnvironment(config['environmentId']);
@@ -502,11 +503,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   // JupyterLab using default_url field
-  document
-    .getElementById('jupyterlab_simple')
-    .addEventListener('change', (e) => {
-      default_url.checked = e.target.checked;
-    });
+  // (hardcoded with hidden form element)
+  // document
+  //   .getElementById('jupyterlab_simple')
+  //   .addEventListener('change', (e) => {
+  //     default_url.checked = e.target.checked;
+  //   });
   // Runtime
   document.getElementById('runtime_simple').addEventListener('change', (e) => {
     runtimeElem.value = `${e.target.value}:00:00`;
