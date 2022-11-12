@@ -1,6 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=jupyterhub
+#SBATCH --job-name=spawner-jupyterhub
 #SBATCH --chdir={{homedir}}
+{% if not output %}#SBATCH --output=/dev/null
+{% else %}#SBATCH --output={{homedir}}/jupyterhub_slurmspawner_%j.log
+{% endif %}
 #SBATCH --export={{keepvars}}
 #SBATCH --get-user-env=L
 #SBATCH --partition={{partition}}
@@ -10,7 +13,6 @@
 {% endif %}{% if mem        %}#SBATCH --mem={{mem}}
 {% endif %}{% if reservation%}#SBATCH --reservation={{reservation}}
 {% endif %}{% if exclusive  %}#SBATCH --exclusive
-{% endif %}{% if not output %}#SBATCH --output=/dev/null
 {% endif %}{% if options %}#SBATCH {{options}}
 {% endif %}
 
@@ -18,4 +20,6 @@ set -euo pipefail
 
 trap 'echo SIGTERM received' TERM
 {{prologue}}
-{{cmd}}
+{% if srun %}{{srun}} {% endif %}{{cmd}}
+echo "JupyterLab server ended gracefully"
+{{epilogue}}
