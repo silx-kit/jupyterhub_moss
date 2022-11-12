@@ -83,8 +83,8 @@ class MOSlurmSpawner(SlurmSpawner):
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}.",
     ).tag(config=True)
 
-    # Get number of nodes and idle nodes for all partitions
-    slurm_info_cmd = traitlets.Unicode(r"sinfo -a -N --noheader -o \'%R %t %m\'").tag(config=True)
+    # Get number of nodes and cores for all partitions
+    slurm_info_cmd = traitlets.Unicode(r"sinfo -a -N --noheader -o \'%R %C %m\'").tag(config=True)
 
     singularity_cmd = traitlets.List(
         trait=traitlets.Unicode(),
@@ -112,16 +112,18 @@ class MOSlurmSpawner(SlurmSpawner):
                 format_template(self.slurm_info_cmd, **subvars),
             )
         )
-        self.log.info("Slurm info command: %s", cmd)
-        state = await self.run_command(cmd)
-        slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0, "max_mem": 0})
-        for line in state.splitlines():
-            partition, state, memory = line.split()
+        self.log.debug("Slurm info command: %s", cmd)
+        out = await self.run_command(cmd)
+        slurm_info = defaultdict(lambda: {"nodes": 0, "cores_total": 0, "cores_idle":0, "max_mem": 0})
+        for line in out.splitlines():
+            partition, cores, memory = line.split()
+            _, cores_idle, _, cores_total = cores.split('/')
             info = slurm_info[partition]
             info["nodes"] += 1
-            if state == "idle":
-                info["idle"] += 1
+            info["cores_total"] += int(cores_total)
+            info["cores_idle"] += int(cores_idle)
             info["max_mem"] = max(info["max_mem"], int(memory))
+        self.log.debug("Slurm info totals: %s", slurm_info)
         return slurm_info
 
     @staticmethod
@@ -130,22 +132,21 @@ class MOSlurmSpawner(SlurmSpawner):
         slurm_info = await spawner._get_slurm_info()
 
         # Combine all partition info as a dict
-        partitions = {}
+        partition_info = {}
         default_partition = None
-        for name, info in spawner.partitions.items():
-            partitions[name] = {
-                "max_nnodes": slurm_info[name]["nodes"],
-                "nnodes_idle": slurm_info[name]["idle"],
-                "max_mem": slurm_info[name]["max_mem"],
-                **info,
-            }
-            if info["simple"] and default_partition is None:
-                default_partition = name
+        for partition in spawner.partitions:
+            avail_partition = {}
+            avail_partition.update(spawner.partitions[partition])
+            avail_partition.update(slurm_info[partition])
+            partition_info[partition] = avail_partition
+
+            if avail_partition["simple"] and default_partition is None:
+                default_partition = partition
 
         # Prepare json info
         jsondata = json.dumps(
             {
-                "partitions": partitions,
+                "partitions": partition_info,
                 "default_partition": default_partition,
             }
         )
@@ -153,7 +154,7 @@ class MOSlurmSpawner(SlurmSpawner):
         return spawner.FORM_TEMPLATE.render(
             hash_option_form_css=RESOURCES_HASH["option_form.css"],
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
-            partitions=partitions,
+            partitions=partition_info,
             default_partition=default_partition,
             batchspawner_version=BATCHSPAWNER_VERSION,
             jupyterhub_version=JUPYTERHUB_VERSION,
