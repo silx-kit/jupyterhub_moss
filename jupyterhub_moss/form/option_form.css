@@ -67,10 +67,10 @@
 }
 
 .form-container {
-  padding: 0.3em;
+  padding: 2ex 2em;
   display: grid;
   grid-template-columns: auto auto;
-  grid-gap: 0.5rem;
+  grid-gap: 1.0rem;
   justify-content: center;
   align-items: center;
   justify-items: stretch;
