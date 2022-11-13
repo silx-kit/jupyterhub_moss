@@ -310,4 +310,8 @@ class MOSlurmSpawner(SlurmSpawner):
     async def submit_batch_script(self):
         self.log.info(f"Used environment: {self.user_options['environment_path']}")
         self.log.info(f"Used default URL: {self.default_url}")
+
+        # refresh environment to be kept in the job
+        self.req_keepvars = self._req_keepvars_default()
+
         return await super().submit_batch_script()
