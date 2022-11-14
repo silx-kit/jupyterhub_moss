@@ -1,3 +1,7 @@
+#spawn_form {
+    padding: 3ex 1em;
+}
+
 .radio-toolbar {
   display: flex;
   flex-wrap: wrap;
