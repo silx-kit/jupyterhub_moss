@@ -56,6 +56,7 @@ class MOSlurmSpawner(SlurmSpawner):
                             "path": traitlets.Unicode(),
                             "description": traitlets.Unicode(),
                             "add_to_path": traitlets.Bool(),
+                            "modules": traitlets.Unicode(),
                         },
                     ),
                 ),
@@ -171,7 +172,9 @@ class MOSlurmSpawner(SlurmSpawner):
         "ngpus": int,
         "options": lambda v: v.strip(),
         "output": lambda v: v == "true",
+        "environment_id": str,
         "environment_path": str,
+        "environment_modules": str,
         "default_url": str,
         "root_dir": str,
     }
@@ -234,18 +237,21 @@ class MOSlurmSpawner(SlurmSpawner):
         """Parse the form and add options to the SLURM job script"""
         # Convert expected input from List[str] to appropriate type
         options = {}
+        self.log.info("FORM: %s", formdata)
+
         for name, convert in self._FORM_FIELD_CONVERSIONS.items():
             if name not in formdata:
                 continue
+
             value = formdata[name][0].strip()
-            if len(value) == 0:
-                continue
+
             try:
                 options[name] = convert(value)
             except ValueError:
                 raise RuntimeError(f"Invalid {name} value")
 
         self.__validate_options(options)
+        self.log.info("Options: %s", options)
 
         partition = options["partition"]
 
@@ -270,12 +276,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             options["gres"] = gpu_gres_template.format(options["ngpus"])
 
-        partition_environments = tuple(
-            self.partitions[partition]["jupyter_environments"].values()
-        )
-        if "environment_path" not in options:
-            # Set path to use from first environment for the current partition
-            options["environment_path"] = partition_environments[0]["path"]
+        partition_environments = self.partitions[partition]["jupyter_environments"]
 
         if options["environment_path"].endswith(".sif"):
             # Use singularity image
@@ -288,16 +289,19 @@ class MOSlurmSpawner(SlurmSpawner):
             )
             return options
 
-        corresponding_default_env = find(
-            lambda env: env["path"] == options["environment_path"],
-            partition_environments,
-        )
-        # custom envs are always added to PATH, defaults ones only if add_to_path is True
-        if (
-            corresponding_default_env is None
-            or corresponding_default_env["add_to_path"]
-        ):
-            options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
+        # add path to environment PATH
+        if options["environment_id"] in partition_environments:
+            env_add_to_path = partition_environments[options["environment_id"]]["add_to_path"]
+        else:
+            env_add_to_path = True
+
+        if env_add_to_path and options["environment_path"]:
+            options["exports"] = f"export PATH={options['environment_path']}:$PATH"
+
+        # load modules
+        if options["environment_modules"]:
+            module_cmd = " ".join(["module", "load", options["environment_modules"]])
+            options["module_load"] = module_cmd
 
         # Virtualenv is not activated, we need to provide full path
         self.batchspawner_singleuser_cmd = os.path.join(

@@ -215,6 +215,8 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     />
     <label>Jupyter environment:</label>
     <div id="jupyter_environments" class="form-offset-row">
+      <input type="hidden" id="environment_path" name="environment_path"/>
+      <input type="hidden" id="environment_modules" name="environment_modules"/>
       <div id="jupyter_environments_default"></div>
       <div>Custom:</div>
       <div id="jupyter_environments_custom"></div>
@@ -223,7 +225,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         <input
           type="radio"
           id="environment_add_radio"
-          name="environment_path"
+          name="environment_id"
           value=""
         />
         <div>
@@ -238,6 +240,11 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
               id="environment_add_path"
               placeholder="/path/to/jupyter/env/bin *"
             />
+            <input
+              type="text"
+              id="environment_add_modules"
+              placeholder="List of modules (space separated)"
+            />
             <button
               type="button"
               id="environment_add_button"
@@ -250,7 +257,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
           <div>
             &#9888; Required packages in custom environments:<br>
             <a href="https://pypi.org/project/batchspawner/">batchspawner</a>{% if batchspawner_version %}~={{batchspawner_version}}{% endif %} and
-            <a href="https://pypi.org/project/jupyterhub/">jupyterhub</a>{% if jupyterhub_version %}~={{jupyterhub_version}}{% endif %}.
+            <a href="https://pypi.org/project/jupyterhub/">jupyterhub</a>{% if jupyterhub_version %}~={{jupyterhub_version}}{% endif %}
           </div>
         </div>
       </div>

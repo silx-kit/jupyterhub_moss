@@ -20,6 +20,8 @@ set -euo pipefail
 
 trap 'echo SIGTERM received' TERM
 {{prologue}}
+{{module_load}}
+{{exports}}
 {% if srun %}{{srun}} {% endif %}{{cmd}}
 echo "JupyterLab server ended gracefully"
 {{epilogue}}

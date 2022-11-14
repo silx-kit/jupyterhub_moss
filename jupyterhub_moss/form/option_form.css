@@ -145,16 +145,17 @@
 
 .environment-add-div {
   display: flex;
-  align-items: flex-start;
+  flex-flow: row wrap;
+  justify-content: flex-start;
   width: 100%;
+}
+
+.environment-add-div > input {
+  flex: 4 1 auto;
 }
 
 .environment-add-div > * {
   margin-left: 0.3rem;
-}
-
-#environment_add_path {
-  flex: 1;
 }
 
 #environment_add_button {
