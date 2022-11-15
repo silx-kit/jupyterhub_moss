@@ -1,5 +1,12 @@
 # jupyterhub_moss: JupyterHub MOdular Slurm Spawner
 
+Fork of the original [silx-kit/jupyterhub_moss](https://github.com/silx-kit/jupyterhub_moss) maintained by VUB-HPC.
+
+Notable changes in this fork:
+* support for loading modules in the singleuser server job
+* execute `sinfo` asynchronously with `batchspawner.run_command()`
+* show idle cores in the table of available resources
+
 **jupyterhub_moss** is a Python package that provides:
 
 - A [JupyterHub](https://jupyterhub.readthedocs.io/)
@@ -59,6 +66,8 @@ c.MOSlurmSpawner.partitions = {
                 "path": "/env/path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
                 "description": "Default",  # Text displayed for this environment select option
                 "add_to_path": True,       # Toggle adding the environment to shell PATH (optional, default: True)
+                # Space separated list of modules to be loaded in single-user server job 
+                "modules": "SoftwarePackage/1.2.3"
             },
         },
     },
@@ -75,6 +84,7 @@ c.MOSlurmSpawner.partitions = {
                 "path": "/path/to/jupyter/env/for/partition_2/bin/",
                 "description": "Default",
                 "add_to_path": True,
+                "modules": "AnotherSoftwarePackage/1.2.3"
             },
         },
     },
@@ -91,6 +101,7 @@ c.MOSlurmSpawner.partitions = {
                 "path": "/path/to/jupyter/env/for/partition_3/bin/",
                 "description": "Partition 3 default",
                 "add_to_path": True,
+                "modules": "SoftwarePackage/1.2.3"
         },
     },
 }
@@ -129,7 +140,7 @@ c.MOSlurmSpawner.partitions = {
     partitions.
   - `description`: Text used for display in the selection options.
   - `add_to_path`: Whether or not to prepend the environment `path` to shell
-    `PATH`.
+  - `modules`: Space separated list of modules to be loaded in single-user server job.
 
 ### Spawn page
 
@@ -197,6 +208,7 @@ The following optional query arguments are available:
     start [JupyterLab](https://jupyterlab.readthedocs.io/en/stable/) or use
     [JupyterLab URLs](https://jupyterlab.readthedocs.io/en/stable/user/urls.html)
   - `environment_path`: Path to Python environment bin/ used to start Jupyter
+  - `environment_modules`: Space separated list of modules to be loaded in single-user server job
   - `root_dir`: The path of the "root" folder browsable from Jupyter(Lab)
     (user's home directory if not provided)
 
