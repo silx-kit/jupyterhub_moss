@@ -3,7 +3,7 @@ from tornado.web import StaticFileHandler as _StaticFileHandler
 from .spawner import MOSlurmSpawner
 from .utils import local_path as _local_path
 
-version = "5.0.0"
+version = "5.5.0"
 
 STATIC_FORM_REGEX = r"/form/(.*)"
 STATIC_FORM_PATH = _local_path("form")
