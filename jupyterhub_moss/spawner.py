@@ -80,12 +80,10 @@ class MOSlurmSpawner(SlurmSpawner):
         return partitions
 
     slurm_info_cmd = traitlets.Unicode(
-        "",
+        # Get number of nodes and cores for all partitions
+        r"sinfo -a -N --noheader -o \'%R %C %m\'",
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}.",
     ).tag(config=True)
-
-    # Get number of nodes and cores for all partitions
-    slurm_info_cmd = traitlets.Unicode(r"sinfo -a -N --noheader -o \'%R %C %m\'").tag(config=True)
 
     singularity_cmd = traitlets.List(
         trait=traitlets.Unicode(),
