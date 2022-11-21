@@ -309,6 +309,6 @@ class MOSlurmSpawner(SlurmSpawner):
         self.log.info(f"Used default URL: {self.default_url}")
 
         # refresh environment to be kept in the job
-        self.req_keepvars = self._req_keepvars_default()
+        self.req_keepvars = self.trait_defaults("req_keepvars")
 
         return await super().submit_batch_script()
