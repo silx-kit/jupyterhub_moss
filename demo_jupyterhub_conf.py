@@ -17,7 +17,7 @@ jupyterhub_moss.set_config(c)
 
 
 class MOckSlurmSpawner(jupyterhub_moss.MOSlurmSpawner):
-    def _get_slurm_info(self):
+    async def _get_slurm_info(self):
         return {
             k: {
                 "nodes": v["max_nprocs"],
