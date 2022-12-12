@@ -80,9 +80,49 @@ class MOSlurmSpawner(SlurmSpawner):
 
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes and cores for all partitions
-        r"sinfo -a -N --noheader -o '%R %C %m'",
+        r"sinfo -a -N --noheader -o '%R %C'",
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}.",
     ).tag(config=True)
+
+    slurm_info_resources = traitlets.Callable(
+        help="""Provides information about resources in Slurm cluster.
+
+        It will be called with the Spawner as a single argument and return a tuple:
+        - list of labels to be displayed for the resources
+        - dictionary mapping each partition name to a list of resources
+    """,
+    ).tag(config=True)
+
+    @traitlets.default("slurm_info_resources")
+    def _slurm_info_resources(self, slurm_info_out):
+        """
+        Parses output from Slurm (slurm_info_cmd)
+        Returns information about partition resources to be displayed in a table
+        :param: slurm_info_out string with output of slurm_info_cmd
+        :rtype: Tuple with:
+            - list of resource labels in display order
+            - dict with mapping {partition: list of resource counts}
+        """
+        # Resources displayed for each partition
+        # column labels in display order
+        resources_labels = ["Idle Cores", "Total Cores", "Total Nodes"]
+
+        # Parse output
+        resources_count = defaultdict(lambda: {resource: 0 for resource in resources_labels})
+        for line in slurm_info_out.splitlines():
+            partition, cores = line.split()
+            _, cores_idle, _, cores_total = cores.split('/')
+            count = resources_count[partition]
+            count["Total Nodes"] += 1
+            count["Total Cores"] += int(cores_total)
+            count["Idle Cores"] += int(cores_idle)
+
+        resources_info = {
+            partition: [resources_count[partition][resource] for resource in resources_labels]
+            for partition in resources_count
+        }
+
+        return (resources_labels, resources_info)
 
     singularity_cmd = traitlets.List(
         trait=traitlets.Unicode(),
@@ -101,8 +141,13 @@ class MOSlurmSpawner(SlurmSpawner):
         super().__init__(*args, **kwargs)
         self.options_form = self.create_options_form
 
-    async def _get_slurm_info(self):
-        """Returns information about partitions from slurm"""
+    async def _get_slurm_info_resources(self):
+        """
+        Returns information to be displayed about partitions from slurm
+        1. executes slurm_info_cmd
+        2. parses output with slurm_info_resources
+        """
+        # Execute given slurm info command
         subvars = self.get_req_subvars()
         cmd = " ".join(
             (
@@ -112,22 +157,18 @@ class MOSlurmSpawner(SlurmSpawner):
         )
         self.log.debug("Slurm info command: %s", cmd)
         out = await self.run_command(cmd)
-        slurm_info = defaultdict(lambda: {"nodes": 0, "cores_total": 0, "cores_idle":0, "max_mem": 0})
-        for line in out.splitlines():
-            partition, cores, memory = line.split()
-            _, cores_idle, _, cores_total = cores.split('/')
-            info = slurm_info[partition]
-            info["nodes"] += 1
-            info["cores_total"] += int(cores_total)
-            info["cores_idle"] += int(cores_idle)
-            info["max_mem"] = max(info["max_mem"], int(memory))
-        self.log.debug("Slurm info totals: %s", slurm_info)
-        return slurm_info
+
+        # Parse command output
+        resources_labels, resources_info = self._slurm_info_resources(out)
+        self.log.debug("Slurm resources labels: %s", resources_labels)
+        self.log.debug("Slurm resources info: %s", resources_info)
+
+        return (resources_labels, resources_info)
 
     @staticmethod
     async def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
-        slurm_info = await spawner._get_slurm_info()
+        resources_labels, resources_info = await spawner._get_slurm_info_resources()
 
         # Combine all partition info as a dict
         partition_info = {}
@@ -135,7 +176,7 @@ class MOSlurmSpawner(SlurmSpawner):
         for partition in spawner.partitions:
             avail_partition = {}
             avail_partition.update(spawner.partitions[partition])
-            avail_partition.update(slurm_info[partition])
+            avail_partition['resources_info'] = resources_info[partition]
             partition_info[partition] = avail_partition
 
             if avail_partition["simple"] and default_partition is None:
@@ -146,6 +187,7 @@ class MOSlurmSpawner(SlurmSpawner):
             {
                 "partitions": partition_info,
                 "default_partition": default_partition,
+                "resources_labels": resources_labels,
             }
         )
 
@@ -154,6 +196,7 @@ class MOSlurmSpawner(SlurmSpawner):
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
             partitions=partition_info,
             default_partition=default_partition,
+            resources_labels=resources_labels,
             batchspawner_version=BATCHSPAWNER_VERSION,
             jupyterhub_version=JUPYTERHUB_VERSION,
             jsondata=jsondata,
