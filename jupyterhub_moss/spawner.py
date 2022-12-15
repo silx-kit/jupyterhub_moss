@@ -191,7 +191,7 @@ class MOSlurmSpawner(SlurmSpawner):
         out = await self.run_command(cmd)
 
         # Parse command output
-        resources_display, resources_info = self._slurm_info_resources(out)
+        resources_display, resources_info = self.slurm_info_resources(out)
         self.log.debug(
             "Slurm resources displayed in available resources: %s", resources_display
         )
