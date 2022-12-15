@@ -84,27 +84,27 @@ class MOSlurmSpawner(SlurmSpawner):
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes, cores, gpus, total memory for all partitions
         r"sinfo -a --noheader -o '%R %D %C %G %m'",
-        help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}.",
+        help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}."
+        "Output will be parsed by ``slurm_info_resources``.",
     ).tag(config=True)
 
     slurm_info_resources = traitlets.Callable(
         help="""Provides information about resources in Slurm cluster.
 
-        It will be called with the Spawner as a single argument and return a tuple:
-        - list of labels to be displayed for the resources
-        - dictionary mapping each partition name to a list of resources
-    """,
+        It will be called with the output of ``slurm_info_cmd`` as argument and should return a tuple:
+        - list of resource labels to be displayed in table of available resources
+        - dictionary mapping each partition name to resources defined in ``RESOURCES_COUNTS``""",
     ).tag(config=True)
 
     @traitlets.default("slurm_info_resources")
     def _slurm_info_resources(self, slurm_info_out):
         """
         Parses output from Slurm command: sinfo -a --noheader -o '%R %D %C %G %m'
-        Returns information about partition resources: number of cores, number of gpus, max memory and
-            any resource counts to be displayed in table of available resources
-        :param: slurm_info_out string with output of slurm_info_cmd
-        :rtype: Tuple with:
-            - list of resources to be displayed in table of available resources
+        Returns information about partition resources listed in RESOURCES_COUNTS: number of cores,
+        max memory, gpus and resource counts to be shown in table of available resources
+        :param slurm_info_out: string with output of slurm_info_cmd
+        :rtype: tuple with:
+            - list of resource labels to be displayed in table of available resources
             - dict with mapping per partition {partition: {max_nprocs, max_ngpus, max_mem, ...}}
         """
         # Resources displayed in table of available resources (column labels in display order)
@@ -192,20 +192,16 @@ class MOSlurmSpawner(SlurmSpawner):
 
         # Parse command output
         resources_display, resources_info = self.slurm_info_resources(out)
-        self.log.debug(
-            "Slurm resources displayed in available resources: %s", resources_display
-        )
-        self.log.debug("Slurm resources counters: %s", resources_info)
+        dbgmsg = "Slurm partition resources displayed as available resources: %s"
+        self.log.debug(dbgmsg, resources_display)
+        self.log.debug("Slurm partition resources: %s", resources_info)
 
         for partition in resources_info:
             if not all(
                 counter in resources_info[partition] for counter in RESOURCES_COUNTS
             ):
-                raise KeyError(
-                    "Missing required resource counter in Slurm partition: {}".format(
-                        partition
-                    )
-                )
+                errmsg = "Missing required resource counter in Slurm partition: {}"
+                raise KeyError(errmsg.format(partition))
 
         return (resources_display, resources_info)
 
