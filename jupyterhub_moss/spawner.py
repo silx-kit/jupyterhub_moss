@@ -119,7 +119,7 @@ class MOSlurmSpawner(SlurmSpawner):
             lambda: {resource: 0 for resource in RESOURCES_COUNTS + resources_display}
         )
         for line in slurm_info_out.splitlines():
-            partition, nodes, cores, gpus, memory = line.split()
+            partition, nodes, ncores_per_node, cores, gpus, memory = line.split()
             # core count - allocated/idle/other/total
             _, cores_idle, _, cores_total = cores.split("/")
             # gpu count - gpu:name:total(indexes)
