@@ -126,7 +126,7 @@ class MOSlurmSpawner(SlurmSpawner):
             try:
                 gpus_gres = gpus.replace("(", ":").split(":")
                 gpus_total = gpus_gres[2]
-                gpu = ":".join(gpus_gres[0:1]) + ":{}"
+                gpu = ":".join(gpus_gres[0:2]) + ":{}"
             except IndexError:
                 gpus_total = 0
                 gpu = None
