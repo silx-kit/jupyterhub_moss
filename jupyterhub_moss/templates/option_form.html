@@ -127,17 +127,17 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     <table class="table table-hover">
       <tr class="active">
         <th>Partition</th>
-        <th>Total Nodes</th>
-        <th>Toral Cores</th>
-        <th>Idle Cores</th>
+        {% for res_name in resources_display %}
+        <th>{{ res_name }}</th>
+        {% endfor %}
       </tr>
       {% for name, partition in partitions.items() %}
       {% if partition.simple %}
       <tr>
         <th>{{ name }}</th>
-        <td>{{ partition.nodes }}</td>
-        <td>{{ partition.cores_total }}</td>
-        <td>{{ partition.cores_idle }}</td>
+        {% for res in partition['available_counts'] %}
+        <td>{{ res }}</td>
+        {% endfor %}
       </tr>
       {% endif %}
       {% endfor %}
@@ -294,16 +294,16 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     <table class="table table-hover">
       <tr class="active">
         <th>Partition</th>
-        <th>Total Nodes</th>
-        <th>Toral Cores</th>
-        <th>Idle Cores</th>
+        {% for res_name in resources_display %}
+        <th>{{ res_name }}</th>
+        {% endfor %}
       </tr>
       {% for name, partition in partitions.items() %}
       <tr>
         <th>{{ name }}</th>
-        <td>{{ partition.nodes }}</td>
-        <td>{{ partition.cores_total }}</td>
-        <td>{{ partition.cores_idle }}</td>
+        {% for res in partition['available_counts'] %}
+        <td>{{ res }}</td>
+        {% endfor %}
       </tr>
       {% endfor %}
     </table>
