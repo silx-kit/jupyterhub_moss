@@ -138,8 +138,8 @@ class MOSlurmSpawner(SlurmSpawner):
                 count["Total Cores"] = int(cores_total)
                 count["Idle Cores"] = int(cores_idle)
                 # required resource counts
-                count["max_nprocs"] = int(ncores_per_node.rstrip('+'))
-                count["max_mem"] = int(memory.rstrip('+'))
+                count["max_nprocs"] = int(ncores_per_node.rstrip("+"))
+                count["max_mem"] = int(memory.rstrip("+"))
                 count["gpu"] = gpu
                 count["max_ngpus"] = int(gpus_total)
             except ValueError as err:
