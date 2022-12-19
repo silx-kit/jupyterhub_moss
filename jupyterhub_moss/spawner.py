@@ -83,7 +83,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes, cores, gpus, total memory for all partitions
-        r"sinfo -a --noheader -o '%R %D %C %G %m'",
+        r"sinfo -a --noheader -o '%R %D %c %C %G %m'",
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}."
         "Output will be parsed by ``slurm_info_resources``.",
     ).tag(config=True)
