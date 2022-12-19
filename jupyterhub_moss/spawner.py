@@ -97,6 +97,10 @@ class MOSlurmSpawner(SlurmSpawner):
     ).tag(config=True)
 
     @traitlets.default("slurm_info_resources")
+    def _get_slurm_info_resources_default(self):
+        """Returns default for `slurm_info_resources` traitlet."""
+        return self._slurm_info_resources
+
     def _slurm_info_resources(self, slurm_info_out):
         """
         Parses output from Slurm command: sinfo -a --noheader -o '%R %D %C %G %m'
