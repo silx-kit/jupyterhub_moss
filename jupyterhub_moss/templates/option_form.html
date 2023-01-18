@@ -124,24 +124,21 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         <option value="12">12 hours</option>
       </select>
     </div>
-    <h4 style="text-align: center">List of available resources:</h4>
-    <table width="100%" border="1" style="text-align: center">
-      <tr style="text-align: center; background-color: orange">
-        <th style="text-align: center" colspan="6">Current Status</th>
+    <h4 style="text-align: left">Available resources at current time</h4>
+    <table class="table table-hover">
+      <tr class="active">
+        <th>Partition</th>
+        {% for res_name in resources_display %}
+        <th>{{ res_name }}</th>
+        {% endfor %}
       </tr>
-
-      <tr style="text-align: center; background-color: gold">
-        <th style="text-align: center">Partition</th>
-        <th style="text-align: center"># nodes</th>
-        <th style="text-align: center"># avail</th>
-      </tr>
-
       {% for name, partition in partitions.items() %}
       {% if partition.simple %}
       <tr>
-        <th style="text-align: center">{{ name }}</th>
-        <td>{{ partition.max_nnodes }}</td>
-        <td>{{ partition.nnodes_idle }}</td>
+        <th>{{ name }}</th>
+        {% for res in partition['available_counts'] %}
+        <td>{{ res }}</td>
+        {% endfor %}
       </tr>
       {% endif %}
       {% endfor %}
@@ -289,21 +286,20 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     />
     </div>
 
-    <h4 style="text-align: center">List of available resources:</h4>
-    <table width="100%" border="1" style="text-align: center">
-      <tr style="text-align: center; background-color: orange">
-        <th style="text-align: center" colspan="6">Current Status</th>
-      </tr>
-      <tr style="text-align: center; background-color: gold">
-        <th style="text-align: center">Partition</th>
-        <th style="text-align: center"># nodes</th>
-        <th style="text-align: center"># avail</th>
+    <h4 style="text-align: left">Available resources at current time</h4>
+    <table class="table table-hover">
+      <tr class="active">
+        <th>Partition</th>
+        {% for res_name in resources_display %}
+        <th>{{ res_name }}</th>
+        {% endfor %}
       </tr>
       {% for name, partition in partitions.items() %}
       <tr>
-        <th style="text-align: center">{{ name }}</th>
-        <td>{{ partition.max_nnodes }}</td>
-        <td>{{ partition.nnodes_idle }}</td>
+        <th>{{ name }}</th>
+        {% for res in partition['available_counts'] %}
+        <td>{{ res }}</td>
+        {% endfor %}
       </tr>
       {% endfor %}
     </table>

@@ -21,6 +21,9 @@ RESOURCES_HASH = {
     for name in ("option_form.css", "option_form.js")
 }
 
+# Required resources per partition
+RESOURCES_COUNTS = ["max_nprocs", "max_mem", "gpu", "max_ngpus", "available_counts"]
+
 with open(local_path("batch_script.sh")) as f:
     BATCH_SCRIPT = f.read()
 
@@ -79,10 +82,83 @@ class MOSlurmSpawner(SlurmSpawner):
         return partitions
 
     slurm_info_cmd = traitlets.Unicode(
-        # Get number of nodes and cores for all partitions
-        r"sinfo -a -N --noheader -o '%R %t %m'",
-        help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}.",
+        # Get number of nodes, cores, gpus, total memory for all partitions
+        r"sinfo -a --noheader -o '%R %D %c %C %G %m'",
+        help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}."
+        "Output will be parsed by ``slurm_info_resources``.",
     ).tag(config=True)
+
+    slurm_info_resources = traitlets.Callable(
+        help="""Provides information about resources in Slurm cluster.
+
+        It will be called with the output of ``slurm_info_cmd`` as argument and should return a tuple:
+        - list of resource labels to be displayed in table of available resources
+        - dictionary mapping each partition name to resources defined in ``RESOURCES_COUNTS``""",
+    ).tag(config=True)
+
+    @traitlets.default("slurm_info_resources")
+    def _get_slurm_info_resources_default(self):
+        """Returns default for `slurm_info_resources` traitlet."""
+        return self._slurm_info_resources
+
+    def _slurm_info_resources(self, slurm_info_out):
+        """
+        Parses output from Slurm command: sinfo -a --noheader -o '%R %D %C %G %m'
+        Returns information about partition resources listed in RESOURCES_COUNTS: number of cores,
+        max memory, gpus and resource counts to be shown in table of available resources
+        :param slurm_info_out: string with output of slurm_info_cmd
+        :rtype: tuple with:
+            - list of resource labels to be displayed in table of available resources
+            - dict with mapping per partition {partition: {max_nprocs, max_ngpus, max_mem, ...}}
+        """
+        # Resources displayed in table of available resources (column labels in display order)
+        resources_display = ["Idle Cores", "Total Cores", "Total Nodes"]
+
+        # Parse output
+        resources_count = defaultdict(
+            lambda: {resource: 0 for resource in RESOURCES_COUNTS + resources_display}
+        )
+        for line in slurm_info_out.splitlines():
+            partition, nodes, ncores_per_node, cores, gpus, memory = line.split()
+            # core count - allocated/idle/other/total
+            _, cores_idle, _, cores_total = cores.split("/")
+            # gpu count - gpu:name:total(indexes)
+            try:
+                gpus_gres = gpus.replace("(", ":").split(":")
+                gpus_total = gpus_gres[2]
+                gpu = ":".join(gpus_gres[0:2]) + ":{}"
+            except IndexError:
+                gpus_total = 0
+                gpu = None
+
+            count = resources_count[partition]
+            try:
+                # display resource counts
+                count["Total Nodes"] = int(nodes)
+                count["Total Cores"] = int(cores_total)
+                count["Idle Cores"] = int(cores_idle)
+                # required resource counts
+                count["max_nprocs"] = int(ncores_per_node.rstrip("+"))
+                count["max_mem"] = int(memory.rstrip("+"))
+                count["gpu"] = gpu
+                count["max_ngpus"] = int(gpus_total)
+            except ValueError as err:
+                self.log.error("Error parsing output of slurm_info_cmd: %s", err)
+                raise
+            else:
+                count["available_counts"] = [
+                    count[resource] for resource in resources_display
+                ]
+
+        resources_info = {
+            partition: {
+                resource: resources_count[partition][resource]
+                for resource in RESOURCES_COUNTS
+            }
+            for partition in resources_count
+        }
+
+        return (resources_display, resources_info)
 
     singularity_cmd = traitlets.List(
         trait=traitlets.Unicode(),
@@ -101,8 +177,13 @@ class MOSlurmSpawner(SlurmSpawner):
         super().__init__(*args, **kwargs)
         self.options_form = self.create_options_form
 
-    async def _get_slurm_info(self):
-        """Returns information about partitions from slurm"""
+    async def _get_slurm_info_resources(self):
+        """
+        Retrieves information about resources in partitions from slurm
+        1. executes slurm_info_cmd
+        2. parses output with slurm_info_resources
+        """
+        # Execute given slurm info command
         subvars = self.get_req_subvars()
         cmd = " ".join(
             (
@@ -110,49 +191,56 @@ class MOSlurmSpawner(SlurmSpawner):
                 format_template(self.slurm_info_cmd, **subvars),
             )
         )
-        self.log.info("Slurm info command: %s", cmd)
-        state = await self.run_command(cmd)
-        slurm_info = defaultdict(lambda: {"nodes": 0, "idle": 0, "max_mem": 0})
-        for line in state.splitlines():
-            partition, state, memory = line.split()
-            info = slurm_info[partition]
-            info["nodes"] += 1
-            if state == "idle":
-                info["idle"] += 1
-            info["max_mem"] = max(info["max_mem"], int(memory))
-        return slurm_info
+        self.log.debug("Slurm info command: %s", cmd)
+        out = await self.run_command(cmd)
+
+        # Parse command output
+        resources_display, resources_info = self.slurm_info_resources(out)
+        dbgmsg = "Slurm partition resources displayed as available resources: %s"
+        self.log.debug(dbgmsg, resources_display)
+        self.log.debug("Slurm partition resources: %s", resources_info)
+
+        for partition in resources_info:
+            if not all(
+                counter in resources_info[partition] for counter in RESOURCES_COUNTS
+            ):
+                errmsg = "Missing required resource counter in Slurm partition: {}"
+                raise KeyError(errmsg.format(partition))
+
+        return (resources_display, resources_info)
 
     @staticmethod
     async def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
-        slurm_info = await spawner._get_slurm_info()
+        resources_display, resources_info = await spawner._get_slurm_info_resources()
 
         # Combine all partition info as a dict
-        partitions = {}
+        partition_info = {}
         default_partition = None
-        for name, info in spawner.partitions.items():
-            partitions[name] = {
-                "max_nnodes": slurm_info[name]["nodes"],
-                "nnodes_idle": slurm_info[name]["idle"],
-                "max_mem": slurm_info[name]["max_mem"],
-                **info,
-            }
-            if info["simple"] and default_partition is None:
-                default_partition = name
+        for partition in spawner.partitions:
+            # use data from Slurm as base and overwrite with manual configuration settings
+            partition_info[partition] = resources_info[partition]
+            partition_info[partition].update(spawner.partitions[partition])
+            spawner.partitions[partition] = partition_info[partition]
+
+            if partition_info[partition]["simple"] and default_partition is None:
+                default_partition = partition
 
         # Prepare json info
         jsondata = json.dumps(
             {
-                "partitions": partitions,
+                "partitions": partition_info,
                 "default_partition": default_partition,
+                "resources_display": resources_display,
             }
         )
 
         return spawner.FORM_TEMPLATE.render(
             hash_option_form_css=RESOURCES_HASH["option_form.css"],
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
-            partitions=partitions,
+            partitions=partition_info,
             default_partition=default_partition,
+            resources_display=resources_display,
             batchspawner_version=BATCHSPAWNER_VERSION,
             jupyterhub_version=JUPYTERHUB_VERSION,
             jsondata=jsondata,
