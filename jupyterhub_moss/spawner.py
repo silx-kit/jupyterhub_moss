@@ -8,10 +8,10 @@ from copy import deepcopy
 from typing import Dict, List
 
 import traitlets
-from batchspawner import format_template, SlurmSpawner
+from batchspawner import SlurmSpawner, format_template
 from jinja2 import Environment, FileSystemLoader
 
-from .utils import file_hash, find, local_path
+from .utils import file_hash, find, local_path, parse_timelimit
 
 TEMPLATE_PATH = local_path("templates")
 
@@ -22,7 +22,7 @@ RESOURCES_HASH = {
 }
 
 # Required resources per partition
-RESOURCES_COUNTS = ["max_nprocs", "max_mem", "gpu", "max_ngpus", "available_counts"]
+RESOURCES_COUNTS = ["max_nprocs", "max_mem", "gpu", "max_ngpus", "max_runtime", "available_counts"]
 
 with open(local_path("batch_script.sh")) as f:
     BATCH_SCRIPT = f.read()
@@ -82,8 +82,8 @@ class MOSlurmSpawner(SlurmSpawner):
         return partitions
 
     slurm_info_cmd = traitlets.Unicode(
-        # Get number of nodes, cores, gpus, total memory for all partitions
-        r"sinfo -a --noheader -o '%R %D %c %C %G %m'",
+        # Get number of nodes, cores, gpus, total memory, time limit for all partitions
+        r"sinfo -a --noheader -o '%R %D %c %C %G %m %l'",
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}."
         "Output will be parsed by ``slurm_info_resources``.",
     ).tag(config=True)
@@ -109,7 +109,9 @@ class MOSlurmSpawner(SlurmSpawner):
         :param slurm_info_out: string with output of slurm_info_cmd
         :rtype: tuple with:
             - list of resource labels to be displayed in table of available resources
-            - dict with mapping per partition {partition: {max_nprocs, max_ngpus, max_mem, ...}}
+            - dict with mapping per partition: {
+                partition: {max_nprocs, max_ngpus, max_mem, max_runtime, ...},
+              }
         """
         # Resources displayed in table of available resources (column labels in display order)
         resources_display = ["Idle Cores", "Total Cores", "Total Nodes"]
@@ -119,7 +121,7 @@ class MOSlurmSpawner(SlurmSpawner):
             lambda: {resource: 0 for resource in RESOURCES_COUNTS + resources_display}
         )
         for line in slurm_info_out.splitlines():
-            partition, nodes, ncores_per_node, cores, gpus, memory = line.split()
+            partition, nodes, ncores_per_node, cores, gpus, memory, timelimit = line.split()
             # core count - allocated/idle/other/total
             _, cores_idle, _, cores_total = cores.split("/")
             # gpu count - gpu:name:total(indexes)
@@ -130,6 +132,11 @@ class MOSlurmSpawner(SlurmSpawner):
             except IndexError:
                 gpus_total = 0
                 gpu = None
+
+            max_runtime = parse_timelimit(timelimit)
+            if max_runtime is None:
+                # Parsing failed: Limit to one day
+                max_runtime = datetime.timedelta(days=1)
 
             count = resources_count[partition]
             try:
@@ -142,6 +149,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 count["max_mem"] = int(memory.rstrip("+"))
                 count["gpu"] = gpu
                 count["max_ngpus"] = int(gpus_total)
+                count["max_runtime"] = int(max_runtime.total_seconds())
             except ValueError as err:
                 self.log.error("Error parsing output of slurm_info_cmd: %s", err)
                 raise
@@ -261,10 +269,6 @@ class MOSlurmSpawner(SlurmSpawner):
         "root_dir": str,
     }
 
-    _RUNTIME_REGEXP = re.compile(
-        "^(?P<hours>[0-9]+)(?::(?P<minutes>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
-    )
-
     _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
 
     def __validate_options(self, options):
@@ -275,13 +279,9 @@ class MOSlurmSpawner(SlurmSpawner):
         partition_info = self.partitions[options["partition"]]
 
         if "runtime" in options:
-            match = self._RUNTIME_REGEXP.match(options["runtime"])
-            assert match is not None, "Error in runtime syntax"
-            runtime = datetime.timedelta(
-                **{k: int(v) for k, v in match.groupdict().items()}
-            )
-            max_runtime = datetime.timedelta(seconds=partition_info["max_runtime"])
-            assert runtime <= max_runtime, "Requested runtime is too long"
+            runtime = parse_timelimit(options["runtime"])
+            assert runtime is not None, "Error in runtime syntax"
+            assert runtime.total_seconds() <=  partition_info["max_runtime"], "Requested runtime exceeds partition time limit"
 
         if (
             "nprocs" in options

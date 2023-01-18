@@ -1,5 +1,7 @@
+import datetime
 import hashlib
 import os.path
+import re
 from typing import Any, Callable, Iterable, Optional
 
 
@@ -18,3 +20,20 @@ def find(function: Callable[[Any], bool], iterable: Iterable[Any]) -> Optional[A
         if function(item):
             return item
     return None
+
+_TIMELIMIT_REGEXP = re.compile(
+    "^(?:^(?P<days>[0-9]+)-)?(?P<hours>[0-9]+)(?::(?P<minutes>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
+)
+
+
+def parse_timelimit(timelimit: str) -> Optional[datetime.timedelta]:
+    """Parse a SLURM timelimit/walltime string.
+
+    Returns a timedelta or None if parsing failed.
+    """
+    match = _TIMELIMIT_REGEXP.match(timelimit)
+    if match is None:
+        return None
+    return datetime.timedelta(
+        **{k: int(v) for k, v in match.groupdict().items() if v is not None}
+    )
