@@ -102,19 +102,23 @@ c.MOSlurmSpawner.partitions = {
   will be used to generate subtitles in the spawn page.
 - `description`: The description of the partition. This is only cosmetic and
   will be used to generate subtitles in the spawn page.
-- `gpu`: A template string that will be used to request GPU resources through
-  `--gres`. The template should therefore include a `{}` that will be replaced
-  by the number of requested GPU **and** follow the format expected by `--gres`.
-  If no GPU is available for this partition, set to `None`.
-- `max_ngpus`: The maximum number of GPU that can be requested for this
-  partition. The spawn page will use this to generate appropriate bounds for the
-  user inputs. If no GPU is available for this partition, set to `0`.
-- `max_nprocs`: The maximum number of processors that can be requested for this
-  partition. The spawn page will use this to generate appropriate bounds for the
-  user inputs.
-- `max_runtime`: The maximum job runtime for this partition in seconds. It
-  should be of minimum 1 hour as the _Simple_ tab only display buttons for
-  runtimes greater than 1 hour.
+- `gpu`: [Optional] A template string that will be used to request GPU resources
+  through `--gres`. The template should therefore include a `{}` that will be
+  replaced by the number of requested GPU **and** follow the format expected by
+  `--gres`. If no GPU is available for this partition, set to `None`. It is
+  retrieved from SLURM if not provided.
+- `max_ngpus`: [Optional] The maximum number of GPU that can be requested for
+  this partition. The spawn page will use this to generate appropriate bounds
+  for the user inputs. If no GPU is available for this partition, set to `0`. It
+  is retrieved from SLURM if not provided.
+- `max_nprocs`: [Optional] The maximum number of processors that can be
+  requested for this partition. The spawn page will use this to generate
+  appropriate bounds for the user inputs. It is retrieved from SLURM if not
+  provided.
+- `max_runtime`: [Optional] The maximum job runtime for this partition in
+  seconds. It should be of minimum 1 hour as the _Simple_ tab only display
+  buttons for runtimes greater than 1 hour. It is retrieved from SLURM if not
+  provided.
 - `simple`: Whether the partition should be available in the _Simple_ tab. The
   spawn page that will be generated is organized in a two tabs: a _Simple_ tab
   with minimal settings that will be enough for most users and an _Advanced_ tab
