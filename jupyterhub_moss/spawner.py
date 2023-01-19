@@ -342,31 +342,8 @@ class MOSlurmSpawner(SlurmSpawner):
 
         self.__validate_options(options)
 
-        partition = options["partition"]
-
-        # Specific handling of exclusive flag
-        # When mem=0 or all CPU are requested, set the exclusive flag
-        if (
-            options["nprocs"] == self.partitions[partition]["max_nprocs"]
-            or options.get("mem", None) == "0"
-        ):
-            options["exclusive"] = True
-
-        # Specific handling of landing URL (e.g., to start jupyterlab)
-        self.default_url = options.get("default_url", "")
-
-        if "root_dir" in options:
-            self.notebook_dir = options["root_dir"]
-
-        # Specific handling of ngpus as gres
-        if options.get("ngpus", 0) > 0:
-            gpu_gres_template = self.partitions[partition]["gpu"]
-            if gpu_gres_template is None:
-                raise RuntimeError("GPU(s) not available for this partition")
-            options["gres"] = gpu_gres_template.format(options["ngpus"])
-
         partition_environments = tuple(
-            self.partitions[partition]["jupyter_environments"].values()
+            self.partitions[options["partition"]]["jupyter_environments"].values()
         )
         if "environment_path" not in options:
             # Set path to use from first environment for the current partition
@@ -424,6 +401,28 @@ class MOSlurmSpawner(SlurmSpawner):
         partition_info = partitions_info[self.user_options["partition"]]
 
         self.__check_user_options(partition_info)
+
+        # Specific handling of exclusive flag
+        # When mem=0 or all CPU are requested, set the exclusive flag
+        if (
+            self.user_options["nprocs"] == partition_info["max_nprocs"]
+            or self.user_options.get("mem", None) == "0"
+        ):
+            self.user_options["exclusive"] = True
+
+        # Specific handling of landing URL (e.g., to start jupyterlab)
+        self.default_url = self.user_options.get("default_url", "")
+
+        if "root_dir" in self.user_options:
+            self.notebook_dir = self.user_options["root_dir"]
+
+        # Specific handling of ngpus as gres
+        ngpus = self.user_options.get("ngpus", 0)
+        if ngpus > 0:
+            gpu_gres_template = partition_info["gpu"]
+            if gpu_gres_template is None:
+                raise RuntimeError("GPU(s) not available for this partition")
+            self.user_options["gres"] = gpu_gres_template.format(ngpus)
 
         return await super().start()
 
