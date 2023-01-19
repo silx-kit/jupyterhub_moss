@@ -21,6 +21,7 @@ def find(function: Callable[[Any], bool], iterable: Iterable[Any]) -> Optional[A
             return item
     return None
 
+
 _TIMELIMIT_REGEXP = re.compile(
     "^(?:^(?P<days>[0-9]+)-)?(?P<hours>[0-9]+)(?::(?P<minutes>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
 )

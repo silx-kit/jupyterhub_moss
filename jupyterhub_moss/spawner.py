@@ -22,7 +22,14 @@ RESOURCES_HASH = {
 }
 
 # Required resources per partition
-RESOURCES_COUNTS = ["max_nprocs", "max_mem", "gpu", "max_ngpus", "max_runtime", "available_counts"]
+RESOURCES_COUNTS = [
+    "max_nprocs",
+    "max_mem",
+    "gpu",
+    "max_ngpus",
+    "max_runtime",
+    "available_counts",
+]
 
 with open(local_path("batch_script.sh")) as f:
     BATCH_SCRIPT = f.read()
@@ -121,7 +128,15 @@ class MOSlurmSpawner(SlurmSpawner):
             lambda: {resource: 0 for resource in RESOURCES_COUNTS + resources_display}
         )
         for line in slurm_info_out.splitlines():
-            partition, nodes, ncores_per_node, cores, gpus, memory, timelimit = line.split()
+            (
+                partition,
+                nodes,
+                ncores_per_node,
+                cores,
+                gpus,
+                memory,
+                timelimit,
+            ) = line.split()
             # core count - allocated/idle/other/total
             _, cores_idle, _, cores_total = cores.split("/")
             # gpu count - gpu:name:total(indexes)
@@ -283,8 +298,9 @@ class MOSlurmSpawner(SlurmSpawner):
 
         if "runtime" in options:
             runtime = parse_timelimit(options["runtime"])
-            assert runtime is not None, "Error in runtime syntax"
-            assert runtime.total_seconds() <=  partition_info["max_runtime"], "Requested runtime exceeds partition time limit"
+            assert (
+                runtime.total_seconds() <= partition_info["max_runtime"]
+            ), "Requested runtime exceeds partition time limit"
 
         if (
             "nprocs" in options
