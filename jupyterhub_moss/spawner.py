@@ -380,6 +380,31 @@ class MOSlurmSpawner(SlurmSpawner):
         if self.user_options.get("ngpus", -1) > partition_info["max_ngpus"]:
             raise AssertionError("Error in number of GPUs")
 
+    def __update_spawn_options(self, partition_info):
+        """Update user_options and other attributes controlling the spawn"""
+        # Specific handling of exclusive flag
+        # When mem=0 or all CPU are requested, set the exclusive flag
+        if (
+            self.user_options["nprocs"] == partition_info["max_nprocs"]
+            or self.user_options.get("mem", None) == "0"
+        ):
+            self.user_options["exclusive"] = True
+
+        # Specific handling of landing URL (e.g., to start jupyterlab)
+        self.default_url = self.user_options.get("default_url", "")
+        self.log.info(f"Used default URL: {self.default_url}")
+
+        if "root_dir" in self.user_options:
+            self.notebook_dir = self.user_options["root_dir"]
+
+        # Specific handling of ngpus as gres
+        ngpus = self.user_options.get("ngpus", 0)
+        if ngpus > 0:
+            gpu_gres_template = partition_info["gpu"]
+            if gpu_gres_template is None:
+                raise RuntimeError("GPU(s) not available for this partition")
+            self.user_options["gres"] = gpu_gres_template.format(ngpus)
+
     def __update_spawn_commands(self, cmd_path):
         """Add path to commands"""
         if cmd_path.endswith(".sif"):
@@ -405,28 +430,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
         self.__check_user_options(partition_info)
 
-        # Specific handling of exclusive flag
-        # When mem=0 or all CPU are requested, set the exclusive flag
-        if (
-            self.user_options["nprocs"] == partition_info["max_nprocs"]
-            or self.user_options.get("mem", None) == "0"
-        ):
-            self.user_options["exclusive"] = True
-
-        # Specific handling of landing URL (e.g., to start jupyterlab)
-        self.default_url = self.user_options.get("default_url", "")
-        self.log.info(f"Used default URL: {self.default_url}")
-
-        if "root_dir" in self.user_options:
-            self.notebook_dir = self.user_options["root_dir"]
-
-        # Specific handling of ngpus as gres
-        ngpus = self.user_options.get("ngpus", 0)
-        if ngpus > 0:
-            gpu_gres_template = partition_info["gpu"]
-            if gpu_gres_template is None:
-                raise RuntimeError("GPU(s) not available for this partition")
-            self.user_options["gres"] = gpu_gres_template.format(ngpus)
+        self.__update_spawn_options(partition_info)
 
         environment_path = self.user_options["environment_path"]
         self.log.info(f"Used environment: {environment_path}")
