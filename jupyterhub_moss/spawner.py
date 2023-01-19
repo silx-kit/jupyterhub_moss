@@ -133,9 +133,12 @@ class MOSlurmSpawner(SlurmSpawner):
                 gpus_total = 0
                 gpu = None
 
-            max_runtime = parse_timelimit(timelimit)
-            if max_runtime is None:
-                # Parsing failed: Limit to one day
+            try:
+                max_runtime = parse_timelimit(timelimit)
+            except ValueError:
+                self.log.warning(
+                    f"Parsing timelimit '{timelimit}' failed: set to 1 day"
+                )
                 max_runtime = datetime.timedelta(days=1)
 
             count = resources_count[partition]

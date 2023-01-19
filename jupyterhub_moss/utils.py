@@ -26,14 +26,14 @@ _TIMELIMIT_REGEXP = re.compile(
 )
 
 
-def parse_timelimit(timelimit: str) -> Optional[datetime.timedelta]:
+def parse_timelimit(timelimit: str) -> datetime.timedelta:
     """Parse a SLURM timelimit/walltime string.
 
-    Returns a timedelta or None if parsing failed.
+    Raises ValueError if parsing failed.
     """
     match = _TIMELIMIT_REGEXP.match(timelimit)
     if match is None:
-        return None
+        raise ValueError(f"Failed to parse time limit: '{timelimit}'.")
     return datetime.timedelta(
         **{k: int(v) for k, v in match.groupdict().items() if v is not None}
     )
