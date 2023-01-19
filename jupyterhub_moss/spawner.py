@@ -349,33 +349,17 @@ class MOSlurmSpawner(SlurmSpawner):
             # Set path to use from first environment for the current partition
             options["environment_path"] = partition_environments[0]["path"]
 
-        if options["environment_path"].endswith(".sif"):
-            # Use singularity image
-            self.batchspawner_singleuser_cmd = " ".join(
-                [
-                    *self.singularity_cmd,
-                    options["environment_path"],
-                    "batchspawner-singleuser",
-                ]
-            )
-            return options
-
         corresponding_default_env = find(
             lambda env: env["path"] == options["environment_path"],
             partition_environments,
         )
+        # Singularity images are never added to PATH,
         # custom envs are always added to PATH, defaults ones only if add_to_path is True
-        if (
+        if not options["environment_path"].endswith(".sif") and (
             corresponding_default_env is None
             or corresponding_default_env["add_to_path"]
         ):
             options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
-
-        # Virtualenv is not activated, we need to provide full path
-        self.batchspawner_singleuser_cmd = os.path.join(
-            options["environment_path"], "batchspawner-singleuser"
-        )
-        self.cmd = [os.path.join(options["environment_path"], "jupyterhub-singleuser")]
 
         return options
 
@@ -395,6 +379,25 @@ class MOSlurmSpawner(SlurmSpawner):
 
         if self.user_options.get("ngpus", -1) > partition_info["max_ngpus"]:
             raise AssertionError("Error in number of GPUs")
+
+    def __update_spawn_commands(self, cmd_path):
+        """Add path to commands"""
+        if cmd_path.endswith(".sif"):
+            # Use singularity image
+            self.batchspawner_singleuser_cmd = " ".join(
+                [
+                    *self.singularity_cmd,
+                    cmd_path,
+                    "batchspawner-singleuser",
+                ]
+            )
+            return
+
+        # Virtualenv are not activated, use full path
+        self.batchspawner_singleuser_cmd = os.path.join(
+            cmd_path, "batchspawner-singleuser"
+        )
+        self.cmd = [os.path.join(cmd_path, "jupyterhub-singleuser")]
 
     async def start(self):
         _, partitions_info = await self._get_partitions_info()
@@ -423,6 +426,8 @@ class MOSlurmSpawner(SlurmSpawner):
             if gpu_gres_template is None:
                 raise RuntimeError("GPU(s) not available for this partition")
             self.user_options["gres"] = gpu_gres_template.format(ngpus)
+
+        self.__update_spawn_commands(self.user_options["environment_path"])
 
         return await super().start()
 
