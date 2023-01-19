@@ -203,11 +203,12 @@ class MOSlurmSpawner(SlurmSpawner):
         super().__init__(*args, **kwargs)
         self.options_form = self.create_options_form
 
-    async def _get_slurm_info_resources(self):
-        """
-        Retrieves information about resources in partitions from slurm
-        1. executes slurm_info_cmd
-        2. parses output with slurm_info_resources
+    async def _get_partitions_info(self):
+        """Returns information about used SLURM partitions
+
+        1. Executes slurm_info_cmd
+        2. Parses output with slurm_info_resources
+        3. Combines info with partitions traitlet
         """
         # Execute given slurm info command
         subvars = self.get_req_subvars()
@@ -233,29 +234,30 @@ class MOSlurmSpawner(SlurmSpawner):
                 errmsg = "Missing required resource counter in Slurm partition: {}"
                 raise KeyError(errmsg.format(partition))
 
-        return (resources_display, resources_info)
+        partitions_info = {}
+        for partition, description in self.partitions.items():
+            partitions_info[partition] = resources_info[partition]
+            # use data from Slurm as base and overwrite with manual configuration settings
+            partitions_info[partition].update(description)
+
+        return (resources_display, partitions_info)
 
     @staticmethod
     async def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
-        resources_display, resources_info = await spawner._get_slurm_info_resources()
+        resources_display, partitions_info = await spawner._get_partitions_info()
 
-        # Combine all partition info as a dict
-        partition_info = {}
-        default_partition = None
-        for partition in spawner.partitions:
-            # use data from Slurm as base and overwrite with manual configuration settings
-            partition_info[partition] = resources_info[partition]
-            partition_info[partition].update(spawner.partitions[partition])
-            spawner.partitions[partition] = partition_info[partition]
-
-            if partition_info[partition]["simple"] and default_partition is None:
-                default_partition = partition
+        simple_partitions = [
+            partition for partition, info in partitions_info.items() if info["simple"]
+        ]
+        if not simple_partitions:
+            raise RuntimeError("No 'simple' partition defined: No default partition")
+        default_partition = simple_partitions[0]
 
         # Prepare json info
         jsondata = json.dumps(
             {
-                "partitions": partition_info,
+                "partitions": partitions_info,
                 "default_partition": default_partition,
                 "resources_display": resources_display,
             }
@@ -264,7 +266,7 @@ class MOSlurmSpawner(SlurmSpawner):
         return spawner.FORM_TEMPLATE.render(
             hash_option_form_css=RESOURCES_HASH["option_form.css"],
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
-            partitions=partition_info,
+            partitions=partitions_info,
             default_partition=default_partition,
             resources_display=resources_display,
             batchspawner_version=BATCHSPAWNER_VERSION,
