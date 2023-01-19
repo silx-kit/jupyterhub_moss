@@ -31,6 +31,8 @@ def parse_timelimit(timelimit: str) -> datetime.timedelta:
 
     Raises ValueError if parsing failed.
     """
+    if timelimit == "infinite":
+        return datetime.timedelta.max
     match = _TIMELIMIT_REGEXP.match(timelimit)
     if match is None:
         raise ValueError(f"Failed to parse time limit: '{timelimit}'.")
