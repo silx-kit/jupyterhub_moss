@@ -292,23 +292,15 @@ class MOSlurmSpawner(SlurmSpawner):
     _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
 
     def __validate_options(self, options):
-        """Check validity of options"""
+        """Check validity/syntax of options"""
         assert "partition" in options, "Partition information is missing"
         assert options["partition"] in self.partitions, "Partition is not supported"
 
-        partition_info = self.partitions[options["partition"]]
-
         if "runtime" in options:
-            runtime = parse_timelimit(options["runtime"])
-            assert (
-                runtime.total_seconds() <= partition_info["max_runtime"]
-            ), "Requested runtime exceeds partition time limit"
+            parse_timelimit(options["runtime"])  # Raises exception if malformed
 
-        if (
-            "nprocs" in options
-            and not 1 <= options["nprocs"] <= partition_info["max_nprocs"]
-        ):
-            raise AssertionError("Error in number of CPUs")
+        if "nprocs" in options and not 1 <= options["nprocs"]:
+            raise AssertionError("Error: Number of CPUs must be at least 1")
 
         if "mem" in options and self._MEM_REGEXP.match(options["mem"]) is None:
             raise AssertionError("Error in memory syntax")
@@ -316,11 +308,8 @@ class MOSlurmSpawner(SlurmSpawner):
         if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")
 
-        if (
-            "ngpus" in options
-            and not 0 <= options["ngpus"] <= partition_info["max_ngpus"]
-        ):
-            raise AssertionError("Error in number of GPUs")
+        if "ngpus" in options and not 0 <= options["ngpus"]:
+            raise AssertionError("Error: Number of GPUs must be positive")
 
         if "options" in options and "\n" in options["options"]:
             raise AssertionError("Error in extra options")
@@ -412,6 +401,31 @@ class MOSlurmSpawner(SlurmSpawner):
         self.cmd = [os.path.join(options["environment_path"], "jupyterhub-singleuser")]
 
         return options
+
+    def __check_user_options(self, partition_info):
+        """Check if requested resources are valid for the given partition info.
+
+        Raises AssertionError if request does not match available resources.
+        """
+        if "runtime" in self.user_options:
+            runtime = parse_timelimit(self.user_options["runtime"])
+            assert (
+                runtime.total_seconds() <= partition_info["max_runtime"]
+            ), "Requested runtime exceeds partition time limit"
+
+        if self.user_options.get("nprocs", -1) > partition_info["max_nprocs"]:
+            raise AssertionError("Error in number of CPUs")
+
+        if self.user_options.get("ngpus", -1) > partition_info["max_ngpus"]:
+            raise AssertionError("Error in number of GPUs")
+
+    async def start(self):
+        _, partitions_info = await self._get_partitions_info()
+        partition_info = partitions_info[self.user_options["partition"]]
+
+        self.__check_user_options(partition_info)
+
+        return await super().start()
 
     async def submit_batch_script(self):
         self.log.info(f"Used environment: {self.user_options['environment_path']}")
