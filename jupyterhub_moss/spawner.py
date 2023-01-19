@@ -415,6 +415,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
         # Specific handling of landing URL (e.g., to start jupyterlab)
         self.default_url = self.user_options.get("default_url", "")
+        self.log.info(f"Used default URL: {self.default_url}")
 
         if "root_dir" in self.user_options:
             self.notebook_dir = self.user_options["root_dir"]
@@ -427,14 +428,13 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             self.user_options["gres"] = gpu_gres_template.format(ngpus)
 
-        self.__update_spawn_commands(self.user_options["environment_path"])
+        environment_path = self.user_options["environment_path"]
+        self.log.info(f"Used environment: {environment_path}")
+        self.__update_spawn_commands(environment_path)
 
         return await super().start()
 
     async def submit_batch_script(self):
-        self.log.info(f"Used environment: {self.user_options['environment_path']}")
-        self.log.info(f"Used default URL: {self.default_url}")
-
         # refresh environment to be kept in the job
         self.req_keepvars = self.trait_defaults("req_keepvars")
 
