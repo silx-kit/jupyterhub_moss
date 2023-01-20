@@ -308,7 +308,7 @@ class MOSlurmSpawner(SlurmSpawner):
         if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")
 
-        if "ngpus" in options and not 0 <= options["ngpus"]:
+        if "ngpus" in options and options["ngpus"] < 0:
             raise AssertionError("Error: Number of GPUs must be positive")
 
         if "options" in options and "\n" in options["options"]:
