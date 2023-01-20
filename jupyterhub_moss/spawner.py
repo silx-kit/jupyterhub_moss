@@ -234,11 +234,11 @@ class MOSlurmSpawner(SlurmSpawner):
                 errmsg = "Missing required resource counter in Slurm partition: {}"
                 raise KeyError(errmsg.format(partition))
 
-        partitions_info = {}
-        for partition, description in self.partitions.items():
-            partitions_info[partition] = resources_info[partition]
-            # use data from Slurm as base and overwrite with manual configuration settings
-            partitions_info[partition].update(description)
+        # use data from Slurm as base and overwrite with manual configuration settings
+        partitions_info = {
+            partition: {**resources_info[partition], **config_partition_info}
+            for partition, config_partition_info in self.partitions.items()
+        }
 
         return (resources_display, partitions_info)
 
@@ -292,14 +292,23 @@ class MOSlurmSpawner(SlurmSpawner):
     _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
 
     def __validate_options(self, options):
-        """Check validity/syntax of options"""
+        """Check validity/syntax of options
+
+        Checks performed here do not rely on partition resources.
+        See :meth:`__check_user_options` for partition resources-based checks.
+
+        Reason: The async method :meth:`_get_partitions_info` cannot be called here
+        unless `options_from_form` can be async as well.
+
+        Raises an exception when a check fails.
+        """
         assert "partition" in options, "Partition information is missing"
         assert options["partition"] in self.partitions, "Partition is not supported"
 
         if "runtime" in options:
             parse_timelimit(options["runtime"])  # Raises exception if malformed
 
-        if "nprocs" in options and not 1 <= options["nprocs"]:
+        if "nprocs" in options and options["nprocs"] < 1:
             raise AssertionError("Error: Number of CPUs must be at least 1")
 
         if "mem" in options and self._MEM_REGEXP.match(options["mem"]) is None:
@@ -349,13 +358,16 @@ class MOSlurmSpawner(SlurmSpawner):
             # Set path to use from first environment for the current partition
             options["environment_path"] = partition_environments[0]["path"]
 
+        # Singularity images are never added to PATH
+        if options["environment_path"].endswith(".sif"):
+            return options
+
+        # Custom envs are always added to PATH, defaults ones only if add_to_path is True
         corresponding_default_env = find(
             lambda env: env["path"] == options["environment_path"],
             partition_environments,
         )
-        # Singularity images are never added to PATH,
-        # custom envs are always added to PATH, defaults ones only if add_to_path is True
-        if not options["environment_path"].endswith(".sif") and (
+        if (
             corresponding_default_env is None
             or corresponding_default_env["add_to_path"]
         ):
@@ -366,6 +378,8 @@ class MOSlurmSpawner(SlurmSpawner):
     def __check_user_options(self, partition_info):
         """Check if requested resources are valid for the given partition info.
 
+        See :meth:`__validate_options` for the other user options checks.
+
         Raises AssertionError if request does not match available resources.
         """
         if "runtime" in self.user_options:
@@ -374,10 +388,16 @@ class MOSlurmSpawner(SlurmSpawner):
                 runtime.total_seconds() <= partition_info["max_runtime"]
             ), "Requested runtime exceeds partition time limit"
 
-        if self.user_options.get("nprocs", -1) > partition_info["max_nprocs"]:
+        if (
+            "nprocs" in self.user_options
+            and self.user_options["nprocs"] > partition_info["max_nprocs"]
+        ):
             raise AssertionError("Error in number of CPUs")
 
-        if self.user_options.get("ngpus", -1) > partition_info["max_ngpus"]:
+        if (
+            "ngpus" in self.user_options
+            and self.user_options["ngpus"] > partition_info["max_ngpus"]
+        ):
             raise AssertionError("Error in number of GPUs")
 
     def __update_spawn_options(self, partition_info):
@@ -385,8 +405,8 @@ class MOSlurmSpawner(SlurmSpawner):
         # Specific handling of exclusive flag
         # When mem=0 or all CPU are requested, set the exclusive flag
         if (
-            self.user_options["nprocs"] == partition_info["max_nprocs"]
-            or self.user_options.get("mem", None) == "0"
+            self.user_options.get("nprocs") == partition_info["max_nprocs"]
+            or self.user_options.get("mem") == "0"
         ):
             self.user_options["exclusive"] = True
 
@@ -418,7 +438,7 @@ class MOSlurmSpawner(SlurmSpawner):
             )
             return
 
-        # Virtualenv are not activated, use full path
+        # Since virtualenvs are not activated, the full path of executables must be provided
         self.batchspawner_singleuser_cmd = os.path.join(
             cmd_path, "batchspawner-singleuser"
         )
@@ -428,6 +448,8 @@ class MOSlurmSpawner(SlurmSpawner):
         _, partitions_info = await self._get_partitions_info()
         partition_info = partitions_info[self.user_options["partition"]]
 
+        # Exceptions raised by the checks are catched by the caller, and
+        # a "500 Internal Server Error" is returned to the frontend.
         self.__check_user_options(partition_info)
 
         self.__update_spawn_options(partition_info)
