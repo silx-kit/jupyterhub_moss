@@ -203,11 +203,12 @@ class MOSlurmSpawner(SlurmSpawner):
         super().__init__(*args, **kwargs)
         self.options_form = self.create_options_form
 
-    async def _get_slurm_info_resources(self):
-        """
-        Retrieves information about resources in partitions from slurm
-        1. executes slurm_info_cmd
-        2. parses output with slurm_info_resources
+    async def _get_partitions_info(self):
+        """Returns information about used SLURM partitions
+
+        1. Executes slurm_info_cmd
+        2. Parses output with slurm_info_resources
+        3. Combines info with partitions traitlet
         """
         # Execute given slurm info command
         subvars = self.get_req_subvars()
@@ -233,29 +234,30 @@ class MOSlurmSpawner(SlurmSpawner):
                 errmsg = "Missing required resource counter in Slurm partition: {}"
                 raise KeyError(errmsg.format(partition))
 
-        return (resources_display, resources_info)
+        # use data from Slurm as base and overwrite with manual configuration settings
+        partitions_info = {
+            partition: {**resources_info[partition], **config_partition_info}
+            for partition, config_partition_info in self.partitions.items()
+        }
+
+        return (resources_display, partitions_info)
 
     @staticmethod
     async def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
-        resources_display, resources_info = await spawner._get_slurm_info_resources()
+        resources_display, partitions_info = await spawner._get_partitions_info()
 
-        # Combine all partition info as a dict
-        partition_info = {}
-        default_partition = None
-        for partition in spawner.partitions:
-            # use data from Slurm as base and overwrite with manual configuration settings
-            partition_info[partition] = resources_info[partition]
-            partition_info[partition].update(spawner.partitions[partition])
-            spawner.partitions[partition] = partition_info[partition]
-
-            if partition_info[partition]["simple"] and default_partition is None:
-                default_partition = partition
+        simple_partitions = [
+            partition for partition, info in partitions_info.items() if info["simple"]
+        ]
+        if not simple_partitions:
+            raise RuntimeError("No 'simple' partition defined: No default partition")
+        default_partition = simple_partitions[0]
 
         # Prepare json info
         jsondata = json.dumps(
             {
-                "partitions": partition_info,
+                "partitions": partitions_info,
                 "default_partition": default_partition,
                 "resources_display": resources_display,
             }
@@ -264,7 +266,7 @@ class MOSlurmSpawner(SlurmSpawner):
         return spawner.FORM_TEMPLATE.render(
             hash_option_form_css=RESOURCES_HASH["option_form.css"],
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
-            partitions=partition_info,
+            partitions=partitions_info,
             default_partition=default_partition,
             resources_display=resources_display,
             batchspawner_version=BATCHSPAWNER_VERSION,
@@ -290,23 +292,24 @@ class MOSlurmSpawner(SlurmSpawner):
     _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
 
     def __validate_options(self, options):
-        """Check validity of options"""
+        """Check validity/syntax of options
+
+        Checks performed here do not rely on partition resources.
+        See :meth:`__check_user_options` for partition resources-based checks.
+
+        Reason: The async method :meth:`_get_partitions_info` cannot be called here
+        unless `options_from_form` can be async as well.
+
+        Raises an exception when a check fails.
+        """
         assert "partition" in options, "Partition information is missing"
         assert options["partition"] in self.partitions, "Partition is not supported"
 
-        partition_info = self.partitions[options["partition"]]
-
         if "runtime" in options:
-            runtime = parse_timelimit(options["runtime"])
-            assert (
-                runtime.total_seconds() <= partition_info["max_runtime"]
-            ), "Requested runtime exceeds partition time limit"
+            parse_timelimit(options["runtime"])  # Raises exception if malformed
 
-        if (
-            "nprocs" in options
-            and not 1 <= options["nprocs"] <= partition_info["max_nprocs"]
-        ):
-            raise AssertionError("Error in number of CPUs")
+        if "nprocs" in options and options["nprocs"] < 1:
+            raise AssertionError("Error: Number of CPUs must be at least 1")
 
         if "mem" in options and self._MEM_REGEXP.match(options["mem"]) is None:
             raise AssertionError("Error in memory syntax")
@@ -314,11 +317,8 @@ class MOSlurmSpawner(SlurmSpawner):
         if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")
 
-        if (
-            "ngpus" in options
-            and not 0 <= options["ngpus"] <= partition_info["max_ngpus"]
-        ):
-            raise AssertionError("Error in number of GPUs")
+        if "ngpus" in options and options["ngpus"] < 0:
+            raise AssertionError("Error: Number of GPUs must be positive")
 
         if "options" in options and "\n" in options["options"]:
             raise AssertionError("Error in extra options")
@@ -351,70 +351,116 @@ class MOSlurmSpawner(SlurmSpawner):
 
         self.__validate_options(options)
 
-        partition = options["partition"]
-
-        # Specific handling of exclusive flag
-        # When mem=0 or all CPU are requested, set the exclusive flag
-        if (
-            options["nprocs"] == self.partitions[partition]["max_nprocs"]
-            or options.get("mem", None) == "0"
-        ):
-            options["exclusive"] = True
-
-        # Specific handling of landing URL (e.g., to start jupyterlab)
-        self.default_url = options.get("default_url", "")
-
-        if "root_dir" in options:
-            self.notebook_dir = options["root_dir"]
-
-        # Specific handling of ngpus as gres
-        if options.get("ngpus", 0) > 0:
-            gpu_gres_template = self.partitions[partition]["gpu"]
-            if gpu_gres_template is None:
-                raise RuntimeError("GPU(s) not available for this partition")
-            options["gres"] = gpu_gres_template.format(options["ngpus"])
-
         partition_environments = tuple(
-            self.partitions[partition]["jupyter_environments"].values()
+            self.partitions[options["partition"]]["jupyter_environments"].values()
         )
         if "environment_path" not in options:
             # Set path to use from first environment for the current partition
             options["environment_path"] = partition_environments[0]["path"]
 
+        # Singularity images are never added to PATH
         if options["environment_path"].endswith(".sif"):
-            # Use singularity image
-            self.batchspawner_singleuser_cmd = " ".join(
-                [
-                    *self.singularity_cmd,
-                    options["environment_path"],
-                    "batchspawner-singleuser",
-                ]
-            )
             return options
 
+        # Custom envs are always added to PATH, defaults ones only if add_to_path is True
         corresponding_default_env = find(
             lambda env: env["path"] == options["environment_path"],
             partition_environments,
         )
-        # custom envs are always added to PATH, defaults ones only if add_to_path is True
         if (
             corresponding_default_env is None
             or corresponding_default_env["add_to_path"]
         ):
             options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
 
-        # Virtualenv is not activated, we need to provide full path
-        self.batchspawner_singleuser_cmd = os.path.join(
-            options["environment_path"], "batchspawner-singleuser"
-        )
-        self.cmd = [os.path.join(options["environment_path"], "jupyterhub-singleuser")]
-
         return options
 
-    async def submit_batch_script(self):
-        self.log.info(f"Used environment: {self.user_options['environment_path']}")
+    def __check_user_options(self, partition_info):
+        """Check if requested resources are valid for the given partition info.
+
+        See :meth:`__validate_options` for the other user options checks.
+
+        Raises AssertionError if request does not match available resources.
+        """
+        if "runtime" in self.user_options:
+            runtime = parse_timelimit(self.user_options["runtime"])
+            assert (
+                runtime.total_seconds() <= partition_info["max_runtime"]
+            ), "Requested runtime exceeds partition time limit"
+
+        if (
+            "nprocs" in self.user_options
+            and self.user_options["nprocs"] > partition_info["max_nprocs"]
+        ):
+            raise AssertionError("Error in number of CPUs")
+
+        if (
+            "ngpus" in self.user_options
+            and self.user_options["ngpus"] > partition_info["max_ngpus"]
+        ):
+            raise AssertionError("Error in number of GPUs")
+
+    def __update_spawn_options(self, partition_info):
+        """Update user_options and other attributes controlling the spawn"""
+        # Specific handling of exclusive flag
+        # When mem=0 or all CPU are requested, set the exclusive flag
+        if (
+            self.user_options.get("nprocs") == partition_info["max_nprocs"]
+            or self.user_options.get("mem") == "0"
+        ):
+            self.user_options["exclusive"] = True
+
+        # Specific handling of landing URL (e.g., to start jupyterlab)
+        self.default_url = self.user_options.get("default_url", "")
         self.log.info(f"Used default URL: {self.default_url}")
 
+        if "root_dir" in self.user_options:
+            self.notebook_dir = self.user_options["root_dir"]
+
+        # Specific handling of ngpus as gres
+        ngpus = self.user_options.get("ngpus", 0)
+        if ngpus > 0:
+            gpu_gres_template = partition_info["gpu"]
+            if gpu_gres_template is None:
+                raise RuntimeError("GPU(s) not available for this partition")
+            self.user_options["gres"] = gpu_gres_template.format(ngpus)
+
+    def __update_spawn_commands(self, cmd_path):
+        """Add path to commands"""
+        if cmd_path.endswith(".sif"):
+            # Use singularity image
+            self.batchspawner_singleuser_cmd = " ".join(
+                [
+                    *self.singularity_cmd,
+                    cmd_path,
+                    "batchspawner-singleuser",
+                ]
+            )
+            return
+
+        # Since virtualenvs are not activated, the full path of executables must be provided
+        self.batchspawner_singleuser_cmd = os.path.join(
+            cmd_path, "batchspawner-singleuser"
+        )
+        self.cmd = [os.path.join(cmd_path, "jupyterhub-singleuser")]
+
+    async def start(self):
+        _, partitions_info = await self._get_partitions_info()
+        partition_info = partitions_info[self.user_options["partition"]]
+
+        # Exceptions raised by the checks are catched by the caller, and
+        # a "500 Internal Server Error" is returned to the frontend.
+        self.__check_user_options(partition_info)
+
+        self.__update_spawn_options(partition_info)
+
+        environment_path = self.user_options["environment_path"]
+        self.log.info(f"Used environment: {environment_path}")
+        self.__update_spawn_commands(environment_path)
+
+        return await super().start()
+
+    async def submit_batch_script(self):
         # refresh environment to be kept in the job
         self.req_keepvars = self.trait_defaults("req_keepvars")
 
