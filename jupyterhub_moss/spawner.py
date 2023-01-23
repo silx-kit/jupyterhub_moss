@@ -66,6 +66,7 @@ class MOSlurmSpawner(SlurmSpawner):
                             "path": traitlets.Unicode(),
                             "description": traitlets.Unicode(),
                             "add_to_path": traitlets.Bool(),
+                            "prologue": traitlets.Unicode(default_value=""),
                         },
                     ),
                 ),
@@ -86,6 +87,7 @@ class MOSlurmSpawner(SlurmSpawner):
         for partition in partitions.values():
             for env in partition["jupyter_environments"].values():
                 env.setdefault("add_to_path", True)
+                env.setdefault("prologue", "")
         return partitions
 
     slurm_info_cmd = traitlets.Unicode(
@@ -240,7 +242,8 @@ class MOSlurmSpawner(SlurmSpawner):
             for partition, config_partition_info in self.partitions.items()
         }
 
-        return (resources_display, partitions_info)
+        # Ensure returning a dict that can be modified by the callers
+        return (resources_display, deepcopy(partitions_info))
 
     @staticmethod
     async def create_options_form(spawner):
@@ -253,6 +256,12 @@ class MOSlurmSpawner(SlurmSpawner):
         if not simple_partitions:
             raise RuntimeError("No 'simple' partition defined: No default partition")
         default_partition = simple_partitions[0]
+
+        # Strip prologue from partitions_info:
+        # it is not useful and can cause some parsing issues
+        for partition_info in partitions_info.values():
+            for env_info in partition_info["jupyter_environments"].values():
+                env_info.pop("prologue", None)
 
         # Prepare json info
         jsondata = json.dumps(
@@ -358,20 +367,27 @@ class MOSlurmSpawner(SlurmSpawner):
             # Set path to use from first environment for the current partition
             options["environment_path"] = partition_environments[0]["path"]
 
-        # Singularity images are never added to PATH
-        if options["environment_path"].endswith(".sif"):
-            return options
-
-        # Custom envs are always added to PATH, defaults ones only if add_to_path is True
         corresponding_default_env = find(
             lambda env: env["path"] == options["environment_path"],
             partition_environments,
         )
-        if (
+
+        # Generate prologue
+        prologue = self.req_prologue
+
+        if corresponding_default_env is not None:
+            prologue += f"\n{corresponding_default_env['prologue']}"
+
+        # Singularity images are never added to PATH
+        # Custom envs are always added to PATH
+        # Defaults envs only if add_to_path is True
+        if not options["environment_path"].endswith(".sif") and (
             corresponding_default_env is None
             or corresponding_default_env["add_to_path"]
         ):
-            options["prologue"] = f"export PATH={options['environment_path']}:$PATH"
+            prologue += f"\nexport PATH={options['environment_path']}:$PATH"
+
+        options["prologue"] = prologue
 
         return options
 
