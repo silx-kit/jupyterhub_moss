@@ -45,7 +45,7 @@ def parse_timelimit(timelimit: str) -> datetime.timedelta:
 def create_prologue(
     default_prologue: str,
     environment_path: str,
-    partition_environments,
+    partition_environments: Iterable[dict],
 ) -> str:
     """Create prologue commands"""
     prologue = default_prologue
@@ -58,10 +58,11 @@ def create_prologue(
         prologue += f"\n{corresponding_default_env['prologue']}"
 
     # Singularity images are never added to PATH
+    if environment_path.endswith(".sif"):
+        return prologue
+
     # Custom envs are always added to PATH
     # Defaults envs only if add_to_path is True
-    if not environment_path.endswith(".sif") and (
-        corresponding_default_env is None or corresponding_default_env["add_to_path"]
-    ):
+    if corresponding_default_env is None or corresponding_default_env["add_to_path"]:
         prologue += f"\nexport PATH={environment_path}:$PATH"
     return prologue
