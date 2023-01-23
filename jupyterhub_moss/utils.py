@@ -40,3 +40,28 @@ def parse_timelimit(timelimit: str) -> datetime.timedelta:
     return datetime.timedelta(
         **{k: int(v) for k, v in match.groupdict().items() if v is not None}
     )
+
+
+def create_prologue(
+    default_prologue: str,
+    environment_path: str,
+    partition_environments,
+) -> str:
+    """Create prologue commands"""
+    prologue = default_prologue
+
+    corresponding_default_env = find(
+        lambda env: env["path"] == environment_path,
+        partition_environments,
+    )
+    if corresponding_default_env is not None:
+        prologue += f"\n{corresponding_default_env['prologue']}"
+
+    # Singularity images are never added to PATH
+    # Custom envs are always added to PATH
+    # Defaults envs only if add_to_path is True
+    if not environment_path.endswith(".sif") and (
+        corresponding_default_env is None or corresponding_default_env["add_to_path"]
+    ):
+        prologue += f"\nexport PATH={environment_path}:$PATH"
+    return prologue

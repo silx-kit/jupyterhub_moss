@@ -11,7 +11,7 @@ import traitlets
 from batchspawner import SlurmSpawner, format_template
 from jinja2 import Environment, FileSystemLoader
 
-from .utils import file_hash, find, local_path, parse_timelimit
+from .utils import create_prologue, file_hash, local_path, parse_timelimit
 
 TEMPLATE_PATH = local_path("templates")
 
@@ -367,27 +367,9 @@ class MOSlurmSpawner(SlurmSpawner):
             # Set path to use from first environment for the current partition
             options["environment_path"] = partition_environments[0]["path"]
 
-        corresponding_default_env = find(
-            lambda env: env["path"] == options["environment_path"],
-            partition_environments,
+        options["prologue"] = create_prologue(
+            self.req_prologue, options["environment_path"], partition_environments
         )
-
-        # Generate prologue
-        prologue = self.req_prologue
-
-        if corresponding_default_env is not None:
-            prologue += f"\n{corresponding_default_env['prologue']}"
-
-        # Singularity images are never added to PATH
-        # Custom envs are always added to PATH
-        # Defaults envs only if add_to_path is True
-        if not options["environment_path"].endswith(".sif") and (
-            corresponding_default_env is None
-            or corresponding_default_env["add_to_path"]
-        ):
-            prologue += f"\nexport PATH={options['environment_path']}:$PATH"
-
-        options["prologue"] = prologue
 
         return options
 
