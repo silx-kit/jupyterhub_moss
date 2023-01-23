@@ -59,6 +59,7 @@ c.MOSlurmSpawner.partitions = {
                 "path": "/env/path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
                 "description": "Default",  # Text displayed for this environment select option
                 "add_to_path": True,       # Toggle adding the environment to shell PATH (optional, default: True)
+                "prologue": "",            # Shell commands to execute before starting the Jupyter server (optional, default: "")
             },
         },
     },
@@ -75,6 +76,7 @@ c.MOSlurmSpawner.partitions = {
                 "path": "/path/to/jupyter/env/for/partition_2/bin/",
                 "description": "Default",
                 "add_to_path": True,
+                "prologue": "echo 'Starting default environment'",
             },
         },
     },
@@ -91,6 +93,7 @@ c.MOSlurmSpawner.partitions = {
                 "path": "/path/to/jupyter/env/for/partition_3/bin/",
                 "description": "Partition 3 default",
                 "add_to_path": True,
+                "prologue": "echo 'Starting default environment'",
         },
     },
 }
@@ -134,6 +137,10 @@ c.MOSlurmSpawner.partitions = {
   - `description`: Text used for display in the selection options.
   - `add_to_path`: Whether or not to prepend the environment `path` to shell
     `PATH`.
+  - `prologue`: Shell commands to execute on the Slurm node before starting the
+    Jupyter single-user server. This can be used to run, e.g.,
+    `module load <module>`. By default no command is run. This is appended to
+    commands passed through batchspawner's `req_prologue`.
 
 ### Spawn page
 
