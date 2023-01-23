@@ -66,7 +66,7 @@ class MOSlurmSpawner(SlurmSpawner):
                             "path": traitlets.Unicode(),
                             "description": traitlets.Unicode(),
                             "add_to_path": traitlets.Bool(),
-                            "prologue": traitlets.Unicode(default_value=""),
+                            "prologue": traitlets.Unicode(),
                         },
                     ),
                 ),

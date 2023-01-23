@@ -139,8 +139,7 @@ c.MOSlurmSpawner.partitions = {
     `PATH`.
   - `prologue`: Shell commands to execute on the Slurm node before starting the
     Jupyter single-user server. This can be used to run, e.g.,
-    `module load <module>`. By default no command is run. This is appended to
-    commands passed through batchspawner's `req_prologue`.
+    `module load <module>`. By default no command is run.
 
 ### Spawn page
 
