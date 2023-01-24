@@ -1,4 +1,5 @@
 import datetime
+import functools
 import importlib.metadata
 import json
 import os.path
@@ -9,11 +10,9 @@ from typing import Dict, List
 
 import traitlets
 from batchspawner import SlurmSpawner, format_template
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader
 
 from .utils import create_prologue, file_hash, local_path, parse_timelimit
-
-TEMPLATE_PATH = local_path("templates")
 
 # Compute resources hash once at start-up
 RESOURCES_HASH = {
@@ -194,16 +193,33 @@ class MOSlurmSpawner(SlurmSpawner):
         help="Singularity command to use for starting jupyter server in container",
     ).tag(config=True)
 
-    FORM_TEMPLATE = Environment(
-        loader=FileSystemLoader(TEMPLATE_PATH),
-        autoescape=False,
-        trim_blocks=True,
-        lstrip_blocks=True,
-    ).get_template("option_form.html")
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.options_form = self.create_options_form
+
+    @functools.cached_property
+    def __option_form_template(self):
+        """jinja2 template
+
+        Templates look-up is similar to JupyterHub:
+        Use 'templates/...' to extend and fall-back to embedded templates
+        """
+        template_path = local_path("templates")
+        loader = ChoiceLoader(
+            [
+                PrefixLoader({"templates": FileSystemLoader(template_path)}),
+                FileSystemLoader(
+                    list(self.user.settings["template_path"]) + [template_path]
+                ),
+            ]
+        )
+        environment = Environment(
+            loader=loader,
+            autoescape=False,
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        return environment.get_template("option_form.html")
 
     async def _get_partitions_info(self):
         """Returns information about used SLURM partitions
@@ -272,7 +288,7 @@ class MOSlurmSpawner(SlurmSpawner):
             }
         )
 
-        return spawner.FORM_TEMPLATE.render(
+        return spawner.__option_form_template.render(
             hash_option_form_css=RESOURCES_HASH["option_form.css"],
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
             partitions=partitions_info,

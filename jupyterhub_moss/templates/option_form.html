@@ -124,6 +124,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         <option value="12">12 hours</option>
       </select>
     </div>
+    {% block simple_tab_footer %}
     <h4 style="text-align: left">Available resources at current time</h4>
     <table class="table">
       <tr class="active">
@@ -143,6 +144,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       {% endif %}
       {% endfor %}
     </table>
+    {% endblock simple_tab_footer %}
   </div>
   <div id="menu1" class="tab-pane fade indent-right" align="right">
     <div class="form-container">
@@ -285,7 +287,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       placeholder="--option1=v1 --option2=v2"
     />
     </div>
-
+    {% block advanced_tab_footer %}
     <h4 style="text-align: left">Available resources at current time</h4>
     <table class="table">
       <tr class="active">
@@ -303,5 +305,6 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       </tr>
       {% endfor %}
     </table>
+    {% endblock advanced_tab_footer %}
   </div>
 </div>

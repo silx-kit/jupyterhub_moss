@@ -3,7 +3,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import jupyterhub_moss  # noqa
 
@@ -90,6 +90,7 @@ c.MOSlurmSpawner.partitions = {
 c.JupyterHub.ip = "127.0.0.1"
 c.JupyterHub.hub_ip = "127.0.0.1"
 c.JupyterHub.port = 8000
+c.JupyterHub.template_paths = [os.path.join(os.path.dirname(__file__), "templates")]
 
 # Batchspawner
 c.BatchSpawnerBase.exec_prefix = ""  # Do not run sudo
