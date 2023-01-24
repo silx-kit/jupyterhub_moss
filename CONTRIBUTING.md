@@ -39,11 +39,11 @@ and `black` to ensure CI passes.
 Even if you do not have access to a Slurm cluster, it is possible to mock the
 Slurm info to generate the spawn page for a local development JupyterHub
 instance. For instance, see the
-[`demo_jupyterhub_conf.py`](demo_jupyterhub_conf.py) file which which you can
+[`demo/jupyterhub_conf.py`](demo/jupyterhub_conf.py) file which which you can
 use to start jupyterhub using jupyterhub_moss:
 
 ```
-jupyterhub -f demo_jupyterhub_conf.py
+jupyterhub -f demo/jupyterhub_conf.py
 ```
 
 ## Release
