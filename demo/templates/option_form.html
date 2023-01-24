@@ -20,9 +20,9 @@
 {% endmacro %}
 
 {% block simple_tab_footer %}
-resource_table(partitions, simple_only=true)
+{{ resource_table(partitions, simple_only=true) }}
 {% endblock simple_tab_footer %}
 
 {% block advanced_tab_footer %}
-resource_table(partitions)
+{{ resource_table(partitions) }}
 {% endblock advanced_tab_footer %}
