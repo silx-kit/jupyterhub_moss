@@ -1,0 +1,28 @@
+{% extends 'templates/option_form.html' %}
+{% macro resource_table(partitions, simple_only=false) -%}
+<h4 style="text-align: center">Available resources</h4>
+<table class="table">
+  <tr class="active">
+    <th>Partition</th>
+    <th>CPU cores</th>
+    <th>Nodes</th>
+  </tr>
+  {% for name, partition in partitions.items() %}
+  {% if partition.simple or not simple_only %}
+  <tr>
+    <th>{{ name }}</th>
+    <th>{{ partition['available_counts'][0] }}<small>/{{ partition['available_counts'][1] }}</small></th>
+    <th>{{ partition['available_counts'][2] }}</th>
+  </tr>
+  {% endif %}
+  {% endfor %}
+</table>
+{% endmacro %}
+
+{% block simple_resource_table %}
+resource_table(partitions, simple_only=true)
+{% endblock simple_resource_table %}
+
+{% block resource_table %}
+resource_table(partitions)
+{% endblock resource_table %}

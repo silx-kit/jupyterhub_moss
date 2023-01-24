@@ -90,6 +90,7 @@ c.MOSlurmSpawner.partitions = {
 c.JupyterHub.ip = "127.0.0.1"
 c.JupyterHub.hub_ip = "127.0.0.1"
 c.JupyterHub.port = 8000
+c.JupyterHub.template_paths = [os.path.join(os.path.dirname(__file__), "templates")]
 
 # Batchspawner
 c.BatchSpawnerBase.exec_prefix = ""  # Do not run sudo
