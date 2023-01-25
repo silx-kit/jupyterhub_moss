@@ -1,3 +1,23 @@
+{% macro resource_tab_footer(partitions, simple_only=false) %}
+<h4 style="text-align: center">Available resources</h4>
+<table class="table">
+  <tr class="active">
+    <th>Partition</th>
+    <th>Idle CPU cores</th>
+    <th>Idle nodes</th>
+  </tr>
+  {% for name, partition in partitions.items() %}
+  {% if partition.simple or not simple_only %}
+  <tr>
+    <th>{{ name }}</th>
+    <th>{{ partition['ncores_idle'] }} <small>/ {{ partition['ncores_total'] }}</small></th>
+    <th>{{ partition['nnodes_total'] }}</th>
+  </tr>
+  {% endif %}
+  {% endfor %}
+</table>
+{% endmacro %}
+
 <link href="/hub/form/option_form.css?v={{hash_option_form_css}}" rel="stylesheet" />
 <script>
 window.SLURM_DATA = JSON.parse('{{ jsondata }}');
@@ -125,25 +145,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       </select>
     </div>
     {% block simple_tab_footer %}
-    <h4 style="text-align: left">Available resources at current time</h4>
-    <table class="table">
-      <tr class="active">
-        <th>Partition</th>
-        {% for res_name in resources_display %}
-        <th>{{ res_name }}</th>
-        {% endfor %}
-      </tr>
-      {% for name, partition in partitions.items() %}
-      {% if partition.simple %}
-      <tr>
-        <th>{{ name }}</th>
-        {% for res in partition['available_counts'] %}
-        <td>{{ res }}</td>
-        {% endfor %}
-      </tr>
-      {% endif %}
-      {% endfor %}
-    </table>
+    {{ resource_tab_footer(partitions, simple_only=true) }}
     {% endblock simple_tab_footer %}
   </div>
   <div id="menu1" class="tab-pane fade indent-right" align="right">
@@ -288,23 +290,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     />
     </div>
     {% block advanced_tab_footer %}
-    <h4 style="text-align: left">Available resources at current time</h4>
-    <table class="table">
-      <tr class="active">
-        <th>Partition</th>
-        {% for res_name in resources_display %}
-        <th>{{ res_name }}</th>
-        {% endfor %}
-      </tr>
-      {% for name, partition in partitions.items() %}
-      <tr>
-        <th>{{ name }}</th>
-        {% for res in partition['available_counts'] %}
-        <td>{{ res }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
+    {{ resource_tab_footer(partitions) }}
     {% endblock advanced_tab_footer %}
   </div>
 </div>
