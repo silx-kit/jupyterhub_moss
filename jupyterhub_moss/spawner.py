@@ -4,7 +4,6 @@ import importlib.metadata
 import json
 import os.path
 import re
-from collections import defaultdict
 from copy import deepcopy
 from typing import Dict, List
 
@@ -21,14 +20,7 @@ RESOURCES_HASH = {
 }
 
 # Required resources per partition
-RESOURCES_COUNTS = [
-    "max_nprocs",
-    "max_mem",
-    "gpu",
-    "max_ngpus",
-    "max_runtime",
-    "available_counts",
-]
+REQUIRED_RESOURCES_COUNTS = "max_nprocs", "max_mem", "gpu", "max_ngpus", "max_runtime"
 
 with open(local_path("batch_script.sh")) as f:
     BATCH_SCRIPT = f.read()
@@ -99,9 +91,10 @@ class MOSlurmSpawner(SlurmSpawner):
     slurm_info_resources = traitlets.Callable(
         help="""Provides information about resources in Slurm cluster.
 
-        It will be called with the output of ``slurm_info_cmd`` as argument and should return a tuple:
-        - list of resource labels to be displayed in table of available resources
-        - dictionary mapping each partition name to resources defined in ``RESOURCES_COUNTS``""",
+        It will be called with the output of ``slurm_info_cmd`` as argument and should return a
+        dictionary mapping each partition name to resources defined in ``REQUIRED_RESOURCES_COUNTS``
+        and resources used in option_form template.
+        """,
     ).tag(config=True)
 
     @traitlets.default("slurm_info_resources")
@@ -109,29 +102,24 @@ class MOSlurmSpawner(SlurmSpawner):
         """Returns default for `slurm_info_resources` traitlet."""
         return self._slurm_info_resources
 
-    def _slurm_info_resources(self, slurm_info_out):
-        """
-        Parses output from Slurm command: sinfo -a --noheader -o '%R %D %C %G %m'
-        Returns information about partition resources listed in RESOURCES_COUNTS: number of cores,
-        max memory, gpus and resource counts to be shown in table of available resources
-        :param slurm_info_out: string with output of slurm_info_cmd
-        :rtype: tuple with:
-            - list of resource labels to be displayed in table of available resources
-            - dict with mapping per partition: {
-                partition: {max_nprocs, max_ngpus, max_mem, max_runtime, ...},
-              }
-        """
-        # Resources displayed in table of available resources (column labels in display order)
-        resources_display = ["Idle Cores", "Total Cores", "Total Nodes"]
+    def _slurm_info_resources(self, slurm_info_out: str) -> Dict[str, dict]:
+        """Parses output from Slurm command: sinfo -a --noheader -o '%R %D %c %C %G %m %l'
 
-        # Parse output
-        resources_count = defaultdict(
-            lambda: {resource: 0 for resource in RESOURCES_COUNTS + resources_display}
-        )
+        Returns information about partition resources listed in ``REQUIRED_RESOURCES_COUNTS``:
+        number of cores, max memory, gpus and resource counts to be shown in table of available resources.
+
+        :param slurm_info_out: Output of slurm_info_cmd
+        :rtype: Mapping of partition information:
+            {
+                partition: {max_nprocs, max_ngpus, max_mem, max_runtime, ...},
+            }
+        """
+        partitions_info = {}
+
         for line in slurm_info_out.splitlines():
             (
                 partition,
-                nodes,
+                nnodes_total,
                 ncores_per_node,
                 cores,
                 gpus,
@@ -139,7 +127,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 timelimit,
             ) = line.split()
             # core count - allocated/idle/other/total
-            _, cores_idle, _, cores_total = cores.split("/")
+            _, ncores_idle, _, ncores_total = cores.split("/")
             # gpu count - gpu:name:total(indexes)
             try:
                 gpus_gres = gpus.replace("(", ":").split(":")
@@ -157,35 +145,25 @@ class MOSlurmSpawner(SlurmSpawner):
                 )
                 max_runtime = datetime.timedelta(days=1)
 
-            count = resources_count[partition]
+            resources = {}
             try:
                 # display resource counts
-                count["Total Nodes"] = int(nodes)
-                count["Total Cores"] = int(cores_total)
-                count["Idle Cores"] = int(cores_idle)
+                resources["nnodes_total"] = int(nnodes_total)
+                resources["ncores_total"] = int(ncores_total)
+                resources["ncores_idle"] = int(ncores_idle)
                 # required resource counts
-                count["max_nprocs"] = int(ncores_per_node.rstrip("+"))
-                count["max_mem"] = int(memory.rstrip("+"))
-                count["gpu"] = gpu
-                count["max_ngpus"] = int(gpus_total)
-                count["max_runtime"] = int(max_runtime.total_seconds())
+                resources["max_nprocs"] = int(ncores_per_node.rstrip("+"))
+                resources["max_mem"] = int(memory.rstrip("+"))
+                resources["gpu"] = gpu
+                resources["max_ngpus"] = int(gpus_total)
+                resources["max_runtime"] = int(max_runtime.total_seconds())
             except ValueError as err:
                 self.log.error("Error parsing output of slurm_info_cmd: %s", err)
                 raise
-            else:
-                count["available_counts"] = [
-                    count[resource] for resource in resources_display
-                ]
 
-        resources_info = {
-            partition: {
-                resource: resources_count[partition][resource]
-                for resource in RESOURCES_COUNTS
-            }
-            for partition in resources_count
-        }
+            partitions_info[partition] = resources
 
-        return (resources_display, resources_info)
+        return partitions_info
 
     singularity_cmd = traitlets.List(
         trait=traitlets.Unicode(),
@@ -240,17 +218,8 @@ class MOSlurmSpawner(SlurmSpawner):
         out = await self.run_command(cmd)
 
         # Parse command output
-        resources_display, resources_info = self.slurm_info_resources(out)
-        dbgmsg = "Slurm partition resources displayed as available resources: %s"
-        self.log.debug(dbgmsg, resources_display)
+        resources_info = self.slurm_info_resources(out)
         self.log.debug("Slurm partition resources: %s", resources_info)
-
-        for partition in resources_info:
-            if not all(
-                counter in resources_info[partition] for counter in RESOURCES_COUNTS
-            ):
-                errmsg = "Missing required resource counter in Slurm partition: {}"
-                raise KeyError(errmsg.format(partition))
 
         # use data from Slurm as base and overwrite with manual configuration settings
         partitions_info = {
@@ -258,13 +227,20 @@ class MOSlurmSpawner(SlurmSpawner):
             for partition, config_partition_info in self.partitions.items()
         }
 
+        for partition, info in partitions_info.items():
+            for key in REQUIRED_RESOURCES_COUNTS:
+                if key not in info:
+                    raise KeyError(
+                        f"Missing required resource '{key}' for partition '{partition}'"
+                    )
+
         # Ensure returning a dict that can be modified by the callers
-        return (resources_display, deepcopy(partitions_info))
+        return deepcopy(partitions_info)
 
     @staticmethod
     async def create_options_form(spawner):
         """Create a form for the user to choose the configuration for the SLURM job"""
-        resources_display, partitions_info = await spawner._get_partitions_info()
+        partitions_info = await spawner._get_partitions_info()
 
         simple_partitions = [
             partition for partition, info in partitions_info.items() if info["simple"]
@@ -284,7 +260,6 @@ class MOSlurmSpawner(SlurmSpawner):
             {
                 "partitions": partitions_info,
                 "default_partition": default_partition,
-                "resources_display": resources_display,
             }
         )
 
@@ -293,7 +268,6 @@ class MOSlurmSpawner(SlurmSpawner):
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
             partitions=partitions_info,
             default_partition=default_partition,
-            resources_display=resources_display,
             batchspawner_version=BATCHSPAWNER_VERSION,
             jupyterhub_version=JUPYTERHUB_VERSION,
             jsondata=jsondata,
@@ -459,7 +433,7 @@ class MOSlurmSpawner(SlurmSpawner):
         self.cmd = [os.path.join(cmd_path, "jupyterhub-singleuser")]
 
     async def start(self):
-        _, partitions_info = await self._get_partitions_info()
+        partitions_info = await self._get_partitions_info()
         partition_info = partitions_info[self.user_options["partition"]]
 
         # Exceptions raised by the checks are catched by the caller, and
