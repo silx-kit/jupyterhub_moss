@@ -290,7 +290,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     />
     </div>
     {% block advanced_tab_footer %}
-    {{ resource_tab_footer(partitions) }}
+    {{ resource_tab_footer(partitions, simple_only=false) }}
     {% endblock advanced_tab_footer %}
   </div>
 </div>
