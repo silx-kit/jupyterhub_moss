@@ -359,13 +359,21 @@ class MOSlurmSpawner(SlurmSpawner):
 
         The options dict is updated.
         """
+        # Align names with sbatch script
+        if "mem" in options:
+            options["memory"] = options["mem"]
+
+        # Convert output option from boolean to file pattern
+        is_output = options.get("output", False)
+        options["output"] = "slurm-%j.out" if is_output else "/dev/null"
+
         # Specific handling of exclusive flag
-        # When mem=0 or all CPU are requested, set the exclusive flag
+        # When memory=0 or all CPU are requested, set the exclusive flag
         if (
             options.get("nprocs") == partition_info["max_nprocs"]
-            or options.get("mem") == "0"
+            or options.get("memory") == "0"
         ):
-            options["exclusive"] = True
+            options["options"] = f"--exclusive {options.get('options', '')}"
 
         # Specific handling of ngpus as gres
         ngpus = options.get("ngpus", 0)
