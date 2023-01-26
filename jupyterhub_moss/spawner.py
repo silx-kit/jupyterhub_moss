@@ -82,8 +82,8 @@ class MOSlurmSpawner(SlurmSpawner):
         return partitions
 
     slurm_info_cmd = traitlets.Unicode(
-        # Get number of nodes, cores, gpus, total memory, time limit for all partitions
-        r"sinfo -a --noheader -o '%R %D %c %C %G %m %l'",
+        # Get number of nodes/state, cores/node, cores/state, gpus, total memory for all partitions
+        r"sinfo -a --noheader -o '%R %F %c %C %G %m %l'",
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}."
         "Output will be parsed by ``slurm_info_resources``.",
     ).tag(config=True)
@@ -103,7 +103,7 @@ class MOSlurmSpawner(SlurmSpawner):
         return self._slurm_info_resources
 
     def _slurm_info_resources(self, slurm_info_out: str) -> Dict[str, dict]:
-        """Parses output from Slurm command: sinfo -a --noheader -o '%R %D %c %C %G %m %l'
+        """Parses output from Slurm command: sinfo -a --noheader -o '%R %F %c %C %G %m %l'
 
         Returns information about partition resources listed in ``REQUIRED_RESOURCES_COUNTS``:
         number of cores, max memory, gpus and resource counts to be shown in table of available resources.
@@ -111,7 +111,7 @@ class MOSlurmSpawner(SlurmSpawner):
         :param slurm_info_out: Output of slurm_info_cmd
         :rtype: Mapping of partition information:
             {
-                partition: {max_nprocs, max_ngpus, max_mem, max_runtime, ...},
+                partition: {gpu, max_nprocs, max_ngpus, max_mem, max_runtime, ...},
             }
         """
         partitions_info = {}
@@ -119,15 +119,17 @@ class MOSlurmSpawner(SlurmSpawner):
         for line in slurm_info_out.splitlines():
             (
                 partition,
-                nnodes_total,
+                nnodes,
                 ncores_per_node,
-                cores,
+                ncores,
                 gpus,
                 memory,
                 timelimit,
             ) = line.split()
+            # node count - allocated/idle/other/total
+            _, nnodes_idle, _, nnodes_total = nnodes.split("/")
             # core count - allocated/idle/other/total
-            _, ncores_idle, _, ncores_total = cores.split("/")
+            _, ncores_idle, _, ncores_total = ncores.split("/")
             # gpu count - gpu:name:total(indexes)
             try:
                 gpus_gres = gpus.replace("(", ":").split(":")
@@ -149,6 +151,7 @@ class MOSlurmSpawner(SlurmSpawner):
             try:
                 # display resource counts
                 resources["nnodes_total"] = int(nnodes_total)
+                resources["nnodes_idle"] = int(nnodes_idle)
                 resources["ncores_total"] = int(ncores_total)
                 resources["ncores_idle"] = int(ncores_idle)
                 # required resource counts
