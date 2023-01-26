@@ -1,2 +1,7 @@
+graft .vscode
 graft demo
 graft jupyterhub_moss
+include .bumpversion.cfg
+include .editorconfig
+include .prettierrc.json
+include CONTRIBUTING.md
