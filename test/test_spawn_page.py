@@ -13,9 +13,10 @@ class MOSSMockSimple(MOSlurmSpawnerMock):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Partition name, nnodes, ncores_per_node, ncores (allocated/idle/other/total), gpu, memory, timelimit
+        # Partition name, nnodes (allocated/idle/other/total), ncores_per_node,
+        # ncores (allocated/idle/other/total), gpu, memory, timelimit
         self.slurm_info_cmd = (
-            'echo "partition_1 48 35+ 38/1642/0/1680 (null) 196000+ 1-00:00:00"'
+            'echo "partition_1 2/46/0/48 35+ 38/1642/0/1680 (null) 196000+ 1-00:00:00"'
         )
 
         # Set partitions here so that validation is run
@@ -51,6 +52,7 @@ async def test_spawn_page(app):
 
         ref_partitions_info = {
             "partition_1": {
+                "nnodes_idle": 46,
                 "nnodes_total": 48,
                 "ncores_total": 1680,
                 "ncores_idle": 1642,
