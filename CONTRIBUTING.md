@@ -28,11 +28,23 @@ manually using
 black .
 ```
 
+### Testing
+
+[pytest](https://docs.pytest.org/en/latest/) is used to run the tests. The
+config is located in `pyproject.toml`. Tests can be run using:
+
+```
+python -m pytest
+```
+
+Note: This is different from calling `pytest`, see
+[Invoking pytest versus python -m pytest](https://docs.pytest.org/en/latest/explanation/pythonpath.html#invoking-pytest-versus-python-m-pytest).
+
 ### CI
 
-The CI will check that the lint check passes and that all files are correctly
-formatted (using `black --check .`). Before commiting, be sure to run `flake8`
-and `black` to ensure CI passes.
+The CI will check that the lint check passes, that all files are correctly
+formatted (using `black --check .`) and that tests passes. Before commiting, be
+sure to run `flake8` and `black` to ensure CI passes.
 
 ## Generate the spawn page locally
 
