@@ -2,16 +2,16 @@
 <h4 style="text-align: center">Available resources</h4>
 <table class="table">
   <tr class="active">
-    <th>Partition</th>
-    <th>Idle CPU cores</th>
-    <th>Idle nodes</th>
+    <th style="padding-right: 10rem;">Partition</th>
+    <th style="text-align: center; width: 50%;">Idle CPU cores</th>
+    <th style="text-align: center; width: 50%;">Idle nodes</th>
   </tr>
   {% for name, partition in partitions.items() %}
   {% if partition.simple or not simple_only %}
   <tr>
     <th>{{ name }}</th>
-    <th>{{ partition['ncores_idle'] }} <small>/ {{ partition['ncores_total'] }}</small></th>
-    <th>{{ partition['nnodes_total'] }}</th>
+    <th style="text-align: center">{{ partition['ncores_idle'] }} <small>/ {{ partition['ncores_total'] }}</small></th>
+    <th style="text-align: center">{{ partition['nnodes_idle'] }} <small>/ {{ partition['nnodes_total'] }}</small></th>
   </tr>
   {% endif %}
   {% endfor %}
