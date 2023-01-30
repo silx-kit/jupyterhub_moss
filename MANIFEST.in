@@ -1,2 +1,7 @@
 graft demo
 graft jupyterhub_moss
+prune .vscode
+exclude .bumpversion.cfg
+exclude .editorconfig
+exclude .prettierrc.json
+exclude CONTRIBUTING.md
