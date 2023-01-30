@@ -4,3 +4,12 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+asyncio_mode = "auto"
+testpaths = [
+  "test",
+]
