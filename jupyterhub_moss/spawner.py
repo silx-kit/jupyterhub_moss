@@ -288,27 +288,42 @@ class MOSlurmSpawner(SlurmSpawner):
         "root_dir": str,
     }
 
+    def __convert_formdata(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
+        """Convert expected input to appropriate type"""
+        options = {}
+        for name, convert in self._FORM_FIELD_CONVERSIONS.items():
+            if name not in formdata:
+                continue
+            value = formdata[name][0].strip()
+            if len(value) == 0:
+                continue
+            try:
+                options[name] = convert(value)
+            except ValueError:
+                raise RuntimeError(f"Invalid {name} value")
+
+        return options
+
     _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
 
-    def __validate_options(self, options):
-        """Check validity/syntax of options
-
-        Checks performed here do not rely on partition resources.
-        See :meth:`__check_user_options` for partition resources-based checks.
-
-        Reason: The async method :meth:`_get_partitions_info` cannot be called here
-        unless `options_from_form` can be async as well.
+    def __validate_options(self, options, partition_info):
+        """Check validity/syntax of options and if matchs the given partition resources.
 
         Raises an exception when a check fails.
         """
-        assert "partition" in options, "Partition information is missing"
-        assert options["partition"] in self.partitions, "Partition is not supported"
-
         if "runtime" in options:
-            parse_timelimit(options["runtime"])  # Raises exception if malformed
+            runtime = parse_timelimit(
+                options["runtime"]
+            )  # Raises exception if malformed
+            assert (
+                runtime.total_seconds() <= partition_info["max_runtime"]
+            ), "Requested runtime exceeds partition time limit"
 
-        if "nprocs" in options and options["nprocs"] < 1:
-            raise AssertionError("Error: Number of CPUs must be at least 1")
+        if (
+            "nprocs" in options
+            and not 1 <= options["nprocs"] <= partition_info["max_nprocs"]
+        ):
+            raise AssertionError("Error: Unsupported number of CPU cores")
 
         if "mem" in options and self._MEM_REGEXP.match(options["mem"]) is None:
             raise AssertionError("Error in memory syntax")
@@ -316,8 +331,11 @@ class MOSlurmSpawner(SlurmSpawner):
         if "reservation" in options and "\n" in options["reservation"]:
             raise AssertionError("Error in reservation")
 
-        if "ngpus" in options and options["ngpus"] < 0:
-            raise AssertionError("Error: Number of GPUs must be positive")
+        if (
+            "ngpus" in options
+            and not 0 <= options["ngpus"] <= partition_info["max_ngpus"]
+        ):
+            raise AssertionError("Error: Unsupported number of GPUs")
 
         if "options" in options and "\n" in options["options"]:
             raise AssertionError("Error in extra options")
@@ -333,22 +351,26 @@ class MOSlurmSpawner(SlurmSpawner):
         if "root_dir" in options and "\n" in options["root_dir"]:
             raise AssertionError("Error in root_dir")
 
-    def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
-        """Parse the form and add options to the SLURM job script"""
-        # Convert expected input from List[str] to appropriate type
-        options = {}
-        for name, convert in self._FORM_FIELD_CONVERSIONS.items():
-            if name not in formdata:
-                continue
-            value = formdata[name][0].strip()
-            if len(value) == 0:
-                continue
-            try:
-                options[name] = convert(value)
-            except ValueError:
-                raise RuntimeError(f"Invalid {name} value")
+    def __update_options(self, options, partition_info):
+        """Extends/Modify options to be used for the spawn.
 
-        self.__validate_options(options)
+        The options dict is updated.
+        """
+        # Specific handling of exclusive flag
+        # When mem=0 or all CPU are requested, set the exclusive flag
+        if (
+            options.get("nprocs") == partition_info["max_nprocs"]
+            or options.get("mem") == "0"
+        ):
+            options["exclusive"] = True
+
+        # Specific handling of ngpus as gres
+        ngpus = options.get("ngpus", 0)
+        if ngpus > 0:
+            gpu_gres_template = partition_info["gpu"]
+            if gpu_gres_template is None:
+                raise RuntimeError("GPU(s) not available for this partition")
+            options["gres"] = gpu_gres_template.format(ngpus)
 
         partition_environments = tuple(
             self.partitions[options["partition"]]["jupyter_environments"].values()
@@ -361,57 +383,20 @@ class MOSlurmSpawner(SlurmSpawner):
             self.req_prologue, options["environment_path"], partition_environments
         )
 
+    async def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
+        """Parse the form and add options to the SLURM job script"""
+        options = self.__convert_formdata(formdata)
+
+        assert "partition" in options, "Partition information is missing"
+        assert options["partition"] in self.partitions, "Partition is not supported"
+        partitions_info = await self._get_partitions_info()
+        partition_info = partitions_info[options["partition"]]
+
+        self.__validate_options(options, partition_info)
+
+        self.__update_options(options, partition_info)
+
         return options
-
-    def __check_user_options(self, partition_info):
-        """Check if requested resources are valid for the given partition info.
-
-        See :meth:`__validate_options` for the other user options checks.
-
-        Raises AssertionError if request does not match available resources.
-        """
-        if "runtime" in self.user_options:
-            runtime = parse_timelimit(self.user_options["runtime"])
-            assert (
-                runtime.total_seconds() <= partition_info["max_runtime"]
-            ), "Requested runtime exceeds partition time limit"
-
-        if (
-            "nprocs" in self.user_options
-            and self.user_options["nprocs"] > partition_info["max_nprocs"]
-        ):
-            raise AssertionError("Error in number of CPUs")
-
-        if (
-            "ngpus" in self.user_options
-            and self.user_options["ngpus"] > partition_info["max_ngpus"]
-        ):
-            raise AssertionError("Error in number of GPUs")
-
-    def __update_spawn_options(self, partition_info):
-        """Update user_options and other attributes controlling the spawn"""
-        # Specific handling of exclusive flag
-        # When mem=0 or all CPU are requested, set the exclusive flag
-        if (
-            self.user_options.get("nprocs") == partition_info["max_nprocs"]
-            or self.user_options.get("mem") == "0"
-        ):
-            self.user_options["exclusive"] = True
-
-        # Specific handling of landing URL (e.g., to start jupyterlab)
-        self.default_url = self.user_options.get("default_url", "")
-        self.log.info(f"Used default URL: {self.default_url}")
-
-        if "root_dir" in self.user_options:
-            self.notebook_dir = self.user_options["root_dir"]
-
-        # Specific handling of ngpus as gres
-        ngpus = self.user_options.get("ngpus", 0)
-        if ngpus > 0:
-            gpu_gres_template = partition_info["gpu"]
-            if gpu_gres_template is None:
-                raise RuntimeError("GPU(s) not available for this partition")
-            self.user_options["gres"] = gpu_gres_template.format(ngpus)
 
     def __update_spawn_commands(self, cmd_path):
         """Add path to commands"""
@@ -433,14 +418,12 @@ class MOSlurmSpawner(SlurmSpawner):
         self.cmd = [os.path.join(cmd_path, "jupyterhub-singleuser")]
 
     async def start(self):
-        partitions_info = await self._get_partitions_info()
-        partition_info = partitions_info[self.user_options["partition"]]
+        # Specific handling of landing URL (e.g., to start jupyterlab)
+        self.default_url = self.user_options.get("default_url", "")
+        self.log.info(f"Used default URL: {self.default_url}")
 
-        # Exceptions raised by the checks are catched by the caller, and
-        # a "500 Internal Server Error" is returned to the frontend.
-        self.__check_user_options(partition_info)
-
-        self.__update_spawn_options(partition_info)
+        if "root_dir" in self.user_options:
+            self.notebook_dir = self.user_options["root_dir"]
 
         environment_path = self.user_options["environment_path"]
         self.log.info(f"Used environment: {environment_path}")
