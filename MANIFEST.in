@@ -1,5 +1,6 @@
 graft demo
 graft jupyterhub_moss
+graft test
 prune .vscode
 exclude .bumpversion.cfg
 exclude .editorconfig
