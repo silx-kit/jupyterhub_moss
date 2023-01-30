@@ -99,6 +99,9 @@ c.MOSlurmSpawner.partitions = {
 }
 ```
 
+For a minimalistic working demo, check the
+[`demo/jupyterhub_conf.py`](demo/jupyterhub_conf.py) config file.
+
 ### Field descriptions
 
 - `architecture`: The architecture of the partition. This is only cosmetic and
