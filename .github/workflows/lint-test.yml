@@ -37,3 +37,16 @@ jobs:
 
       - name: check-manifest 📰
         run: check-manifest
+
+      - name: Install Node v16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install configurable-http-proxy
+        run: |
+          npm install -g configurable-http-proxy
+          npm list
+
+      - name: pytest tests 👓
+        run: python -m pytest -v
