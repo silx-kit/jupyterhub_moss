@@ -44,7 +44,7 @@ Note: This is different from calling `pytest`, see
 
 The CI will check that the lint check passes, that all files are correctly
 formatted (using `black --check .`) and that tests passes. Before commiting, be
-sure to run `flake8` and `black` to ensure CI passes.
+sure to run `flake8`, `black` and `python -m pytest` to ensure CI passes.
 
 ## Generate the spawn page locally
 
