@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import jupyterhub_moss  # noqa
 
-c = get_config()  # noqa
+c = get_config()  # type: ignore[name-defined] # noqa
 
 # Select the MOSlurmSpawner backend
 jupyterhub_moss.set_config(c)
