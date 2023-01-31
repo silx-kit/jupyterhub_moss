@@ -58,7 +58,7 @@ class MOSlurmSpawner(SlurmSpawner):
             per_key_traits={
                 "description": traitlets.Unicode(),
                 "architecture": traitlets.Unicode(),
-                "gpu": traitlets.Unicode(allow_none=True, default_value=None),
+                "gpu": traitlets.Unicode(allow_none=True),
                 "simple": traitlets.Bool(),
                 "jupyter_environments": traitlets.Dict(
                     key_trait=traitlets.Unicode(),
@@ -87,6 +87,8 @@ class MOSlurmSpawner(SlurmSpawner):
         # Set add_to_path if missing in jupyter_environments
         partitions = deepcopy(proposal["value"])
         for partition in partitions.values():
+            if "gpu" in partition and partition["gpu"] is None:
+                partition["gpu"] = ""  # Convert None to ""
             for env in partition["jupyter_environments"].values():
                 env.setdefault("add_to_path", True)
                 env.setdefault("prologue", "")

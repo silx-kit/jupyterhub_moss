@@ -58,7 +58,7 @@ async def test_spawn_page(app):
                 "ncores_idle": 1642,
                 "max_nprocs": 35,
                 "max_mem": 196000,
-                "gpu": None,
+                "gpu": "",
                 "max_ngpus": 0,
                 "max_runtime": 86400,
                 "architecture": "x86_86",
