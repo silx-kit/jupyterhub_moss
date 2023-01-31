@@ -10,7 +10,7 @@
   partitions set in the Spawner and allows the user to select Slurm resources to
   use.
 
-<img style="margin:auto" src=https://user-images.githubusercontent.com/9449698/194308511-f0e6d6a9-ba7a-4086-a871-23b08523c61a.png width="50%">
+<img style="margin:auto" src=https://user-images.githubusercontent.com/9449698/215526389-2ef5ac32-5d50-49de-aa5f-46972feaccf1.png width="50%">
 
 ## Install
 
@@ -99,6 +99,9 @@ c.MOSlurmSpawner.partitions = {
 }
 ```
 
+For a minimalistic working demo, check the
+[`demo/jupyterhub_conf.py`](demo/jupyterhub_conf.py) config file.
+
 ### Field descriptions
 
 - `architecture`: The architecture of the partition. This is only cosmetic and
@@ -147,7 +150,7 @@ The spawn page (available at `/hub/spawn`) will be generated according to the
 partition settings. For example, this is the spawn page generated for the
 partition settings above:
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/194308511-f0e6d6a9-ba7a-4086-a871-23b08523c61a.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/215526389-2ef5ac32-5d50-49de-aa5f-46972feaccf1.png width="50%">
 
 This spawn page is separated in two tabs: a _Simple_ and an _Advanced_ tab. On
 the _Simple_ tab, the user can choose between the partitions set though
@@ -159,7 +162,7 @@ Clicking on the **Start** button will request the job.
 The spawn page adapts to the chosen partition. This is the page when selecting
 the `partition_2`:
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/194308454-697c717f-daf0-4927-9fa6-6b96ba09dba6.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/215526553-4ba57510-efac-4a28-a576-ef81ff9ec2f5.png width="50%">
 
 As the maximum number of cores is different, the CPUs row change accordingly.
 Also, as `gpu` was set for `partition_2`, a new button row appears to enable GPU
@@ -167,7 +170,7 @@ requests.
 
 The _Advanced_ tab allows finer control on the requested resources.
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/194308524-38417bb8-f520-4940-9c94-af960f11e535.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/215526665-a650a54d-e7ec-4d50-b5ab-a02d93b23d19.png width="50%">
 
 The user can select any partition (`partition_3` is added in this case) and the
 table of available resources reflects this. The user can also choose any number
