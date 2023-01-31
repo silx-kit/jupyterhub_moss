@@ -259,6 +259,7 @@ class MOSlurmSpawner(SlurmSpawner):
     @staticmethod
     async def create_options_form(spawner: MOSlurmSpawner) -> str:
         """Create a form for the user to choose the configuration for the SLURM job"""
+        # Cast to allow stripping sent information
         partitions_info = cast(dict, await spawner._get_partitions_info())
 
         simple_partitions = [
@@ -366,6 +367,8 @@ class MOSlurmSpawner(SlurmSpawner):
         self, form_options: FormOptions, partition_info: PartitionInfo
     ) -> UserOptions:
         """Extends/Modify options to be used for the spawn."""
+        # Cast to initialize UserOptions from FormOptions
+        # Should be solved by https://github.com/python/mypy/pull/13353
         options = cast(UserOptions, dict(gres="", prologue="", **form_options))
 
         # Specific handling of exclusive flag
