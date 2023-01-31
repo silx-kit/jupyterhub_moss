@@ -364,8 +364,8 @@ class MOSlurmSpawner(SlurmSpawner):
             options["memory"] = options["mem"]
 
         # Convert output option from boolean to file pattern
-        is_output = options.get("output", False)
-        options["output"] = "slurm-%j.out" if is_output else "/dev/null"
+        has_output = options.get("output", False)
+        options["output"] = "slurm-%j.out" if has_output else "/dev/null"
 
         # Specific handling of exclusive flag
         # When memory=0 or all CPU are requested, set the exclusive flag
