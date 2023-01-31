@@ -225,10 +225,15 @@ class MOSlurmSpawner(SlurmSpawner):
         self.log.debug("Slurm partition resources: %s", resources_info)
 
         # use data from Slurm as base and overwrite with manual configuration settings
-        partitions_info = {
-            partition: {**resources_info[partition], **config_partition_info}
-            for partition, config_partition_info in self.partitions.items()
-        }
+        partitions_info = {}
+        for partition, config_partition_info in self.partitions.items():
+            partitions_info[partition] = {
+                **resources_info[partition],
+                **config_partition_info,
+            }
+            # If manual config disables `gpu`, make sure none are available
+            if "gpu" in config_partition_info and not config_partition_info["gpu"]:
+                partitions_info[partition]["max_ngpus"] = 0
 
         for partition, info in partitions_info.items():
             for key in REQUIRED_RESOURCES_COUNTS:
