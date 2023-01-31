@@ -13,3 +13,10 @@ asyncio_mode = "auto"
 testpaths = [
   "test",
 ]
+
+
+[[tool.mypy.overrides]]
+module = [
+    "batchspawner",
+]
+ignore_missing_imports = true
