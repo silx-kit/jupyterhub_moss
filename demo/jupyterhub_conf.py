@@ -75,7 +75,7 @@ c.MOSlurmSpawner.partitions = {
     },
 }
 
-# Uncomment the following to custom the options_form template
+# Uncomment the following to customize the options_form template
 # c.JupyterHub.template_paths = [os.path.join(os.path.dirname(__file__), "templates")]
 
 # Mock SLURM sinfo command for the demo
