@@ -35,7 +35,7 @@ statically. The config is located in `pyproject.toml`. Type checking can be run
 using
 
 ```
-mypy .
+mypy
 ```
 
 ### Testing

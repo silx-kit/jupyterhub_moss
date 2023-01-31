@@ -14,11 +14,17 @@ testpaths = [
   "test",
 ]
 
+[tool.mypy]
+python_version = "3.8"
+files = [
+  "jupyterhub_moss",
+  "test",
+]
+
 [[tool.mypy.overrides]]
 module = [
     "batchspawner",
     "jupyterhub.tests.utils",
     "jupyterhub.utils",
-    "setuptools",
 ]
 ignore_missing_imports = true

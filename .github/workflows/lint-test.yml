@@ -36,7 +36,7 @@ jobs:
         run: flake8 .
 
       - name: mypy 🧐
-        run: mypy .
+        run: mypy
 
       - name: check-manifest 📰
         run: check-manifest
