@@ -365,7 +365,7 @@ class MOSlurmSpawner(SlurmSpawner):
         if "\n" in options["root_dir"]:
             raise AssertionError("Error in root_dir")
 
-    def __update_options(
+    def __create_user_options(
         self, form_options: FormOptions, partition_info: PartitionInfo
     ) -> UserOptions:
         """Extends/Modify options to be used for the spawn."""
@@ -406,7 +406,6 @@ class MOSlurmSpawner(SlurmSpawner):
         """Parse the form and add options to the SLURM job script"""
         form_options = self.__convert_formdata(formdata)
 
-        assert "partition" in form_options, "Partition information is missing"
         assert (
             form_options["partition"] in self.partitions
         ), "Partition is not supported"
@@ -415,7 +414,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
         self.__validate_options(form_options, partition_info)
 
-        user_options = self.__update_options(form_options, partition_info)
+        user_options = self.__create_user_options(form_options, partition_info)
         return user_options
 
     def __update_spawn_commands(self, cmd_path: str) -> None:
@@ -442,8 +441,7 @@ class MOSlurmSpawner(SlurmSpawner):
         self.default_url = self.user_options["default_url"]
         self.log.info(f"Used default URL: {self.default_url}")
 
-        if self.user_options["root_dir"]:
-            self.notebook_dir = self.user_options["root_dir"]
+        self.notebook_dir = self.user_options["root_dir"]
 
         environment_path = self.user_options["environment_path"]
         self.log.info(f"Used environment: {environment_path}")
