@@ -7,7 +7,7 @@ import json
 import os.path
 import re
 from copy import deepcopy
-from typing import Callable, cast
+from typing import Callable, Dict, cast
 
 import traitlets
 from batchspawner import SlurmSpawner, format_template
@@ -256,7 +256,7 @@ class MOSlurmSpawner(SlurmSpawner):
                     )
 
         # Ensure returning a dict that can be modified by the callers
-        return cast(dict[str, PartitionInfo], deepcopy(partitions_info))
+        return cast(Dict[str, PartitionInfo], deepcopy(partitions_info))
 
     @staticmethod
     async def create_options_form(spawner: MOSlurmSpawner) -> str:
