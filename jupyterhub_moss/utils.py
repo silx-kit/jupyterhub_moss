@@ -2,7 +2,64 @@ import datetime
 import hashlib
 import os.path
 import re
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional, TypedDict
+
+
+class FormOptions(TypedDict):
+    """Options received through the form or GET request"""
+
+    partition: str
+    runtime: str
+    nprocs: int
+    memory: str
+    reservation: str
+    ngpus: int
+    options: str
+    output: str
+    environment_path: str
+    default_url: str
+    root_dir: str
+
+
+class UserOptions(FormOptions):
+    """Options passed as `Spawner.user_options`"""
+
+    gres: str
+    prologue: str
+
+
+class PartitionResources(TypedDict):
+    """SLURM partition resources information"""
+
+    # display resource counts
+    nnodes_total: int
+    nnodes_idle: int
+    ncores_total: int
+    ncores_idle: int
+    # required resource counts
+    max_nprocs: int
+    max_mem: int
+    gpu: str
+    max_ngpus: int
+    max_runtime: int
+
+
+class JupyterEnvironment(TypedDict):
+    """Single Jupyter environement description"""
+
+    add_to_path: bool
+    description: str
+    path: str
+    prologue: str
+
+
+class PartitionInfo(PartitionResources):
+    """Complete information about a partition"""
+
+    description: str
+    architecture: str
+    simple: bool
+    jupyter_environments: dict[str, JupyterEnvironment]
 
 
 def local_path(path: str) -> str:
@@ -45,7 +102,7 @@ def parse_timelimit(timelimit: str) -> datetime.timedelta:
 def create_prologue(
     default_prologue: str,
     environment_path: str,
-    partition_environments: Iterable[dict],
+    partition_environments: Iterable[JupyterEnvironment],
 ) -> str:
     """Create prologue commands"""
     prologue = default_prologue
