@@ -28,6 +28,16 @@ manually using
 black .
 ```
 
+### Typing
+
+[mypy](https://mypy.readthedocs.io/en/stable) is used to check typing
+statically. The config is located in `pyproject.toml`. Type checking can be run
+using
+
+```
+mypy .
+```
+
 ### Testing
 
 [pytest](https://docs.pytest.org/en/latest/) is used to run the tests. The
@@ -44,7 +54,8 @@ Note: This is different from calling `pytest`, see
 
 The CI will check that the lint check passes, that all files are correctly
 formatted (using `black --check .`) and that tests passes. Before commiting, be
-sure to run `flake8`, `black` and `python -m pytest` to ensure CI passes.
+sure to run `flake8`, `black`, `mypy` and `python -m pytest` to ensure CI
+passes.
 
 ## Generate the spawn page locally
 
