@@ -4,64 +4,9 @@ import datetime
 import hashlib
 import os.path
 import re
-from typing import Any, Callable, Iterable, Optional, TypedDict
+from typing import Any, Callable, Iterable, Optional
 
-
-class FormOptions(TypedDict):
-    """Options received through the form or GET request"""
-
-    partition: str
-    runtime: str
-    nprocs: int
-    memory: str
-    reservation: str
-    ngpus: int
-    options: str
-    output: str
-    environment_path: str
-    default_url: str
-    root_dir: str
-
-
-class UserOptions(FormOptions):
-    """Options passed as `Spawner.user_options`"""
-
-    gres: str
-    prologue: str
-
-
-class PartitionResources(TypedDict):
-    """SLURM partition resources information"""
-
-    # display resource counts
-    nnodes_total: int
-    nnodes_idle: int
-    ncores_total: int
-    ncores_idle: int
-    # required resource counts
-    max_nprocs: int
-    max_mem: int
-    gpu: str
-    max_ngpus: int
-    max_runtime: int
-
-
-class JupyterEnvironment(TypedDict):
-    """Single Jupyter environement description"""
-
-    add_to_path: bool
-    description: str
-    path: str
-    prologue: str
-
-
-class PartitionInfo(PartitionResources):
-    """Complete information about a partition"""
-
-    description: str
-    architecture: str
-    simple: bool
-    jupyter_environments: dict[str, JupyterEnvironment]
+from .models import JupyterEnvironment
 
 
 def local_path(path: str) -> str:
@@ -110,11 +55,11 @@ def create_prologue(
     prologue = default_prologue
 
     corresponding_default_env = find(
-        lambda env: env["path"] == environment_path,
+        lambda env: env.path == environment_path,
         partition_environments,
     )
     if corresponding_default_env is not None:
-        prologue += f"\n{corresponding_default_env['prologue']}"
+        prologue += f"\n{corresponding_default_env.prologue}"
 
     # Singularity images are never added to PATH
     if environment_path.endswith(".sif"):
@@ -122,6 +67,6 @@ def create_prologue(
 
     # Custom envs are always added to PATH
     # Defaults envs only if add_to_path is True
-    if corresponding_default_env is None or corresponding_default_env["add_to_path"]:
+    if corresponding_default_env is None or corresponding_default_env.add_to_path:
         prologue += f"\nexport PATH={environment_path}:$PATH"
     return prologue

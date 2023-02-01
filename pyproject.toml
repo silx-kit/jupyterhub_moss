@@ -16,6 +16,7 @@ testpaths = [
 
 [tool.mypy]
 python_version = "3.8"
+plugins = "pydantic.mypy"
 files = [
   "jupyterhub_moss",
   "test",
