@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Extra, validator
 
@@ -91,7 +91,7 @@ class PartitionConfig(BaseModel, allow_mutation=False, extra=Extra.forbid):
 
     architecture = ""
     description = ""
-    jupyter_environments: dict[str, JupyterEnvironment]
+    jupyter_environments: Dict[str, JupyterEnvironment]
     simple = True
 
 
@@ -122,7 +122,7 @@ class _PartitionTraits(PartitionConfig, allow_mutation=False, extra=Extra.forbid
 class PartitionsTrait(BaseModel, allow_mutation=False, extra=Extra.forbid):
     """Configuration passed as ``partitions`` trait"""
 
-    __root__: dict[str, _PartitionTraits]
+    __root__: Dict[str, _PartitionTraits]
 
     def dict(self, *args, **kwargs):
         return {k: v.dict(*args, **kwargs) for k, v in self.__root__.items()}
