@@ -12,7 +12,6 @@ from batchspawner import SlurmSpawner, format_template
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader
 
 from .models import (
-    FormOptions,
     PartitionAllResources,
     PartitionInfo,
     PartitionResources,
@@ -280,7 +279,7 @@ class MOSlurmSpawner(SlurmSpawner):
         )
 
     def __validate_options(
-        self, options: FormOptions, partition_info: PartitionInfo
+        self, options: UserOptions, partition_info: PartitionInfo
     ) -> None:
         """Check if options match the given partition resources.
 
@@ -298,12 +297,13 @@ class MOSlurmSpawner(SlurmSpawner):
         if options.ngpus > partition_info.max_ngpus:
             raise AssertionError("Unsupported number of GPUs")
 
-    def __create_user_options(
-        self, form_options: FormOptions, partition_info: PartitionInfo
-    ) -> UserOptions:
-        """Extends/Modify options to be used for the spawn."""
-        options = UserOptions(gres="", prologue="", **form_options.dict())
+    def __update_options(
+        self, options: UserOptions, partition_info: PartitionInfo
+    ) -> None:
+        """Extends/Modify options to be used for the spawn.
 
+        The provided `options` argument is modified in-place.
+        """
         # Specific handling of exclusive flag
         # When memory=0 or all CPU are requested, set the exclusive flag
         if options.nprocs == partition_info.max_nprocs or options.memory == "0":
@@ -325,19 +325,20 @@ class MOSlurmSpawner(SlurmSpawner):
             self.req_prologue, options.environment_path, partition_environments
         )
 
-        return options
-
     async def options_from_form(self, formdata: dict[str, list[str]]) -> dict:
         """Parse the form and add options to the SLURM job script"""
-        form_options = FormOptions(**{k: v[0].strip() for k, v in formdata.items()})
+        options = UserOptions.parse_formdata(formdata)
 
-        assert form_options.partition in self.partitions, "Partition is not supported"
         partitions_info = await self._get_partitions_info()
-        partition_info = partitions_info[form_options.partition]
+        try:
+            partition_info = partitions_info[options.partition]
+        except KeyError:
+            raise RuntimeError(f"Partition {options.partition} is not available")
 
-        self.__validate_options(form_options, partition_info)
+        self.__validate_options(options, partition_info)
+        self.__update_options(options, partition_info)
 
-        return self.__create_user_options(form_options, partition_info).dict()
+        return options.dict()
 
     def __update_spawn_commands(self, cmd_path: str) -> None:
         """Add path to commands"""

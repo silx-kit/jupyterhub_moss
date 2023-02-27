@@ -131,12 +131,10 @@ class PartitionsTrait(BaseModel, allow_mutation=False, extra=Extra.forbid):
         return self.__root__.items()
 
 
-_MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
+class UserOptions(BaseModel):
+    """Options passed as `Spawner.user_options`"""
 
-
-class FormOptions(BaseModel, allow_mutation=False):
-    """Options received through the form or GET request"""
-
+    # Options received through the form or GET request
     partition: str
     runtime = ""
     nprocs = 1
@@ -148,12 +146,26 @@ class FormOptions(BaseModel, allow_mutation=False):
     environment_path = ""
     default_url = ""
     root_dir = ""
+    # Extra fields
+    gres = ""
+    prologue = ""
 
-    def __init__(self, mem: str = "", **kwargs):
-        # Align naming of form field with sbatch script
-        if "memory" not in kwargs:
-            kwargs["memory"] = mem
-        super().__init__(**kwargs)
+    @classmethod
+    def parse_formdata(cls, formdata: dict[str, list[str]]) -> UserOptions:
+        excluded_keys = "gres", "prologue"
+        fields = {
+            k: v[0].strip() for k, v in formdata.items() if k not in excluded_keys
+        }
+
+        # Compatibility with mem query param renamed memory
+        if "mem" in fields and "memory" not in fields:
+            fields["memory"] = fields["mem"]
+
+        # Convert output boolean query param to file pattern
+        fields["output"] = (
+            "slurm-%j.out" if fields.get("output", "false") == "true" else "/dev/null"
+        )
+        return cls.parse_obj(fields)
 
     # validators
     _is_positive = validator("ngpus", allow_reuse=True)(is_positive)
@@ -189,20 +201,10 @@ class FormOptions(BaseModel, allow_mutation=False):
             parse_timelimit(v)  # Raises exception if malformed
         return v
 
+    _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
+
     @validator("memory")
     def check_memory(cls, v: str) -> str:
-        if v and _MEM_REGEXP.match(v) is None:
+        if v and cls._MEM_REGEXP.match(v) is None:
             raise ValueError("Error in memory syntax")
         return v
-
-    @validator("output")
-    def normalize_output(cls, v: str) -> str:
-        """Convert output option from boolean to file pattern"""
-        return "slurm-%j.out" if v == "true" else "/dev/null"
-
-
-class UserOptions(FormOptions, allow_mutation=True):
-    """Options passed as `Spawner.user_options`"""
-
-    gres = ""
-    prologue = ""
