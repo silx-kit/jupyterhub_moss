@@ -152,6 +152,7 @@ class UserOptions(BaseModel):
 
     @classmethod
     def parse_formdata(cls, formdata: dict[str, list[str]]) -> UserOptions:
+        # Those keys should not come from the request, they are set later by the spawner
         excluded_keys = "gres", "prologue"
         fields = {
             k: v[0].strip() for k, v in formdata.items() if k not in excluded_keys

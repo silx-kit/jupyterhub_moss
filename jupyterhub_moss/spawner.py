@@ -10,6 +10,7 @@ from typing import Callable
 import traitlets
 from batchspawner import SlurmSpawner, format_template
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader
+from pydantic import ValidationError
 
 from .models import (
     PartitionAllResources,
@@ -162,7 +163,7 @@ class MOSlurmSpawner(SlurmSpawner):
                     max_ngpus=gpus_total,
                     max_runtime=max_runtime.total_seconds(),
                 )
-            except ValueError as err:
+            except ValidationError as err:
                 self.log.error("Error parsing output of slurm_info_cmd: %s", err)
                 raise
 
