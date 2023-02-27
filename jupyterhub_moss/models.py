@@ -22,7 +22,7 @@ def is_strictly_positive(v: Optional[int]) -> Optional[int]:
 
 def check_match_gpu(v: Optional[int], values: dict) -> Optional[int]:
     if v is not None and v > 0 and values.get("gpu") == "":
-        raise ValueError("Value must be 0 if gpu is ''")
+        return 0  # GPU explicitly disabled
     return v
 
 
