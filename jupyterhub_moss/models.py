@@ -3,21 +3,21 @@ from __future__ import annotations
 import re
 from typing import Dict, Optional
 
-from pydantic import BaseModel, Extra, validator
+from pydantic import (
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    NonNegativeInt,
+    PositiveInt,
+    validator,
+)
 
-# validators
+# constrained types and validators
 
 
-def is_positive(v: Optional[int]) -> Optional[int]:
-    if v is not None and v < 0:
-        raise ValueError("Value must be positive")
-    return v
-
-
-def is_strictly_positive(v: Optional[int]) -> Optional[int]:
-    if v is not None and v <= 0:
-        raise ValueError("Value must be strictly positive")
-    return v
+class NonEmptyStr(ConstrainedStr):
+    min_length = 1
+    strip_whitespace = True
 
 
 def check_match_gpu(v: Optional[int], values: dict) -> Optional[int]:
@@ -37,18 +37,14 @@ class PartitionResources(BaseModel, allow_mutation=False, extra=Extra.allow):
     information about available resources.
     """
 
-    max_nprocs: int
-    max_mem: int
+    max_nprocs: PositiveInt
+    max_mem: PositiveInt
     gpu: str
-    max_ngpus: int
-    max_runtime: int
+    max_ngpus: NonNegativeInt
+    max_runtime: PositiveInt
 
     # validators
-    _is_positive = validator("max_ngpus", allow_reuse=True)(is_positive)
     _check_match_gpu = validator("max_ngpus", allow_reuse=True)(check_match_gpu)
-    _is_strictly_positive = validator(
-        "max_nprocs", "max_mem", "max_runtime", allow_reuse=True
-    )(is_strictly_positive)
 
 
 class PartitionAllResources(
@@ -60,30 +56,19 @@ class PartitionAllResources(
     used to display available resources.
     """
 
-    nnodes_total: int
-    nnodes_idle: int
-    ncores_total: int
-    ncores_idle: int
-
-    # validators
-    _is_positive = validator(
-        "nnodes_total", "nnodes_total", "ncores_total", "ncores_idle", allow_reuse=True
-    )(is_positive)
+    nnodes_total: NonNegativeInt
+    nnodes_idle: NonNegativeInt
+    ncores_total: NonNegativeInt
+    ncores_idle: NonNegativeInt
 
 
 class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
     """Single Jupyter environement description"""
 
     add_to_path = True
-    description: str
-    path: str
+    description: NonEmptyStr
+    path: NonEmptyStr
     prologue = ""
-
-    @validator("path", "description")
-    def check_not_empty(cls, v: str) -> str:
-        if not v:
-            raise ValueError("String must not be empty")
-        return v
 
 
 class PartitionConfig(BaseModel, allow_mutation=False, extra=Extra.forbid):
@@ -112,11 +97,19 @@ class _PartitionTraits(PartitionConfig, allow_mutation=False, extra=Extra.forbid
     max_runtime: Optional[int] = None
 
     # validators
-    _is_positive = validator("max_ngpus", allow_reuse=True)(is_positive)
     _check_match_gpu = validator("max_ngpus", allow_reuse=True)(check_match_gpu)
-    _is_strictly_positive = validator("max_nprocs", "max_runtime", allow_reuse=True)(
-        is_strictly_positive
-    )
+
+    @validator("max_ngpus")
+    def check_is_positive_or_none(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v < 0:
+            raise ValueError("Value must be positive")
+        return v
+
+    @validator("max_nprocs", "max_runtime")
+    def check_is_strictly_positive_or_none(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError("Value must be strictly positive")
+        return v
 
 
 class PartitionsTrait(BaseModel, allow_mutation=False, extra=Extra.forbid):
@@ -137,10 +130,10 @@ class UserOptions(BaseModel):
     # Options received through the form or GET request
     partition: str
     runtime = ""
-    nprocs = 1
+    nprocs: PositiveInt = 1
     memory = ""
     reservation = ""
-    ngpus = 0
+    ngpus: NonNegativeInt = 0
     options = ""
     output = "/dev/null"
     environment_path = ""
@@ -167,10 +160,6 @@ class UserOptions(BaseModel):
             "slurm-%j.out" if fields.get("output", "false") == "true" else "/dev/null"
         )
         return cls.parse_obj(fields)
-
-    # validators
-    _is_positive = validator("ngpus", allow_reuse=True)(is_positive)
-    _is_strictly_positive = validator("nprocs", allow_reuse=True)(is_strictly_positive)
 
     @validator(
         "partition",
