@@ -252,13 +252,18 @@ class MOSlurmSpawner(SlurmSpawner):
             raise RuntimeError("No 'simple' partition defined: No default partition")
         default_partition = simple_partitions[0]
 
-        partitions_dict = {k: v.dict() for k, v in partitions_info.items()}
-
         # Strip prologue from partitions_info:
         # it is not useful and can cause some parsing issues
-        for partition_info in partitions_dict.values():
-            for env_info in partition_info["jupyter_environments"].values():
-                env_info.pop("prologue", None)
+        partitions_dict = {
+            name: info.dict(
+                exclude={
+                    "jupyter_environments": {
+                        env_name: {"prologue"} for env_name in info.jupyter_environments
+                    }
+                }
+            )
+            for name, info in partitions_info.items()
+        }
 
         # Prepare json info
         jsondata = json.dumps(
