@@ -31,14 +31,8 @@ RESOURCES_HASH = {
 with open(local_path("batch_script.sh")) as f:
     BATCH_SCRIPT = f.read()
 
-try:
-    BATCHSPAWNER_VERSION = importlib.metadata.version("batchspawner")
-except importlib.metadata.PackageNotFoundError:
-    BATCHSPAWNER_VERSION = ""
-try:
-    JUPYTERHUB_VERSION = importlib.metadata.version("jupyterhub")
-except importlib.metadata.PackageNotFoundError:
-    JUPYTERHUB_VERSION = ""
+BATCHSPAWNER_VERSION = importlib.metadata.version("batchspawner")
+JUPYTERHUB_VERSION = importlib.metadata.version("jupyterhub")
 
 
 class MOSlurmSpawner(SlurmSpawner):
