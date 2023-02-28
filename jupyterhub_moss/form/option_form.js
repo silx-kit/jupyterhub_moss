@@ -248,6 +248,7 @@ function resetSpawnForm() {
   document.getElementById('spawn_form').reset();
   restoreCustomEnvironmentsFromLocalStorage();
   setSimplePartition(window.SLURM_DATA.default_partition);
+  updateDefaultUrl();
 }
 
 function setVisible(element, visible) {
@@ -332,6 +333,13 @@ function updateMemValue() {
 
   // Pass empty field and 0 as is, append G for others
   memHiddenElem.value = value && value !== '0' ? `${value}G` : value;
+}
+
+function updateDefaultUrl() {
+  const defaultUrlCheckboxElem = document.getElementById('default_url_input');
+  const defaultUrlHiddenElem = document.getElementById('default_url');
+
+  defaultUrlHiddenElem.value = defaultUrlCheckboxElem.checked ? '/lab' : '/tree';
 }
 
 function updatePartitionLimits() {
@@ -470,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const nprocsElem = document.getElementById('nprocs');
   const ngpusElem = document.getElementById('ngpus');
   const runtimeElem = document.getElementById('runtime');
-  const default_url = document.getElementById('default_url');
+  const defaultUrlCheckboxElem = document.getElementById('default_url_input');
   const environmentAddRadio = document.getElementById('environment_add_radio');
   const environmentAddName = document.getElementById('environment_add_name');
   const environmentAddPath = document.getElementById('environment_add_path');
@@ -505,8 +513,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document
     .getElementById('jupyterlab_simple')
     .addEventListener('change', (e) => {
-      default_url.checked = e.target.checked;
+      defaultUrlCheckboxElem.checked = e.target.checked;
+      updateDefaultUrl();
     });
+  // Update default_url hidden input
+  defaultUrlCheckboxElem.addEventListener('change', updateDefaultUrl)
   // Runtime
   document.getElementById('runtime_simple').addEventListener('change', (e) => {
     runtimeElem.value = `${e.target.value}:00:00`;
