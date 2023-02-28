@@ -7,7 +7,6 @@ from pydantic import (
     BaseModel,
     ConstrainedStr,
     Extra,
-    Field,
     NonNegativeInt,
     PositiveInt,
     validator,
@@ -69,8 +68,7 @@ class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
     add_to_path = True
     description: NonEmptyStr
     path: NonEmptyStr
-    # Strip prologue from export: useless and parsing issues in javascript
-    prologue: str = Field("", exclude=True)
+    prologue = ""
 
 
 class PartitionConfig(BaseModel, allow_mutation=False, extra=Extra.forbid):
