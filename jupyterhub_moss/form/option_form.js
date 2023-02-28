@@ -336,8 +336,8 @@ function updateMemValue() {
 }
 
 function updateDefaultUrl() {
-  const defaultUrlCheckboxElem = document.getElementById('default_url_input');
-  const defaultUrlHiddenElem = document.getElementById('default_url');
+  const defaultUrlCheckboxElem = document.getElementById('default_url');
+  const defaultUrlHiddenElem = document.getElementById('default_url_hidden_input');
 
   defaultUrlHiddenElem.value = defaultUrlCheckboxElem.checked ? '/lab' : '/tree';
 }
@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const nprocsElem = document.getElementById('nprocs');
   const ngpusElem = document.getElementById('ngpus');
   const runtimeElem = document.getElementById('runtime');
-  const defaultUrlCheckboxElem = document.getElementById('default_url_input');
+  const defaultUrlCheckboxElem = document.getElementById('default_url');
   const environmentAddRadio = document.getElementById('environment_add_radio');
   const environmentAddName = document.getElementById('environment_add_name');
   const environmentAddPath = document.getElementById('environment_add_path');
