@@ -1,16 +1,24 @@
+from __future__ import annotations
+
 import datetime
 import functools
 import importlib.metadata
 import json
 import os.path
-import re
-from copy import deepcopy
-from typing import Dict, List
+from typing import Callable
 
 import traitlets
 from batchspawner import SlurmSpawner, format_template
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader
+from pydantic import ValidationError
 
+from .models import (
+    PartitionAllResources,
+    PartitionInfo,
+    PartitionResources,
+    PartitionsTrait,
+    UserOptions,
+)
 from .utils import create_prologue, file_hash, local_path, parse_timelimit
 
 # Compute resources hash once at start-up
@@ -19,20 +27,12 @@ RESOURCES_HASH = {
     for name in ("option_form.css", "option_form.js")
 }
 
-# Required resources per partition
-REQUIRED_RESOURCES_COUNTS = "max_nprocs", "max_mem", "gpu", "max_ngpus", "max_runtime"
 
 with open(local_path("batch_script.sh")) as f:
     BATCH_SCRIPT = f.read()
 
-try:
-    BATCHSPAWNER_VERSION = importlib.metadata.version("batchspawner")
-except importlib.metadata.PackageNotFoundError:
-    BATCHSPAWNER_VERSION = None
-try:
-    JUPYTERHUB_VERSION = importlib.metadata.version("jupyterhub")
-except importlib.metadata.PackageNotFoundError:
-    JUPYTERHUB_VERSION = None
+BATCHSPAWNER_VERSION = importlib.metadata.version("batchspawner")
+JUPYTERHUB_VERSION = importlib.metadata.version("jupyterhub")
 
 
 class MOSlurmSpawner(SlurmSpawner):
@@ -47,7 +47,7 @@ class MOSlurmSpawner(SlurmSpawner):
             per_key_traits={
                 "description": traitlets.Unicode(),
                 "architecture": traitlets.Unicode(),
-                "gpu": traitlets.Unicode(allow_none=True, default_value=None),
+                "gpu": traitlets.Unicode(allow_none=True),
                 "simple": traitlets.Bool(),
                 "jupyter_environments": traitlets.Dict(
                     key_trait=traitlets.Unicode(),
@@ -61,9 +61,9 @@ class MOSlurmSpawner(SlurmSpawner):
                         },
                     ),
                 ),
-                "max_ngpus": traitlets.Int(),
-                "max_nprocs": traitlets.Int(),
-                "max_runtime": traitlets.Int(),
+                "max_ngpus": traitlets.Int(allow_none=True),
+                "max_nprocs": traitlets.Int(allow_none=True),
+                "max_runtime": traitlets.Int(allow_none=True),
             },
         ),
         key_trait=traitlets.Unicode(),
@@ -72,13 +72,9 @@ class MOSlurmSpawner(SlurmSpawner):
     ).tag(config=True)
 
     @traitlets.validate("partitions")
-    def _validate_partitions(self, proposal):
-        # Set add_to_path if missing in jupyter_environments
-        partitions = deepcopy(proposal["value"])
-        for partition in partitions.values():
-            for env in partition["jupyter_environments"].values():
-                env.setdefault("add_to_path", True)
-                env.setdefault("prologue", "")
+    def _validate_partitions(self, proposal: dict) -> dict[str, dict]:
+        partitions = proposal["value"]
+        PartitionsTrait.parse_obj(partitions)  # Validation
         return partitions
 
     slurm_info_cmd = traitlets.Unicode(
@@ -92,21 +88,23 @@ class MOSlurmSpawner(SlurmSpawner):
         help="""Provides information about resources in Slurm cluster.
 
         It will be called with the output of ``slurm_info_cmd`` as argument and should return a
-        dictionary mapping each partition name to resources defined in ``REQUIRED_RESOURCES_COUNTS``
-        and resources used in option_form template.
+        dict mapping each partition name to an instance of a :class:`models.PartitionResources`.
         """,
     ).tag(config=True)
 
     @traitlets.default("slurm_info_resources")
-    def _get_slurm_info_resources_default(self):
+    def _get_slurm_info_resources_default(
+        self,
+    ) -> Callable[[str], dict[str, PartitionResources]]:
         """Returns default for `slurm_info_resources` traitlet."""
         return self._slurm_info_resources
 
-    def _slurm_info_resources(self, slurm_info_out: str) -> Dict[str, dict]:
+    def _slurm_info_resources(
+        self, slurm_info_out: str
+    ) -> dict[str, PartitionResources]:
         """Parses output from Slurm command: sinfo -a --noheader -o '%R %F %c %C %G %m %l'
 
-        Returns information about partition resources listed in ``REQUIRED_RESOURCES_COUNTS``:
-        number of cores, max memory, gpus and resource counts to be shown in table of available resources.
+        Returns information about partition resources to constraint user choice and display available resources.
 
         :param slurm_info_out: Output of slurm_info_cmd
         :rtype: Mapping of partition information:
@@ -114,7 +112,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 partition: {gpu, max_nprocs, max_ngpus, max_mem, max_runtime, ...},
             }
         """
-        partitions_info = {}
+        partitions_info: dict[str, PartitionResources] = {}
 
         for line in slurm_info_out.splitlines():
             (
@@ -136,8 +134,8 @@ class MOSlurmSpawner(SlurmSpawner):
                 gpus_total = gpus_gres[2]
                 gpu = ":".join(gpus_gres[0:2]) + ":{}"
             except IndexError:
-                gpus_total = 0
-                gpu = None
+                gpus_total = "0"
+                gpu = ""
 
             try:
                 max_runtime = parse_timelimit(timelimit)
@@ -147,20 +145,21 @@ class MOSlurmSpawner(SlurmSpawner):
                 )
                 max_runtime = datetime.timedelta(days=1)
 
-            resources = {}
             try:
-                # display resource counts
-                resources["nnodes_total"] = int(nnodes_total)
-                resources["nnodes_idle"] = int(nnodes_idle)
-                resources["ncores_total"] = int(ncores_total)
-                resources["ncores_idle"] = int(ncores_idle)
-                # required resource counts
-                resources["max_nprocs"] = int(ncores_per_node.rstrip("+"))
-                resources["max_mem"] = int(memory.rstrip("+"))
-                resources["gpu"] = gpu
-                resources["max_ngpus"] = int(gpus_total)
-                resources["max_runtime"] = int(max_runtime.total_seconds())
-            except ValueError as err:
+                resources = PartitionAllResources(
+                    # display resource counts
+                    nnodes_total=nnodes_total,
+                    nnodes_idle=nnodes_idle,
+                    ncores_total=ncores_total,
+                    ncores_idle=ncores_idle,
+                    # required resource counts
+                    max_nprocs=ncores_per_node.rstrip("+"),
+                    max_mem=memory.rstrip("+"),
+                    gpu=gpu,
+                    max_ngpus=gpus_total,
+                    max_runtime=max_runtime.total_seconds(),
+                )
+            except ValidationError as err:
                 self.log.error("Error parsing output of slurm_info_cmd: %s", err)
                 raise
 
@@ -202,7 +201,7 @@ class MOSlurmSpawner(SlurmSpawner):
         )
         return environment.get_template("option_form.html")
 
-    async def _get_partitions_info(self):
+    async def _get_partitions_info(self) -> dict[str, PartitionInfo]:
         """Returns information about used SLURM partitions
 
         1. Executes slurm_info_cmd
@@ -224,44 +223,38 @@ class MOSlurmSpawner(SlurmSpawner):
         resources_info = self.slurm_info_resources(out)
         self.log.debug("Slurm partition resources: %s", resources_info)
 
+        partitions = PartitionsTrait.parse_obj(self.partitions)
+
         # use data from Slurm as base and overwrite with manual configuration settings
         partitions_info = {
-            partition: {**resources_info[partition], **config_partition_info}
-            for partition, config_partition_info in self.partitions.items()
+            partition: PartitionInfo.parse_obj(
+                {
+                    **resources_info[partition].dict(),
+                    **config_partition_info.dict(exclude_none=True),
+                }
+            )
+            for partition, config_partition_info in partitions.items()
         }
-
-        for partition, info in partitions_info.items():
-            for key in REQUIRED_RESOURCES_COUNTS:
-                if key not in info:
-                    raise KeyError(
-                        f"Missing required resource '{key}' for partition '{partition}'"
-                    )
-
-        # Ensure returning a dict that can be modified by the callers
-        return deepcopy(partitions_info)
+        return partitions_info
 
     @staticmethod
-    async def create_options_form(spawner):
+    async def create_options_form(spawner: MOSlurmSpawner) -> str:
         """Create a form for the user to choose the configuration for the SLURM job"""
         partitions_info = await spawner._get_partitions_info()
 
         simple_partitions = [
-            partition for partition, info in partitions_info.items() if info["simple"]
+            partition for partition, info in partitions_info.items() if info.simple
         ]
         if not simple_partitions:
             raise RuntimeError("No 'simple' partition defined: No default partition")
         default_partition = simple_partitions[0]
 
-        # Strip prologue from partitions_info:
-        # it is not useful and can cause some parsing issues
-        for partition_info in partitions_info.values():
-            for env_info in partition_info["jupyter_environments"].values():
-                env_info.pop("prologue", None)
+        partitions_dict = {k: v.dict() for k, v in partitions_info.items()}
 
         # Prepare json info
         jsondata = json.dumps(
             {
-                "partitions": partitions_info,
+                "partitions": partitions_dict,
                 "default_partition": default_partition,
             }
         )
@@ -269,147 +262,76 @@ class MOSlurmSpawner(SlurmSpawner):
         return spawner.__option_form_template.render(
             hash_option_form_css=RESOURCES_HASH["option_form.css"],
             hash_option_form_js=RESOURCES_HASH["option_form.js"],
-            partitions=partitions_info,
+            partitions=partitions_dict,
             default_partition=default_partition,
             batchspawner_version=BATCHSPAWNER_VERSION,
             jupyterhub_version=JUPYTERHUB_VERSION,
             jsondata=jsondata,
         )
 
-    # Options retrieved from HTML form and associated converter functions
-    _FORM_FIELD_CONVERSIONS = {
-        "partition": str,
-        "runtime": str,
-        "nprocs": int,
-        "mem": str,
-        "reservation": str,
-        "ngpus": int,
-        "options": lambda v: v.strip(),
-        "output": lambda v: v == "true",
-        "environment_path": str,
-        "default_url": str,
-        "root_dir": str,
-    }
-
-    def __convert_formdata(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
-        """Convert expected input to appropriate type"""
-        options = {}
-        for name, convert in self._FORM_FIELD_CONVERSIONS.items():
-            if name not in formdata:
-                continue
-            value = formdata[name][0].strip()
-            if len(value) == 0:
-                continue
-            try:
-                options[name] = convert(value)
-            except ValueError:
-                raise RuntimeError(f"Invalid {name} value")
-
-        return options
-
-    _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
-
-    def __validate_options(self, options, partition_info):
-        """Check validity/syntax of options and if matchs the given partition resources.
+    def __validate_options(
+        self, options: UserOptions, partition_info: PartitionInfo
+    ) -> None:
+        """Check if options match the given partition resources.
 
         Raises an exception when a check fails.
         """
-        if "runtime" in options:
-            runtime = parse_timelimit(
-                options["runtime"]
-            )  # Raises exception if malformed
+        if options.runtime:
             assert (
-                runtime.total_seconds() <= partition_info["max_runtime"]
+                parse_timelimit(options.runtime).total_seconds()
+                <= partition_info.max_runtime
             ), "Requested runtime exceeds partition time limit"
 
-        if (
-            "nprocs" in options
-            and not 1 <= options["nprocs"] <= partition_info["max_nprocs"]
-        ):
-            raise AssertionError("Error: Unsupported number of CPU cores")
+        if options.nprocs > partition_info.max_nprocs:
+            raise AssertionError("Unsupported number of CPU cores")
 
-        if "mem" in options and self._MEM_REGEXP.match(options["mem"]) is None:
-            raise AssertionError("Error in memory syntax")
+        if options.ngpus > partition_info.max_ngpus:
+            raise AssertionError("Unsupported number of GPUs")
 
-        if "reservation" in options and "\n" in options["reservation"]:
-            raise AssertionError("Error in reservation")
-
-        if (
-            "ngpus" in options
-            and not 0 <= options["ngpus"] <= partition_info["max_ngpus"]
-        ):
-            raise AssertionError("Error: Unsupported number of GPUs")
-
-        if "options" in options and "\n" in options["options"]:
-            raise AssertionError("Error in extra options")
-
-        if "environment_path" in options and "\n" in options["environment_path"]:
-            raise AssertionError("Error in environment_path")
-
-        if "default_url" in options:
-            default_url = options["default_url"]
-            if default_url and not default_url.startswith("/"):
-                raise AssertionError("Must start with /")
-
-        if "root_dir" in options and "\n" in options["root_dir"]:
-            raise AssertionError("Error in root_dir")
-
-    def __update_options(self, options, partition_info):
+    def __update_options(
+        self, options: UserOptions, partition_info: PartitionInfo
+    ) -> None:
         """Extends/Modify options to be used for the spawn.
 
-        The options dict is updated.
+        The provided `options` argument is modified in-place.
         """
-        # Align names with sbatch script
-        if "mem" in options:
-            options["memory"] = options["mem"]
-
-        # Convert output option from boolean to file pattern
-        has_output = options.get("output", False)
-        options["output"] = "slurm-%j.out" if has_output else "/dev/null"
-
         # Specific handling of exclusive flag
         # When memory=0 or all CPU are requested, set the exclusive flag
-        if (
-            options.get("nprocs") == partition_info["max_nprocs"]
-            or options.get("memory") == "0"
-        ):
-            options["options"] = f"--exclusive {options.get('options', '')}"
+        if options.nprocs == partition_info.max_nprocs or options.memory == "0":
+            options.options = f"--exclusive {options.options}"
 
         # Specific handling of ngpus as gres
-        ngpus = options.get("ngpus", 0)
-        if ngpus > 0:
-            gpu_gres_template = partition_info["gpu"]
-            if gpu_gres_template is None:
+        if options.ngpus > 0:
+            gpu_gres_template = partition_info.gpu
+            if not gpu_gres_template:
                 raise RuntimeError("GPU(s) not available for this partition")
-            options["gres"] = gpu_gres_template.format(ngpus)
+            options.gres = gpu_gres_template.format(options.ngpus)
 
-        partition_environments = tuple(
-            self.partitions[options["partition"]]["jupyter_environments"].values()
-        )
-        if "environment_path" not in options:
+        partition_environments = tuple(partition_info.jupyter_environments.values())
+        if not options.environment_path:
             # Set path to use from first environment for the current partition
-            options["environment_path"] = partition_environments[0]["path"]
+            options.environment_path = partition_environments[0].path
 
-        options["prologue"] = create_prologue(
-            self.req_prologue, options["environment_path"], partition_environments
+        options.prologue = create_prologue(
+            self.req_prologue, options.environment_path, partition_environments
         )
 
-    async def options_from_form(self, formdata: Dict[str, List[str]]) -> Dict[str, str]:
+    async def options_from_form(self, formdata: dict[str, list[str]]) -> dict:
         """Parse the form and add options to the SLURM job script"""
-        options = self.__convert_formdata(formdata)
+        options = UserOptions.parse_formdata(formdata)
 
-        assert "partition" in options, "Partition information is missing"
-        assert options["partition"] in self.partitions, "Partition is not supported"
         partitions_info = await self._get_partitions_info()
-        partition_info = partitions_info[options["partition"]]
+        try:
+            partition_info = partitions_info[options.partition]
+        except KeyError:
+            raise RuntimeError(f"Partition {options.partition} is not available")
 
         self.__validate_options(options, partition_info)
-
         self.__update_options(options, partition_info)
 
-        return options
+        return options.dict()
 
-    def __update_spawn_commands(self, cmd_path):
+    def __update_spawn_commands(self, cmd_path: str) -> None:
         """Add path to commands"""
         if cmd_path.endswith(".sif"):
             # Use singularity image
@@ -430,11 +352,10 @@ class MOSlurmSpawner(SlurmSpawner):
 
     async def start(self):
         # Specific handling of landing URL (e.g., to start jupyterlab)
-        self.default_url = self.user_options.get("default_url", "")
+        self.default_url = self.user_options["default_url"]
         self.log.info(f"Used default URL: {self.default_url}")
 
-        if "root_dir" in self.user_options:
-            self.notebook_dir = self.user_options["root_dir"]
+        self.notebook_dir = self.user_options["root_dir"]
 
         environment_path = self.user_options["environment_path"]
         self.log.info(f"Used environment: {environment_path}")

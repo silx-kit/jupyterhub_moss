@@ -111,7 +111,7 @@ For a minimalistic working demo, check the
 - `gpu`: [Optional] A template string that will be used to request GPU resources
   through `--gres`. The template should therefore include a `{}` that will be
   replaced by the number of requested GPU **and** follow the format expected by
-  `--gres`. If no GPU is available for this partition, set to `None`. It is
+  `--gres`. If no GPU is available for this partition, set to `""`. It is
   retrieved from SLURM if not provided.
 - `max_ngpus`: [Optional] The maximum number of GPU that can be requested for
   this partition. The spawn page will use this to generate appropriate bounds
