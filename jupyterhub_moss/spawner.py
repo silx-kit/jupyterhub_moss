@@ -73,9 +73,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
     @traitlets.validate("partitions")
     def _validate_partitions(self, proposal: dict) -> dict[str, dict]:
-        partitions = proposal["value"]
-        PartitionsTrait.parse_obj(partitions)  # Validation
-        return partitions
+        return PartitionsTrait.parse_obj(proposal["value"]).dict()
 
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes/state, cores/node, cores/state, gpus, total memory for all partitions
@@ -249,7 +247,18 @@ class MOSlurmSpawner(SlurmSpawner):
             raise RuntimeError("No 'simple' partition defined: No default partition")
         default_partition = simple_partitions[0]
 
-        partitions_dict = {k: v.dict() for k, v in partitions_info.items()}
+        # Strip prologue from partitions_info:
+        # it is not useful and can cause some parsing issues
+        partitions_dict = {
+            name: info.dict(
+                exclude={
+                    "jupyter_environments": {
+                        env_name: {"prologue"} for env_name in info.jupyter_environments
+                    }
+                }
+            )
+            for name, info in partitions_info.items()
+        }
 
         # Prepare json info
         jsondata = json.dumps(
