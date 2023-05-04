@@ -43,7 +43,7 @@
 }
 
 .subheading {
-  padding-top: 15px;
+  padding-top: 1em;
   text-align: center;
 }
 
@@ -57,7 +57,13 @@
 
 #environment_simple {
   text-overflow: ellipsis;
-  max-width: 20em;
+  max-width: 100%;
+  font-size: 1.2em;
+  padding: 1.5ex 1em 1ex 1em;
+}
+
+#runtime_simple {
+  padding: 1.0ex 0.5em 0.5ex 0.5em;
 }
 
 .form-container {
