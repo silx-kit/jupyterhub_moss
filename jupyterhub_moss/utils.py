@@ -6,8 +6,6 @@ import os.path
 import re
 from typing import Any, Callable, Iterable, Optional
 
-from .models import JupyterEnvironment
-
 
 def local_path(path: str) -> str:
     current_dir = os.path.dirname(__file__)
@@ -49,24 +47,21 @@ def parse_timelimit(timelimit: str) -> datetime.timedelta:
 def create_prologue(
     default_prologue: str,
     environment_path: str,
-    partition_environments: Iterable[JupyterEnvironment],
+    environment_modules: str,
 ) -> str:
     """Create prologue commands"""
     prologue = default_prologue
-
-    corresponding_default_env = find(
-        lambda env: env.path == environment_path,
-        partition_environments,
-    )
-    if corresponding_default_env is not None:
-        prologue += f"\n{corresponding_default_env.prologue}"
 
     # Singularity images are never added to PATH
     if environment_path.endswith(".sif"):
         return prologue
 
-    # Custom envs are always added to PATH
-    # Defaults envs only if add_to_path is True
-    if corresponding_default_env is None or corresponding_default_env.add_to_path:
-        prologue += f"\nexport PATH={environment_path}:$PATH"
+    # Prepend path to environement
+    if environment_path:
+        prologue += f'\nexport PATH="{environment_path}:$PATH"'
+
+    # Load environment modules
+    if environment_modules:
+        prologue += f"\nmodule load {environment_modules}"
+
     return prologue
