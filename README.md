@@ -58,7 +58,7 @@ c.MOSlurmSpawner.partitions = {
             "default": {                   # Jupyter environment identifier, at least "path" or "modules" is mandatory
                 "description": "Default",  # Text displayed for this environment select option
                 "path": "/env/path/bin/",  # Path to Python environment bin/ used to start Jupyter server on the Slurm nodes
-                "modules": "",             # Comma separated list of environment modules to load before starting Jupyter server
+                "modules": "",             # Space separated list of environment modules to load before starting Jupyter server
                 "add_to_path": True,       # Toggle adding the environment to shell PATH (optional, default: True)
                 "prologue": "",            # Shell commands to execute before starting the Jupyter server (optional, default: "")
             },
@@ -142,7 +142,7 @@ For a minimalistic working demo, check the
     Slurm nodes. **jupyterhub_moss** needs that a virtual (or conda) environment
     is used to start Jupyter. This path can be changed according to the
     partitions.
-  - `modules`: Comma separated list of environment modules to load before
+  - `modules`: Space separated list of environment modules to load before
     starting the Jupyter server. Environment modules will be loaded with the
     `module` command.
   - `add_to_path`: Whether or not to prepend the environment `path` to shell
