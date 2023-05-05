@@ -121,8 +121,6 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         name="environment_simple"
         id="environment_simple"
       >
-      <optgroup id="environment_simple_default" label="Default"></optgroup>
-      <optgroup id="environment_simple_custom" label="Custom" hidden></optgroup>
       </select>
       <label for="runtime_simple">Job duration:</label>
       <select
@@ -222,7 +220,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       <input type="hidden" id="environment_path" name="environment_path"/>
       <input type="hidden" id="environment_modules" name="environment_modules"/>
       <div id="jupyter_environments_default"></div>
-      <div>Custom:</div>
+      <h4>Custom:</h4>
       <div id="jupyter_environments_custom"></div>
       <div class="environment-div">
         <input type="hidden" value="custom"/>

@@ -70,6 +70,7 @@ class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
     path: Optional[str] = ""
     modules: Optional[str] = ""
     prologue: Optional[str] = ""
+    group: Optional[str] = ""
 
     # validators
     @validator("modules")

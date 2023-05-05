@@ -48,6 +48,21 @@ function createEnvironmentDiv(key, description, path, modules, checked = false) 
   return div;
 }
 
+function createEnvironmentSimpleCustomGroup() {
+  const environmentSimpleCustom = document.getElementById(
+    'environment_simple_custom'
+  );
+
+  if (environmentSimpleCustom == null) {
+    // create option group for custom environments in simple menu
+    const optgroup = document.createElement('optgroup');
+    optgroup.id = 'environment_simple_custom';
+    optgroup.label = 'Custom';
+    optgroup.hidden = true;
+    document.getElementById('environment_simple').appendChild(optgroup);
+  }
+}
+
 function resetEnvironmentSelection() {
   const environmentsDiv = document.getElementById('jupyter_environments');
   const environmentSimpleSelect = document.getElementById('environment_simple');
@@ -219,14 +234,20 @@ function updateDefaultEnvironments() {
   const defaultEnvironmentsDiv = document.getElementById(
     'jupyter_environments_default'
   );
-  const environmentSimpleDefaultOptGroup = document.getElementById(
-    'environment_simple_default'
+  const environmentSimple = document.getElementById(
+    'environment_simple'
   );
 
   const selectedKey = getSelectedEnvironment();
 
-  removeAllChildren(defaultEnvironmentsDiv);
-  removeAllChildren(environmentSimpleDefaultOptGroup);
+  document.querySelectorAll('.default-environment').forEach((defaultEnv) => {
+    defaultEnv.querySelectorAll('div').forEach((envDiv) => {
+      envDiv.parentNode.removeChild(envDiv);
+    });
+    defaultEnv.querySelectorAll('option').forEach((envOpt) => {
+      envOpt.parentNode.removeChild(envOpt);
+    });
+  });
 
   const partition = document.getElementById('partition').value;
   const partitionInfo = window.SLURM_DATA.partitions[partition];
@@ -234,23 +255,53 @@ function updateDefaultEnvironments() {
   // Populate default partition environments
   for (const key in partitionInfo.jupyter_environments) {
     const info = partitionInfo.jupyter_environments[key];
+    const group_id = info.group ? info.group.replace(/\W/g, '_') : '_';
 
-    defaultEnvironmentsDiv.appendChild(
-      createEnvironmentDiv(key, info.description, info.path, info.modules)
-    );
+    // create new radio for advanced list
+    const radio_div = createEnvironmentDiv(key, info.description, info.path, info.modules);
 
+    // add radio div to corresponding group in advanced list
+    const divgroup_id = group_id + "_group"
+    const environmentAdvDivGroup = document.getElementById(divgroup_id);
+    if (environmentAdvDivGroup == null) {
+      divgroup = document.createElement('div');
+      divgroup.id = divgroup_id;
+      divgroup.className = "default-environment";
+      defaultEnvironmentsDiv.appendChild(divgroup);
+      headgroup = document.createElement('h4');
+      headgroup.innerText = info.group;
+      divgroup.appendChild(headgroup);
+      divgroup.appendChild(radio_div);
+    } else {
+      environmentAdvDivGroup.appendChild(radio_div);
+    }
+
+    // create new option for simple menu
     const option = document.createElement('option');
     option.text = info.description;
     option.value = key;
-    environmentSimpleDefaultOptGroup.appendChild(option);
+
+    // add option to corresponding option group in menu
+    const optgroup_id = group_id + "_simple";
+    const environmentSimpleGroup = document.getElementById(optgroup_id);
+    if (environmentSimpleGroup == null) {
+      optgroup = document.createElement('optgroup');
+      optgroup.id = optgroup_id;
+      optgroup.className = "default-environment";
+      optgroup.label = info.group;
+      environmentSimple.appendChild(optgroup);
+      optgroup.appendChild(option);
+    } else {
+      environmentSimpleGroup.appendChild(option);
+    }
   }
   selectEnvironment(selectedKey);
 }
 
 function resetSpawnForm() {
   document.getElementById('spawn_form').reset();
-  restoreCustomEnvironmentsFromLocalStorage();
   setSimplePartition(window.SLURM_DATA.default_partition);
+  restoreCustomEnvironmentsFromLocalStorage();
   updateDefaultUrl();
 }
 
@@ -288,6 +339,7 @@ function setSimplePartition(name) {
   partitionElem.value = name;
   updatePartitionLimits();
   updateDefaultEnvironments();
+  createEnvironmentSimpleCustomGroup();
 
   const info = window.SLURM_DATA.partitions[name];
 
@@ -562,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .getElementById('environment_add_name')
     .addEventListener('input', (e) => {
       const isInputEmpty = e.target.value === '';
-      if (environmentAddRadio.value === '' && !isInputEmpty) {
+      if (environmentAddRadio.value === '' && !isInputEmpty) {var myEle = document.getElementById("myElement");
         // First input in the name: select its radio button
         environmentAddRadio.checked = true;
       }
