@@ -1,5 +1,11 @@
 # jupyterhub_moss: JupyterHub MOdular Slurm Spawner
 
+Fork of the original [silx-kit/jupyterhub_moss](https://github.com/silx-kit/jupyterhub_moss)
+maintained by VUB-HPC.
+
+Notable changes in this fork:
+* support for loading modules in the singleuser server job
+
 **jupyterhub_moss** is a Python package that provides:
 
 - A [JupyterHub](https://jupyterhub.readthedocs.io/)
