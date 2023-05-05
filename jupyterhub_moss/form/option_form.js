@@ -430,7 +430,6 @@ function storeConfigToLocalStorage() {
 
 function restoreConfigFromLocalStorage() {
   const advancedLink = document.getElementById('advanced_tab_link');
-  const jupyterlabSimpleElem = document.getElementById('jupyterlab_simple');
   const runtimeSelect = document.getElementById('runtime_simple');
 
   resetSpawnForm();
@@ -513,13 +512,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ngpusElem.value = e.target.value;
     });
   });
-  // JupyterLab using default_url field
-  document
-    .getElementById('jupyterlab_simple')
-    .addEventListener('change', (e) => {
-      defaultUrlCheckboxElem.checked = e.target.checked;
-      updateDefaultUrl();
-    });
   // Update default_url hidden input
   defaultUrlCheckboxElem.addEventListener('change', updateDefaultUrl)
   // Runtime
