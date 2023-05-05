@@ -75,7 +75,7 @@ class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
     @validator("modules")
     def check_path_or_mods(cls, v: Optional[str], values: dict) -> Optional[str]:
         if not v and not values.get("path"):
-            raise ValueError(f"Jupyter environment path or modules is required")
+            raise ValueError("Jupyter environment path or modules is required")
         return v
 
 
