@@ -1,11 +1,10 @@
 # jupyterhub_moss: JupyterHub MOdular Slurm Spawner
 
-Fork of the original [silx-kit/jupyterhub_moss](https://github.com/silx-kit/jupyterhub_moss) maintained by VUB-HPC.
+Fork of the original [silx-kit/jupyterhub_moss](https://github.com/silx-kit/jupyterhub_moss)
+maintained by VUB-HPC.
 
 Notable changes in this fork:
 * support for loading modules in the singleuser server job
-* execute `sinfo` asynchronously with `batchspawner.run_command()`
-* show idle cores in the table of available resources
 
 **jupyterhub_moss** is a Python package that provides:
 
@@ -17,7 +16,7 @@ Notable changes in this fork:
   partitions set in the Spawner and allows the user to select Slurm resources to
   use.
 
-<img style="margin:auto" src=https://user-images.githubusercontent.com/9449698/194308511-f0e6d6a9-ba7a-4086-a871-23b08523c61a.png width="50%">
+<img style="margin:auto" src=https://user-images.githubusercontent.com/9449698/215526389-2ef5ac32-5d50-49de-aa5f-46972feaccf1.png width="50%">
 
 ## Install
 
@@ -62,12 +61,12 @@ c.MOSlurmSpawner.partitions = {
         "max_runtime": 12*3600,            # Maximum time limit in seconds (Must be at least 1hour)
         "simple": True,                    # True to show in Simple tab
         "jupyter_environments": {
-            "default": {                   # Jupyter environment internal identifier
-                "path": "/env/path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
+            "default": {                   # Jupyter environment identifier, at least "path" or "modules" is mandatory
                 "description": "Default",  # Text displayed for this environment select option
+                "path": "/env/path/bin/",  # Path to Python environment bin/ used to start Jupyter server on the Slurm nodes
+                "modules": "",             # Space separated list of environment modules to load before starting Jupyter server
                 "add_to_path": True,       # Toggle adding the environment to shell PATH (optional, default: True)
-                # Space separated list of modules to be loaded in single-user server job 
-                "modules": "SoftwarePackage/1.2.3"
+                "prologue": "",            # Shell commands to execute before starting the Jupyter server (optional, default: "")
             },
         },
     },
@@ -81,10 +80,11 @@ c.MOSlurmSpawner.partitions = {
         "simple": True,
         "jupyter_environments": {
             "default": {
-                "path": "/path/to/jupyter/env/for/partition_2/bin/",
                 "description": "Default",
+                "path": "",
+                "modules": "JupyterLab/3.6.0",
                 "add_to_path": True,
-                "modules": "AnotherSoftwarePackage/1.2.3"
+                "prologue": "echo 'Starting default environment'",
             },
         },
     },
@@ -98,14 +98,18 @@ c.MOSlurmSpawner.partitions = {
         "simple": False,
         "jupyter_environments": {
             "default": {
-                "path": "/path/to/jupyter/env/for/partition_3/bin/",
                 "description": "Partition 3 default",
+                "path": "/path/to/jupyter/env/for/partition_3/bin/",
+                "modules": "JupyterLab/3.6.0",
                 "add_to_path": True,
-                "modules": "SoftwarePackage/1.2.3"
+                "prologue": "echo 'Starting default environment'",
         },
     },
 }
 ```
+
+For a minimalistic working demo, check the
+[`demo/jupyterhub_conf.py`](demo/jupyterhub_conf.py) config file.
 
 ### Field descriptions
 
@@ -113,34 +117,45 @@ c.MOSlurmSpawner.partitions = {
   will be used to generate subtitles in the spawn page.
 - `description`: The description of the partition. This is only cosmetic and
   will be used to generate subtitles in the spawn page.
-- `gpu`: A template string that will be used to request GPU resources through
-  `--gres`. The template should therefore include a `{}` that will be replaced
-  by the number of requested GPU **and** follow the format expected by `--gres`.
-  If no GPU is available for this partition, set to `None`.
-- `max_ngpus`: The maximum number of GPU that can be requested for this
-  partition. The spawn page will use this to generate appropriate bounds for the
-  user inputs. If no GPU is available for this partition, set to `0`.
-- `max_nprocs`: The maximum number of processors that can be requested for this
-  partition. The spawn page will use this to generate appropriate bounds for the
-  user inputs.
-- `max_runtime`: The maximum job runtime for this partition in seconds. It
-  should be of minimum 1 hour as the _Simple_ tab only display buttons for
-  runtimes greater than 1 hour.
+- `gpu`: [Optional] A template string that will be used to request GPU resources
+  through `--gres`. The template should therefore include a `{}` that will be
+  replaced by the number of requested GPU **and** follow the format expected by
+  `--gres`. If no GPU is available for this partition, set to `""`. It is
+  retrieved from SLURM if not provided.
+- `max_ngpus`: [Optional] The maximum number of GPU that can be requested for
+  this partition. The spawn page will use this to generate appropriate bounds
+  for the user inputs. If no GPU is available for this partition, set to `0`. It
+  is retrieved from SLURM if not provided.
+- `max_nprocs`: [Optional] The maximum number of processors that can be
+  requested for this partition. The spawn page will use this to generate
+  appropriate bounds for the user inputs. It is retrieved from SLURM if not
+  provided.
+- `max_runtime`: [Optional] The maximum job runtime for this partition in
+  seconds. It should be of minimum 1 hour as the _Simple_ tab only display
+  buttons for runtimes greater than 1 hour. It is retrieved from SLURM if not
+  provided.
 - `simple`: Whether the partition should be available in the _Simple_ tab. The
   spawn page that will be generated is organized in a two tabs: a _Simple_ tab
   with minimal settings that will be enough for most users and an _Advanced_ tab
   where almost all Slurm job settings can be set. Some partitions can be hidden
   from the _Simple_ tab with setting `simple` to `False`.
 - `jupyter_environments`: Mapping of identifer name to information about Python
-  environment used to run Jupyter on the Slurm nodes. This information is a
-  mapping containing:
+  environment used to run Jupyter on the Slurm nodes. Either `path` or
+  `modules` (or both) should be defined. This information is a mapping
+  containing:
+  - `description`: Text used for display in the selection options.
   - `path`: The path to a Python environment bin/ used to start jupyter on the
     Slurm nodes. **jupyterhub_moss** needs that a virtual (or conda) environment
     is used to start Jupyter. This path can be changed according to the
     partitions.
-  - `description`: Text used for display in the selection options.
+  - `modules`: Space separated list of environment modules to load before
+    starting the Jupyter server. Environment modules will be loaded with the
+    `module` command.
   - `add_to_path`: Whether or not to prepend the environment `path` to shell
-  - `modules`: Space separated list of modules to be loaded in single-user server job.
+    `PATH`.
+  - `prologue`: Shell commands to execute on the Slurm node before starting the
+    Jupyter single-user server. This can be used to run, e.g.,
+    `module load <module>`. By default no command is run.
 
 ### Spawn page
 
@@ -148,7 +163,7 @@ The spawn page (available at `/hub/spawn`) will be generated according to the
 partition settings. For example, this is the spawn page generated for the
 partition settings above:
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/194308511-f0e6d6a9-ba7a-4086-a871-23b08523c61a.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/215526389-2ef5ac32-5d50-49de-aa5f-46972feaccf1.png width="50%">
 
 This spawn page is separated in two tabs: a _Simple_ and an _Advanced_ tab. On
 the _Simple_ tab, the user can choose between the partitions set though
@@ -160,7 +175,7 @@ Clicking on the **Start** button will request the job.
 The spawn page adapts to the chosen partition. This is the page when selecting
 the `partition_2`:
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/194308454-697c717f-daf0-4927-9fa6-6b96ba09dba6.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/215526553-4ba57510-efac-4a28-a576-ef81ff9ec2f5.png width="50%">
 
 As the maximum number of cores is different, the CPUs row change accordingly.
 Also, as `gpu` was set for `partition_2`, a new button row appears to enable GPU
@@ -168,7 +183,7 @@ requests.
 
 The _Advanced_ tab allows finer control on the requested resources.
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/194308524-38417bb8-f520-4940-9c94-af960f11e535.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/215526665-a650a54d-e7ec-4d50-b5ab-a02d93b23d19.png width="50%">
 
 The user can select any partition (`partition_3` is added in this case) and the
 table of available resources reflects this. The user can also choose any number

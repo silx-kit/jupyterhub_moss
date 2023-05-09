@@ -4,3 +4,28 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+asyncio_mode = "auto"
+testpaths = [
+  "test",
+]
+
+[tool.mypy]
+python_version = "3.8"
+plugins = "pydantic.mypy"
+files = [
+  "jupyterhub_moss",
+  "test",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "batchspawner",
+    "jupyterhub.tests.utils",
+    "jupyterhub.utils",
+]
+ignore_missing_imports = true

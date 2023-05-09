@@ -1,3 +1,23 @@
+{% macro resource_tab_footer(partitions, simple_only) %}
+<h4 class="subheading">Available resources</h4>
+<table class="table">
+  <tr class="active">
+    <th style="padding-right: 10rem;">Partition</th>
+    <th style="text-align: center; width: 50%;">Idle CPU cores</th>
+    <th style="text-align: center; width: 50%;">Idle nodes</th>
+  </tr>
+  {% for name, partition in partitions.items() %}
+  {% if partition.simple or not simple_only %}
+  <tr>
+    <th>{{ name }}</th>
+    <th style="text-align: center">{{ partition['ncores_idle'] }} <small>/ {{ partition['ncores_total'] }}</small></th>
+    <th style="text-align: center">{{ partition['nnodes_idle'] }} <small>/ {{ partition['nnodes_total'] }}</small></th>
+  </tr>
+  {% endif %}
+  {% endfor %}
+</table>
+{% endmacro %}
+
 <link href="/hub/form/option_form.css?v={{hash_option_form_css}}" rel="stylesheet" />
 <script>
 window.SLURM_DATA = JSON.parse('{{ jsondata }}');
@@ -17,7 +37,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
 </ul>
 <div class="tab-content">
   <div id="home" class="tab-pane fade in active">
-    <p class="subheading">Partition</p>
+    <h4 class="subheading">Partition</h4>
     <div class="radio-toolbar">
       {% for name, partition in partitions.items() %}
       {% if partition.simple %}
@@ -37,7 +57,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       {% endif %}
       {% endfor %}
     </div>
-    <p class="subheading">CPUs</p>
+    <h4 class="subheading">CPUs</h4>
     <div class="radio-toolbar">
       <input
         type="radio"
@@ -73,7 +93,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     </div>
 
     <div id="gpu_simple" hidden>
-    <p class="subheading">GPUs</p>
+    <h4 class="subheading">GPUs</h4>
     <div class="radio-toolbar">
       {% set ns = namespace(max_ngpus=0) %}
       {% for partition in partitions.values() %}
@@ -92,7 +112,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       {% endfor %}
     </div>
     </div>
-    <p class="subheading">Options</p>
+    <h4 class="subheading">Options</h4>
     <div class="form-container">
       <label for="environment_simple" accesskey="e">
         Jupyter environment:
@@ -101,15 +121,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         name="environment_simple"
         id="environment_simple"
       >
-      <optgroup id="environment_simple_default" label="Default"></optgroup>
-      <optgroup id="environment_simple_custom" label="Custom" hidden></optgroup>
       </select>
-      <input
-        type="hidden"
-        id="jupyterlab_simple"
-        name="jupyterlab_simple"
-        value="/lab"
-      />
       <label for="runtime_simple">Job duration:</label>
       <select
         name="runtime_simple"
@@ -123,25 +135,9 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         <option value="12">12 hours</option>
       </select>
     </div>
-    <h4 style="text-align: left">Available resources at current time</h4>
-    <table class="table table-hover">
-      <tr class="active">
-        <th>Partition</th>
-        {% for res_name in resources_display %}
-        <th>{{ res_name }}</th>
-        {% endfor %}
-      </tr>
-      {% for name, partition in partitions.items() %}
-      {% if partition.simple %}
-      <tr>
-        <th>{{ name }}</th>
-        {% for res in partition['available_counts'] %}
-        <td>{{ res }}</td>
-        {% endfor %}
-      </tr>
-      {% endif %}
-      {% endfor %}
-    </table>
+    {% block simple_tab_footer %}
+    {{ resource_tab_footer(partitions, simple_only=true) }}
+    {% endblock simple_tab_footer %}
   </div>
   <div id="menu1" class="tab-pane fade indent-right" align="right">
     <div class="form-container">
@@ -209,16 +205,21 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     />
     <input
       type="hidden"
-      id="default_url"
+      id="default_url_hidden_input"
       name="default_url"
       value="/lab"
+    />
+    <input
+      type="checkbox"
+      id="default_url"
+      checked
     />
     <label>Jupyter environment:</label>
     <div id="jupyter_environments" class="form-offset-row">
       <input type="hidden" id="environment_path" name="environment_path"/>
       <input type="hidden" id="environment_modules" name="environment_modules"/>
       <div id="jupyter_environments_default"></div>
-      <div>Custom:</div>
+      <h4>Custom:</h4>
       <div id="jupyter_environments_custom"></div>
       <div class="environment-div">
         <input type="hidden" value="custom"/>
@@ -256,8 +257,8 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
           </div>
           <div>
             &#9888; Required packages in custom environments:<br>
-            <a href="https://pypi.org/project/batchspawner/">batchspawner</a>{% if batchspawner_version %}~={{batchspawner_version}}{% endif %} and
-            <a href="https://pypi.org/project/jupyterhub/">jupyterhub</a>{% if jupyterhub_version %}~={{jupyterhub_version}}{% endif %}
+            <a href="https://pypi.org/project/batchspawner/">batchspawner</a>~={{batchspawner_version}} and
+            <a href="https://pypi.org/project/jupyterhub/">jupyterhub</a>~={{jupyterhub_version}}.
           </div>
         </div>
       </div>
@@ -289,23 +290,8 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       placeholder="--option1=v1 --option2=v2"
     />
     </div>
-
-    <h4 style="text-align: left">Available resources at current time</h4>
-    <table class="table table-hover">
-      <tr class="active">
-        <th>Partition</th>
-        {% for res_name in resources_display %}
-        <th>{{ res_name }}</th>
-        {% endfor %}
-      </tr>
-      {% for name, partition in partitions.items() %}
-      <tr>
-        <th>{{ name }}</th>
-        {% for res in partition['available_counts'] %}
-        <td>{{ res }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
+    {% block advanced_tab_footer %}
+    {{ resource_tab_footer(partitions, simple_only=false) }}
+    {% endblock advanced_tab_footer %}
   </div>
 </div>

@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+import datetime
 import hashlib
 import os.path
+import re
 from typing import Any, Callable, Iterable, Optional
 
 
@@ -18,3 +22,46 @@ def find(function: Callable[[Any], bool], iterable: Iterable[Any]) -> Optional[A
         if function(item):
             return item
     return None
+
+
+_TIMELIMIT_REGEXP = re.compile(
+    "^(?:^(?P<days>[0-9]+)-)?(?P<hours>[0-9]+)(?::(?P<minutes>[0-5]?[0-9]))?(?::(?P<seconds>[0-5]?[0-9]))?$"
+)
+
+
+def parse_timelimit(timelimit: str) -> datetime.timedelta:
+    """Parse a SLURM timelimit/walltime string.
+
+    Raises ValueError if parsing failed.
+    """
+    if timelimit == "infinite":
+        return datetime.timedelta.max
+    match = _TIMELIMIT_REGEXP.match(timelimit)
+    if match is None:
+        raise ValueError(f"Failed to parse time limit: '{timelimit}'.")
+    return datetime.timedelta(
+        **{k: int(v) for k, v in match.groupdict().items() if v is not None}
+    )
+
+
+def create_prologue(
+    default_prologue: str,
+    environment_path: str,
+    environment_modules: str,
+) -> str:
+    """Create prologue commands"""
+    prologue = default_prologue
+
+    # Singularity images are never added to PATH
+    if environment_path.endswith(".sif"):
+        return prologue
+
+    # Prepend path to environement
+    if environment_path:
+        prologue += f'\nexport PATH="{environment_path}:$PATH"'
+
+    # Load environment modules
+    if environment_modules:
+        prologue += f"\nmodule load {environment_modules}"
+
+    return prologue

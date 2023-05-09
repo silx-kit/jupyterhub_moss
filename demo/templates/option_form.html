@@ -1,0 +1,26 @@
+{% extends 'templates/option_form.html' %}
+{% macro resource_table(partitions, simple_only=false) %}
+<h4 style="text-align: left">Currently available resources</h4>
+<table class="table">
+  <tr class="active">
+    <th></th>
+    <th>CPU cores</th>
+  </tr>
+  {% for name, partition in partitions.items() %}
+  {% if partition.simple or not simple_only %}
+  <tr>
+    <th>{{ name }}</th>
+    <th>{{ partition['ncores_idle'] }}</th>
+  </tr>
+  {% endif %}
+  {% endfor %}
+</table>
+{% endmacro %}
+
+{% block simple_tab_footer %}
+{{ resource_table(partitions, simple_only=true) }}
+{% endblock simple_tab_footer %}
+
+{% block advanced_tab_footer %}
+{{ resource_table(partitions) }}
+{% endblock advanced_tab_footer %}

@@ -28,22 +28,45 @@ manually using
 black .
 ```
 
+### Typing
+
+[mypy](https://mypy.readthedocs.io/en/stable) is used to check typing
+statically. The config is located in `pyproject.toml`. Type checking can be run
+using
+
+```
+mypy
+```
+
+### Testing
+
+[pytest](https://docs.pytest.org/en/latest/) is used to run the tests. The
+config is located in `pyproject.toml`. Tests can be run using:
+
+```
+python -m pytest
+```
+
+Note: This is different from calling `pytest`, see
+[Invoking pytest versus python -m pytest](https://docs.pytest.org/en/latest/explanation/pythonpath.html#invoking-pytest-versus-python-m-pytest).
+
 ### CI
 
-The CI will check that the lint check passes and that all files are correctly
-formatted (using `black --check .`). Before commiting, be sure to run `flake8`
-and `black` to ensure CI passes.
+The CI will check that the lint check passes, that all files are correctly
+formatted (using `black --check .`) and that tests passes. Before commiting, be
+sure to run `flake8`, `black`, `mypy` and `python -m pytest` to ensure CI
+passes.
 
 ## Generate the spawn page locally
 
 Even if you do not have access to a Slurm cluster, it is possible to mock the
 Slurm info to generate the spawn page for a local development JupyterHub
 instance. For instance, see the
-[`demo_jupyterhub_conf.py`](demo_jupyterhub_conf.py) file which which you can
+[`demo/jupyterhub_conf.py`](demo/jupyterhub_conf.py) file which which you can
 use to start jupyterhub using jupyterhub_moss:
 
 ```
-jupyterhub -f demo_jupyterhub_conf.py
+jupyterhub -f demo/jupyterhub_conf.py
 ```
 
 ## Release
