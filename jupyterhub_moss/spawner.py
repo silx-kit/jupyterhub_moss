@@ -369,7 +369,8 @@ class MOSlurmSpawner(SlurmSpawner):
         self.default_url = self.user_options["default_url"]
         self.log.info(f"Used default URL: {self.default_url}")
 
-        self.notebook_dir = self.user_options["root_dir"]
+        if self.user_options["root_dir"]:
+            self.notebook_dir = self.user_options["root_dir"]
 
         environment_id = self.user_options["environment_id"]
         self.log.info(f"Used environment: {environment_id}")
