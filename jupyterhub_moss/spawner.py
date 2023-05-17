@@ -13,7 +13,6 @@ from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PrefixLoader
 from pydantic import ValidationError
 
 from .models import (
-    PartitionAllResources,
     PartitionInfo,
     PartitionResources,
     PartitionsTrait,
@@ -78,7 +77,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes/state, cores/node, cores/state, gpus, total memory for all partitions
-        r"sinfo -a --noheader -o '%R %F %c %C %G %m %l'",
+        r"sinfo -N -a --noheader -O 'PartitionName,StateCompact,CPUsState,Gres,GresUsed,Memory,Time'",
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}."
         "Output will be parsed by ``slurm_info_resources``.",
     ).tag(config=True)
@@ -116,25 +115,37 @@ class MOSlurmSpawner(SlurmSpawner):
         for line in slurm_info_out.splitlines():
             (
                 partition,
-                nnodes,
-                ncores_per_node,
+                node_state,
                 ncores,
-                gpus,
+                gres_total,
+                gres_used,
                 memory,
                 timelimit,
             ) = line.split()
-            # node count - allocated/idle/other/total
-            _, nnodes_idle, _, nnodes_total = nnodes.split("/")
+
+            # ignore nodes that are full or down
+            if node_state not in ["idle", "mix"]:
+                continue
+
             # core count - allocated/idle/other/total
             _, ncores_idle, _, ncores_total = ncores.split("/")
+            ncores_idle = int(ncores_idle)
+            ncores_total = int(ncores_total)
+
             # gpu count - gpu:name:total(indexes)
             try:
-                gpus_gres = gpus.replace("(", ":").split(":")
-                gpus_total = gpus_gres[2]
+                gpus_gres = gres_total.replace("(", ":").split(":")
+                gpus_total = int(gpus_gres[2])
                 gpu = ":".join(gpus_gres[0:2]) + ":{}"
+                gpus_used = int(gres_used.replace("(", ":").split(":")[2])
             except IndexError:
-                gpus_total = "0"
+                gpus_total = 0
+                gpus_used = 0
                 gpu = ""
+
+            # job slots for resource display
+            # 1 core, 2 cores, 4 cores, 1 GPU
+            job_slots = [ncores_idle, ncores_idle // 2, ncores_idle // 4, gpus_total-gpus_used]
 
             try:
                 max_runtime = parse_timelimit(timelimit)
@@ -145,24 +156,27 @@ class MOSlurmSpawner(SlurmSpawner):
                 max_runtime = datetime.timedelta(days=1)
 
             try:
-                resources = PartitionAllResources(
+                resources = {
                     # display resource counts
-                    nnodes_total=nnodes_total,
-                    nnodes_idle=nnodes_idle,
-                    ncores_total=ncores_total,
-                    ncores_idle=ncores_idle,
+                    "job_slots": job_slots,
                     # required resource counts
-                    max_nprocs=ncores_per_node.rstrip("+"),
-                    max_mem=memory.rstrip("+"),
-                    gpu=gpu,
-                    max_ngpus=gpus_total,
-                    max_runtime=max_runtime.total_seconds(),
-                )
+                    "max_nprocs": ncores_total,
+                    "max_mem": memory.rstrip("+"),
+                    "gpu": gpu,
+                    "max_ngpus": gpus_total,
+                    "max_runtime": max_runtime.total_seconds(),
+                }
             except ValidationError as err:
                 self.log.error("Error parsing output of slurm_info_cmd: %s", err)
                 raise
 
-            partitions_info[partition] = resources
+            if partition in partitions_info:
+                # update display counters of existing partition
+                slots_counters = zip(partitions_info[partition]["job_slots"], resources["job_slots"])
+                partitions_info[partition]["job_slots"] = [old + new for old, new in slots_counters]
+            else:
+                # add new partition
+                partitions_info[partition] = resources
 
         return partitions_info
 
@@ -228,7 +242,7 @@ class MOSlurmSpawner(SlurmSpawner):
         partitions_info = {
             partition: PartitionInfo.parse_obj(
                 {
-                    **resources_info[partition].dict(),
+                    **resources_info[partition],
                     **config_partition_info.dict(exclude_none=True),
                 }
             )
