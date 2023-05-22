@@ -178,7 +178,9 @@ class UserOptions(BaseModel):
         "reservation",
         "options",
         "output",
+        "environment_id",
         "environment_path",
+        "environment_modules",
         "default_url",
         "root_dir",
     )
