@@ -67,13 +67,13 @@ class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
 
     add_to_path = True
     description: NonEmptyStr
-    path: Optional[str] = ""
-    modules: Optional[str] = ""
-    prologue: Optional[str] = ""
+    path = ""
+    modules = ""
+    prologue = ""
 
     # validators
     @validator("modules")
-    def check_path_or_mods(cls, v: Optional[str], values: dict) -> Optional[str]:
+    def check_path_or_mods(cls, v: str, values: dict) -> str:
         if not v and not values.get("path"):
             raise ValueError("Jupyter environment path or modules is required")
         return v
