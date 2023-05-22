@@ -58,12 +58,15 @@
 #environment_simple {
   text-overflow: ellipsis;
   max-width: 100%;
-  font-size: 1.2em;
-  padding: 1.5ex 1em 1ex 1em;
+  padding: 0.5rem 1rem 0.5rem 1rem;
+  margin-top: -0.5rem;
+  font-weight: 700;
 }
 
 #runtime_simple {
-  padding: 1.0ex 0.5em 0.5ex 0.5em;
+  padding: 0.5rem 1rem 0.5rem 1rem;
+  margin-top: -0.5rem;
+  font-weight: 700;
 }
 
 .form-container {
