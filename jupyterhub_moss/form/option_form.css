@@ -58,7 +58,7 @@
 #environment_simple {
   text-overflow: ellipsis;
   max-width: 100%;
-  padding: 1.0rem;
+  padding: 0.5rem 1rem;
   margin-top: -0.5rem;
   font-weight: 700;
 }
