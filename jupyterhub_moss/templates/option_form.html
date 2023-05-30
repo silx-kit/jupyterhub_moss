@@ -18,7 +18,10 @@
 </table>
 {% endmacro %}
 
+{% block stylesheet %}
 <link href="/hub/form/option_form.css?v={{hash_option_form_css}}" rel="stylesheet" />
+{% endblock %}
+
 <script>
 window.SLURM_DATA = JSON.parse('{{ jsondata }}');
 </script>

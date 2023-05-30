@@ -5,13 +5,18 @@ from traitlets import Unicode, default
 from jupyterhub_moss import MOSlurmSpawner
 
 
-def post_request(path, app, **kwargs):
+def post_request(path, app, data, cookies=None, **kwargs):
     """Send a POST request on the hub
 
     Similar to jupyterhub.tests.utils.get_page
     """
+    if cookies is not None and "_xsrf" in cookies:
+        data["_xsrf"] = cookies["_xsrf"]
+
     base_url = url_path_join(public_host(app), app.hub.base_url)
-    return async_requests.post(url_path_join(base_url, path), **kwargs)
+    return async_requests.post(
+        url_path_join(base_url, path), data=data, cookies=cookies, **kwargs
+    )
 
 
 class MOSlurmSpawnerMock(MOSlurmSpawner):
