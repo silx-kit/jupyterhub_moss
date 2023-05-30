@@ -5,6 +5,8 @@ maintained by VUB-HPC.
 
 Notable changes in this fork:
 * support for loading modules in the singleuser server job
+* support different groups of default environment
+* display available resources as job slots per amount of cores
 
 **jupyterhub_moss** is a Python package that provides:
 

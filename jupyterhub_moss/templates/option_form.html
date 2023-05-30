@@ -1,12 +1,12 @@
 {% macro resource_tab_footer(partitions, simple_only) %}
-<h4 class="subheading">Available resources</h4>
+<h4 class="subheading">Available resources at this time</h4>
 <table class="table">
   <tr class="active">
     <th style="padding-right: 10rem;">Partition</th>
-    <th style="text-align: center; width: 25%;">1 core slots</th>
-    <th style="text-align: center; width: 25%;">2 cores slots</th>
-    <th style="text-align: center; width: 25%;">4 cores slots</th>
-    <th style="text-align: center; width: 25%;">1 GPU slots</th>
+    <th style="text-align: center; width: 25%;">1-core slots</th>
+    <th style="text-align: center; width: 25%;">2-cores slots</th>
+    <th style="text-align: center; width: 25%;">4-cores slots</th>
+    <th style="text-align: center; width: 25%;">GPU slots</th>
   </tr>
   {% for name, partition in partitions.items() %}
   {% if partition.simple or not simple_only %}
@@ -256,7 +256,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
               title="Add this environment to &#13;the list of custom environments"
               disabled
             >
-              &#xff0b;
+              Add custom environment
             </button>
           </div>
           <div>
