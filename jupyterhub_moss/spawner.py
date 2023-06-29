@@ -371,8 +371,12 @@ class MOSlurmSpawner(SlurmSpawner):
         self.notebook_dir = self.user_options["root_dir"]
 
         environment_id = self.user_options["environment_id"]
-        self.log.info(f"Used environment: {environment_id}")
-        self.__update_spawn_commands(self.user_options["environment_path"])
+        environment_path = self.user_options["environment_path"]
+        environment_modules = self.user_options["environment_modules"]
+        self.log.info(
+            f"Used environment: ID: {environment_id}, path: {environment_path}, modules: {environment_modules}"
+        )
+        self.__update_spawn_commands(environment_path)
 
         return await super().start()
 
