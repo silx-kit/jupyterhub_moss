@@ -12,7 +12,7 @@ function createEnvironmentDiv(key, description, path, modules, checked = false) 
   div.classList.add('environment-div');
 
   const radio_id = `environment_radio_${key}`;
-  const title = `Environment Name: ${description}`;
+  const title = [path ? `Path: ${path}` : "", modules ? `Modules: ${modules}` : ""].filter(v => v).join("\n");
 
   // Store definitions in hidden inputs
   const path_input = document.createElement('input');
