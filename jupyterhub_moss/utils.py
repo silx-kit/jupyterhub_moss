@@ -52,13 +52,13 @@ def create_prologue(
     """Create prologue commands"""
     prologue = default_prologue
 
+    # Load environment modules
+    if environment_modules:
+        prologue += f"\nmodule load {environment_modules}"
+
     # Prepend path to environement
     # Singularity images are never added to PATH
     if environment_path and not environment_path.endswith(".sif"):
         prologue += f'\nexport PATH="{environment_path}:$PATH"'
-
-    # Load environment modules
-    if environment_modules:
-        prologue += f"\nmodule load {environment_modules}"
 
     return prologue
