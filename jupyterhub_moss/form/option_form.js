@@ -211,7 +211,7 @@ function restoreCustomEnvironmentsFromLocalStorage() {
   }
 
   for (const key in config) {
-    addCustomEnvironment(key, config[key].description, config[key].path, config[key].modules, false);
+    addCustomEnvironment(key, config[key].description, config[key].path || "", config[key].modules || "", false);
   }
 }
 
