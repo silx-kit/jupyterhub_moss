@@ -55,9 +55,10 @@ c.MOSlurmSpawner.partitions = {
         "max_runtime": 12*3600,            # Maximum time limit in seconds (Must be at least 1hour)
         "simple": True,                    # True to show in Simple tab
         "jupyter_environments": {
-            "default": {                   # Jupyter environment internal identifier
-                "path": "/env/path/bin/",  # Path to Python environment bin/ used to start jupyter on the Slurm nodes
+            "default": {                   # Jupyter environment identifier, at least "path" or "modules" is mandatory
                 "description": "Default",  # Text displayed for this environment select option
+                "path": "/env/path/bin/",  # Path to Python environment bin/ used to start Jupyter server on the Slurm nodes
+                "modules": "",             # Space separated list of environment modules to load before starting Jupyter server
                 "add_to_path": True,       # Toggle adding the environment to shell PATH (optional, default: True)
                 "prologue": "",            # Shell commands to execute before starting the Jupyter server (optional, default: "")
             },
@@ -73,8 +74,9 @@ c.MOSlurmSpawner.partitions = {
         "simple": True,
         "jupyter_environments": {
             "default": {
-                "path": "/path/to/jupyter/env/for/partition_2/bin/",
                 "description": "Default",
+                "path": "",
+                "modules": "JupyterLab/3.6.0",
                 "add_to_path": True,
                 "prologue": "echo 'Starting default environment'",
             },
@@ -90,8 +92,9 @@ c.MOSlurmSpawner.partitions = {
         "simple": False,
         "jupyter_environments": {
             "default": {
-                "path": "/path/to/jupyter/env/for/partition_3/bin/",
                 "description": "Partition 3 default",
+                "path": "/path/to/jupyter/env/for/partition_3/bin/",
+                "modules": "JupyterLab/3.6.0",
                 "add_to_path": True,
                 "prologue": "echo 'Starting default environment'",
         },
@@ -131,13 +134,17 @@ For a minimalistic working demo, check the
   where almost all Slurm job settings can be set. Some partitions can be hidden
   from the _Simple_ tab with setting `simple` to `False`.
 - `jupyter_environments`: Mapping of identifer name to information about Python
-  environment used to run Jupyter on the Slurm nodes. This information is a
-  mapping containing:
+  environment used to run Jupyter on the Slurm nodes. Either `path` or
+  `modules` (or both) should be defined. This information is a mapping
+  containing:
+  - `description`: Text used for display in the selection options.
   - `path`: The path to a Python environment bin/ used to start jupyter on the
     Slurm nodes. **jupyterhub_moss** needs that a virtual (or conda) environment
     is used to start Jupyter. This path can be changed according to the
     partitions.
-  - `description`: Text used for display in the selection options.
+  - `modules`: Space separated list of environment modules to load before
+    starting the Jupyter server. Environment modules will be loaded with the
+    `module` command.
   - `add_to_path`: Whether or not to prepend the environment `path` to shell
     `PATH`.
   - `prologue`: Shell commands to execute on the Slurm node before starting the

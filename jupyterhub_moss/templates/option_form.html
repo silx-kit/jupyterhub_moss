@@ -1,5 +1,5 @@
 {% macro resource_tab_footer(partitions, simple_only) %}
-<h4 style="text-align: center">Available resources</h4>
+<h4 class="subheading">Available resources</h4>
 <table class="table">
   <tr class="active">
     <th style="padding-right: 10rem;">Partition</th>
@@ -40,7 +40,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
 </ul>
 <div class="tab-content">
   <div id="home" class="tab-pane fade in active">
-    <p class="subheading">Partition</p>
+    <h4 class="subheading">Partition</h4>
     <div class="radio-toolbar">
       {% for name, partition in partitions.items() %}
       {% if partition.simple %}
@@ -60,7 +60,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       {% endif %}
       {% endfor %}
     </div>
-    <p class="subheading">CPUs</p>
+    <h4 class="subheading">CPUs</h4>
     <div class="radio-toolbar">
       <input
         type="radio"
@@ -96,7 +96,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     </div>
 
     <div id="gpu_simple" hidden>
-    <p class="subheading">GPUs</p>
+    <h4 class="subheading">GPUs</h4>
     <div class="radio-toolbar">
       {% set ns = namespace(max_ngpus=0) %}
       {% for partition in partitions.values() %}
@@ -115,7 +115,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       {% endfor %}
     </div>
     </div>
-    <p class="subheading">Options</p>
+    <h4 class="subheading">Options</h4>
     <div class="form-container">
       <label for="environment_simple" accesskey="e">
         Jupyter environment:
@@ -229,6 +229,8 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
     />
     <label>Jupyter environment:</label>
     <div id="jupyter_environments" class="form-offset-row">
+      <input type="hidden" id="environment_path" name="environment_path"/>
+      <input type="hidden" id="environment_modules" name="environment_modules"/>
       <div id="jupyter_environments_default"></div>
       <div>Custom:</div>
       <div id="jupyter_environments_custom"></div>
@@ -237,7 +239,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
         <input
           type="radio"
           id="environment_add_radio"
-          name="environment_path"
+          name="environment_id"
           value=""
         />
         <div>
@@ -252,13 +254,18 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
               id="environment_add_path"
               placeholder="/path/to/jupyter/env/bin *"
             />
+            <input
+              type="text"
+              id="environment_add_modules"
+              placeholder="List of modules (space-separated)"
+            />
             <button
               type="button"
               id="environment_add_button"
               title="Add this environment to &#13;the list of custom environments"
               disabled
             >
-              &#xff0b;
+              Add custom environment
             </button>
           </div>
           <div>

@@ -43,7 +43,7 @@
 }
 
 .subheading {
-  padding-top: 15px;
+  padding-top: 1em;
   text-align: center;
 }
 
@@ -57,14 +57,23 @@
 
 #environment_simple {
   text-overflow: ellipsis;
-  max-width: 20em;
+  max-width: 100%;
+  padding: 0.5rem 1rem;
+  margin-top: -0.5rem;
+  font-weight: 700;
+}
+
+#runtime_simple {
+  padding: 0.5rem 1.0rem;
+  margin-top: -0.5rem;
+  font-weight: 700;
 }
 
 .form-container {
   padding: 0.3em;
   display: grid;
   grid-template-columns: auto auto;
-  grid-gap: 0.5rem;
+  grid-gap: 1.0rem;
   justify-content: center;
   align-items: center;
   justify-items: stretch;
@@ -145,16 +154,18 @@
 
 .environment-add-div {
   display: flex;
-  align-items: flex-start;
+  flex-flow: column nowrap;
+  justify-content: flex-start;
   width: 100%;
+  gap: 0.5rem;
 }
 
 .environment-add-div > * {
   margin-left: 0.3rem;
 }
 
-#environment_add_path {
-  flex: 1;
+.environment-add-div > input {
+  flex: 4 1 auto;
 }
 
 #environment_add_button {

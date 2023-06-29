@@ -67,8 +67,16 @@ class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
 
     add_to_path = True
     description: NonEmptyStr
-    path: NonEmptyStr
+    path = ""
+    modules = ""
     prologue = ""
+
+    # validators
+    @validator("modules")
+    def check_path_or_mods(cls, v: str, values: dict) -> str:
+        if not v and not values.get("path"):
+            raise ValueError("Jupyter environment path or modules is required")
+        return v
 
 
 class PartitionConfig(BaseModel, allow_mutation=False, extra=Extra.forbid):
@@ -136,7 +144,9 @@ class UserOptions(BaseModel):
     ngpus: NonNegativeInt = 0
     options = ""
     output = "/dev/null"
+    environment_id = ""
     environment_path = ""
+    environment_modules = ""
     default_url = ""
     root_dir = ""
     # Extra fields
@@ -168,7 +178,9 @@ class UserOptions(BaseModel):
         "reservation",
         "options",
         "output",
+        "environment_id",
         "environment_path",
+        "environment_modules",
         "default_url",
         "root_dir",
     )

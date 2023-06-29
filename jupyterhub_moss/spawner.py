@@ -54,9 +54,10 @@ class MOSlurmSpawner(SlurmSpawner):
                     value_trait=traitlets.Dict(
                         key_trait=traitlets.Unicode(),
                         per_key_traits={
-                            "path": traitlets.Unicode(),
                             "description": traitlets.Unicode(),
                             "add_to_path": traitlets.Bool(),
+                            "path": traitlets.Unicode(),
+                            "modules": traitlets.Unicode(),
                             "prologue": traitlets.Unicode(),
                         },
                     ),
@@ -316,13 +317,16 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             options.gres = gpu_gres_template.format(options.ngpus)
 
-        partition_environments = tuple(partition_info.jupyter_environments.values())
-        if not options.environment_path:
-            # Set path to use from first environment for the current partition
-            options.environment_path = partition_environments[0].path
+        # Custom envs are always added to PATH
+        prologue_env_path = options.environment_path
+        # Default envs only added to PATH if add_to_path is True
+        partition_default_envs = partition_info.jupyter_environments
+        if options.environment_id in partition_default_envs:
+            if not partition_default_envs[options.environment_id].add_to_path:
+                prologue_env_path = ""
 
         options.prologue = create_prologue(
-            self.req_prologue, options.environment_path, partition_environments
+            self.req_prologue, prologue_env_path, options.environment_modules
         )
 
     async def options_from_form(self, formdata: dict[str, list[str]]) -> dict:
@@ -366,8 +370,12 @@ class MOSlurmSpawner(SlurmSpawner):
 
         self.notebook_dir = self.user_options["root_dir"]
 
+        environment_id = self.user_options["environment_id"]
         environment_path = self.user_options["environment_path"]
-        self.log.info(f"Used environment: {environment_path}")
+        environment_modules = self.user_options["environment_modules"]
+        self.log.info(
+            f"Used environment: ID: {environment_id}, path: {environment_path}, modules: {environment_modules}"
+        )
         self.__update_spawn_commands(environment_path)
 
         return await super().start()

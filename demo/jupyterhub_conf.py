@@ -21,20 +21,20 @@ c.MOSlurmSpawner.partitions = {
         "simple": True,
         "jupyter_environments": {
             "default": {
-                "path": "/default/jupyter_env_path/bin/",
                 "description": "Operating system (default)",
+                "path": "/default/jupyter_env_path/bin/",
                 "add_to_path": False,
                 "prologue": 'echo "Starting default env."\n',
             },
-            "new-x86": {
-                "path": "/new-x86/jupyter_env_path/bin/",
+            "Python 3.11": {
                 "description": "New environment x86 (latest)",
-                "add_to_path": True,
+                "modules": "Python/3.11 JupyterLab/3.6.0",
+                "add_to_path": False,
                 "prologue": "echo 'Starting new-x86 env.'",
             },
             "latest": {
-                "path": "/latest/jupyter_env_path/bin/",
                 "description": "Operating system (latest)",
+                "path": "/latest/jupyter_env_path/bin/",
                 "prologue": "echo 'Starting latest env.'",
             },
         },
@@ -45,16 +45,16 @@ c.MOSlurmSpawner.partitions = {
         "simple": True,
         "jupyter_environments": {
             "default": {
-                "path": "/path/to/jupyter/env/for/partition_2/bin/",
                 "description": "Current environment (default)",
+                "path": "/path/to/jupyter/env/for/partition_2/bin/",
             },
             "latest": {
-                "path": "/latest/path/to/jupyter/env/for/partition_2/bin/",
                 "description": "Current environment (latest)",
+                "path": "/latest/path/to/jupyter/env/for/partition_2/bin/",
             },
-            "new-ppx64le": {
-                "path": "/new-ppc64le/jupyter_env_path/bin/",
+            "Python 3.11": {
                 "description": "New environment ppc64le (latest)",
+                "modules": "Python/3.11 JupyterLab/3.6.0",
             },
         },
     },
@@ -64,12 +64,12 @@ c.MOSlurmSpawner.partitions = {
         "simple": False,
         "jupyter_environments": {
             "default": {
-                "path": "/path/to/jupyter/env/for/partition_3/bin/",
                 "description": "Operating system (default)",
+                "path": "/path/to/jupyter/env/for/partition_3/bin/",
             },
             "new-x86": {
-                "path": "/new-x86/jupyter_env_path/bin/",
                 "description": "New environment x86 (latest)",
+                "path": "/new-x86/jupyter_env_path/bin/",
             },
         },
     },

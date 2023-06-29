@@ -28,9 +28,14 @@ class MOSSMockSimple(MOSlurmSpawnerMock):
                 "simple": True,
                 "jupyter_environments": {
                     "default": {
+                        "description": "Virtual environment",
                         "path": "/default/jupyter_env_path/bin/",
-                        "description": "default",
                         "add_to_path": True,
+                    },
+                    "modules": {
+                        "description": "Environment modules",
+                        "modules": "JupyterLab/3.6.0",
+                        "add_to_path": False,
                     },
                 },
             },
@@ -66,9 +71,16 @@ async def test_spawn_page(app):
                 "simple": True,
                 "jupyter_environments": {
                     "default": {
+                        "description": "Virtual environment",
                         "path": "/default/jupyter_env_path/bin/",
-                        "description": "default",
+                        "modules": "",
                         "add_to_path": True,
+                    },
+                    "modules": {
+                        "description": "Environment modules",
+                        "path": "",
+                        "modules": "JupyterLab/3.6.0",
+                        "add_to_path": False,
                     },
                 },
             }
