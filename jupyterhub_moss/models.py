@@ -4,20 +4,15 @@ import re
 from typing import Dict, Optional
 
 from pydantic import (
+    constr,
     field_validator,
     BaseModel,
-    ConstrainedStr,
     Extra,
     NonNegativeInt,
     PositiveInt,
 )
 
-# constrained types and validators
-
-
-class NonEmptyStr(ConstrainedStr):
-    min_length = 1
-    strip_whitespace = True
+# Validators
 
 
 def check_match_gpu(v: Optional[int], values: dict) -> Optional[int]:
@@ -65,11 +60,12 @@ class PartitionAllResources(
 class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
     """Single Jupyter environement description"""
 
-    add_to_path = True
-    description: NonEmptyStr
-    path = ""
-    modules = ""
-    prologue = ""
+    add_to_path: bool = True
+    # See https://github.com/pydantic/pydantic/issues/156 for type: ignore
+    description: constr(strip_whitespace=True, min_length=1)  # type: ignore[valid-type]
+    path: str = ""
+    modules: str = ""
+    prologue: str = ""
 
     # validators
     @field_validator("modules")
