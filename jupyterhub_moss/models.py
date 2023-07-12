@@ -4,12 +4,12 @@ import re
 from typing import Dict, Optional
 
 from pydantic import (
+    field_validator,
     BaseModel,
     ConstrainedStr,
     Extra,
     NonNegativeInt,
     PositiveInt,
-    validator,
 )
 
 # constrained types and validators
@@ -44,7 +44,7 @@ class PartitionResources(BaseModel, allow_mutation=False, extra=Extra.allow):
     max_runtime: PositiveInt
 
     # validators
-    _check_match_gpu = validator("max_ngpus", allow_reuse=True)(check_match_gpu)
+    _check_match_gpu = field_validator("max_ngpus")(check_match_gpu)
 
 
 class PartitionAllResources(
@@ -72,7 +72,7 @@ class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
     prologue = ""
 
     # validators
-    @validator("modules")
+    @field_validator("modules")
     def check_path_or_mods(cls, v: str, values: dict) -> str:
         if not v and not values.get("path"):
             raise ValueError("Jupyter environment path or modules is required")
@@ -105,15 +105,15 @@ class _PartitionTraits(PartitionConfig, allow_mutation=False, extra=Extra.forbid
     max_runtime: Optional[int] = None
 
     # validators
-    _check_match_gpu = validator("max_ngpus", allow_reuse=True)(check_match_gpu)
+    _check_match_gpu = field_validator("max_ngpus")(check_match_gpu)
 
-    @validator("max_ngpus")
+    @field_validator("max_ngpus")
     def check_is_positive_or_none(cls, v: Optional[int]) -> Optional[int]:
         if v is not None and v < 0:
             raise ValueError("Value must be positive")
         return v
 
-    @validator("max_nprocs", "max_runtime")
+    @field_validator("max_nprocs", "max_runtime")
     def check_is_strictly_positive_or_none(cls, v: Optional[int]) -> Optional[int]:
         if v is not None and v <= 0:
             raise ValueError("Value must be strictly positive")
@@ -171,7 +171,7 @@ class UserOptions(BaseModel):
         )
         return cls.parse_obj(fields)
 
-    @validator(
+    @field_validator(
         "partition",
         "runtime",
         "memory",
@@ -189,13 +189,13 @@ class UserOptions(BaseModel):
             raise ValueError("Must not contain newline")
         return v
 
-    @validator("default_url")
+    @field_validator("default_url")
     def is_absolute_path(cls, v: str) -> str:
         if v and not v.startswith("/"):
             raise ValueError("Must start with /")
         return v
 
-    @validator("runtime")
+    @field_validator("runtime")
     def check_timelimit(cls, v: str) -> str:
         from .utils import parse_timelimit  # avoid circular imports
 
@@ -205,7 +205,7 @@ class UserOptions(BaseModel):
 
     _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
 
-    @validator("memory")
+    @field_validator("memory")
     def check_memory(cls, v: str) -> str:
         if v and cls._MEM_REGEXP.match(v) is None:
             raise ValueError("Error in memory syntax")
