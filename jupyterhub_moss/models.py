@@ -7,9 +7,10 @@ from pydantic import (
     constr,
     field_validator,
     BaseModel,
-    Extra,
+    ConfigDict,
     NonNegativeInt,
     PositiveInt,
+    RootModel,
 )
 
 # Validators
@@ -24,7 +25,7 @@ def check_match_gpu(v: Optional[int], values: dict) -> Optional[int]:
 # models
 
 
-class PartitionResources(BaseModel, allow_mutation=False, extra=Extra.allow):
+class PartitionResources(BaseModel, frozen=True, extra="allow"):
     """SLURM partition required resources information
 
     This information retrieved from SLURM is used to constraint user's selection.
@@ -42,9 +43,7 @@ class PartitionResources(BaseModel, allow_mutation=False, extra=Extra.allow):
     _check_match_gpu = field_validator("max_ngpus")(check_match_gpu)
 
 
-class PartitionAllResources(
-    PartitionResources, allow_mutation=False, extra=Extra.forbid
-):
+class PartitionAllResources(PartitionResources, frozen=True, extra="forbid"):
     """SLURM partition resources information
 
     Extends resource constraints information with information
@@ -57,7 +56,7 @@ class PartitionAllResources(
     ncores_idle: NonNegativeInt
 
 
-class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
+class JupyterEnvironment(BaseModel, frozen=True, extra="forbid"):
     """Single Jupyter environement description"""
 
     add_to_path: bool = True
@@ -75,7 +74,7 @@ class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
         return v
 
 
-class PartitionConfig(BaseModel, allow_mutation=False, extra=Extra.forbid):
+class PartitionConfig(BaseModel, frozen=True, extra="forbid"):
     """Information about partition description and available environments"""
 
     architecture: str = ""
@@ -84,15 +83,13 @@ class PartitionConfig(BaseModel, allow_mutation=False, extra=Extra.forbid):
     simple: bool = True
 
 
-class PartitionInfo(
-    PartitionConfig, PartitionResources, allow_mutation=False, extra=Extra.allow
-):
+class PartitionInfo(PartitionConfig, PartitionResources):
     """Complete information about a partition: config and resources"""
 
-    pass
+    model_config = ConfigDict(frozen=True, extra="allow")
 
 
-class _PartitionTraits(PartitionConfig, allow_mutation=False, extra=Extra.forbid):
+class _PartitionTraits(PartitionConfig, frozen=True, extra="forbid"):
     """Configuration of a single partition passed as ``partitions`` traits"""
 
     gpu: Optional[str] = None
@@ -116,16 +113,18 @@ class _PartitionTraits(PartitionConfig, allow_mutation=False, extra=Extra.forbid
         return v
 
 
-class PartitionsTrait(BaseModel, allow_mutation=False, extra=Extra.forbid):
+class PartitionsTrait(RootModel):
     """Configuration passed as ``partitions`` trait"""
 
-    __root__: Dict[str, _PartitionTraits]
+    root: Dict[str, _PartitionTraits]
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     def dict(self, *args, **kwargs):
-        return {k: v.dict(*args, **kwargs) for k, v in self.__root__.items()}
+        return {k: v.dict(*args, **kwargs) for k, v in self.root.items()}
 
     def items(self):
-        return self.__root__.items()
+        return self.root.items()
 
 
 class UserOptions(BaseModel):
