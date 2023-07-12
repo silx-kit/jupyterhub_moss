@@ -78,10 +78,10 @@ class JupyterEnvironment(BaseModel, allow_mutation=False, extra=Extra.forbid):
 class PartitionConfig(BaseModel, allow_mutation=False, extra=Extra.forbid):
     """Information about partition description and available environments"""
 
-    architecture = ""
-    description = ""
+    architecture: str = ""
+    description: str = ""
     jupyter_environments: Dict[str, JupyterEnvironment]
-    simple = True
+    simple: bool = True
 
 
 class PartitionInfo(
@@ -133,21 +133,21 @@ class UserOptions(BaseModel):
 
     # Options received through the form or GET request
     partition: str
-    runtime = ""
+    runtime: str = ""
     nprocs: PositiveInt = 1
-    memory = ""
-    reservation = ""
+    memory: str = ""
+    reservation: str = ""
     ngpus: NonNegativeInt = 0
-    options = ""
-    output = "/dev/null"
-    environment_id = ""
-    environment_path = ""
-    environment_modules = ""
-    default_url = ""
-    root_dir = ""
+    options: str = ""
+    output: str = "/dev/null"
+    environment_id: str = ""
+    environment_path: str = ""
+    environment_modules: str = ""
+    default_url: str = ""
+    root_dir: str = ""
     # Extra fields
-    gres = ""
-    prologue = ""
+    gres: str = ""
+    prologue: str = ""
 
     @classmethod
     def parse_formdata(cls, formdata: dict[str, list[str]]) -> UserOptions:
