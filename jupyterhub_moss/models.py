@@ -121,8 +121,8 @@ class PartitionsTrait(RootModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    def dict(self, *args, **kwargs):
-        return {k: v.dict(*args, **kwargs) for k, v in self.root.items()}
+    def model_dump(self, *args, **kwargs):
+        return {k: v.model_dump(*args, **kwargs) for k, v in self.root.items()}
 
     def items(self):
         return self.root.items()
@@ -165,7 +165,7 @@ class UserOptions(BaseModel):
         fields["output"] = (
             "slurm-%j.out" if fields.get("output", "false") == "true" else "/dev/null"
         )
-        return cls.parse_obj(fields)
+        return cls.model_validate(fields)
 
     @field_validator(
         "partition",
