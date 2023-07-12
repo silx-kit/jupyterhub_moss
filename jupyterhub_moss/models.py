@@ -128,6 +128,10 @@ class PartitionsTrait(RootModel):
         return self.root.items()
 
 
+_MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
+"""Memory input regular expression"""
+
+
 class UserOptions(BaseModel):
     """Options passed as `Spawner.user_options`"""
 
@@ -199,10 +203,8 @@ class UserOptions(BaseModel):
             parse_timelimit(v)  # Raises exception if malformed
         return v
 
-    _MEM_REGEXP = re.compile("^[0-9]*([0-9]+[KMGT])?$")
-
     @field_validator("memory")
     def check_memory(cls, v: str) -> str:
-        if v and cls._MEM_REGEXP.match(v) is None:
+        if v and _MEM_REGEXP.match(v) is None:
             raise ValueError("Error in memory syntax")
         return v
