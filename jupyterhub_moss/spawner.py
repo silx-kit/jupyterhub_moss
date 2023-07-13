@@ -74,7 +74,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
     @traitlets.validate("partitions")
     def _validate_partitions(self, proposal: dict) -> dict[str, dict]:
-        return PartitionsTrait.parse_obj(proposal["value"]).dict()
+        return PartitionsTrait.model_validate(proposal["value"]).model_dump()
 
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes/state, cores/node, cores/state, gpus, total memory for all partitions
@@ -222,14 +222,14 @@ class MOSlurmSpawner(SlurmSpawner):
         resources_info = self.slurm_info_resources(out)
         self.log.debug("Slurm partition resources: %s", resources_info)
 
-        partitions = PartitionsTrait.parse_obj(self.partitions)
+        partitions = PartitionsTrait.model_validate(self.partitions)
 
         # use data from Slurm as base and overwrite with manual configuration settings
         partitions_info = {
-            partition: PartitionInfo.parse_obj(
+            partition: PartitionInfo.model_validate(
                 {
-                    **resources_info[partition].dict(),
-                    **config_partition_info.dict(exclude_none=True),
+                    **resources_info[partition].model_dump(),
+                    **config_partition_info.model_dump(exclude_none=True),
                 }
             )
             for partition, config_partition_info in partitions.items()
@@ -251,7 +251,7 @@ class MOSlurmSpawner(SlurmSpawner):
         # Strip prologue from partitions_info:
         # it is not useful and can cause some parsing issues
         partitions_dict = {
-            name: info.dict(
+            name: info.model_dump(
                 exclude={
                     "jupyter_environments": {
                         env_name: {"prologue"} for env_name in info.jupyter_environments
@@ -342,7 +342,7 @@ class MOSlurmSpawner(SlurmSpawner):
         self.__validate_options(options, partition_info)
         self.__update_options(options, partition_info)
 
-        return options.dict()
+        return options.model_dump()
 
     def __update_spawn_commands(self, cmd_path: str) -> None:
         """Add path to commands"""
