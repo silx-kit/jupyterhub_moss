@@ -119,7 +119,7 @@ class PartitionsTrait(RootModel):
 
     root: Dict[str, _PartitionTraits]
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True)
 
     def model_dump(self, *args, **kwargs):
         return {k: v.model_dump(*args, **kwargs) for k, v in self.root.items()}
