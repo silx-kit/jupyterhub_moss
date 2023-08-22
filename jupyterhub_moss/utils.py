@@ -52,7 +52,7 @@ def parse_gpu_resource(generic_resources: str) -> tuple[str, str]:
 
     Information about the first GPU found is returned if any.
 
-    :returns: (GPU resource template, number of GPUs) or None if the resource is not a GPU.
+    :returns: (GPU resource template, number of GPUs)
     :raises ValueError: If parsing failed.
     """
     for resource in generic_resources.split(","):
