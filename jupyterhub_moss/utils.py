@@ -44,6 +44,26 @@ def parse_timelimit(timelimit: str) -> datetime.timedelta:
     )
 
 
+_GPU_GRES_REGEXP = re.compile(r"^gpu:(?P<type_>[^:]+):(?P<count>[0-9]+)(?:\(.*\))?$")
+
+
+def parse_gpu_resource(generic_resources: str) -> tuple[str, str]:
+    """Parse SLURM generic resources (aka., gres) to retrieve GPU information.
+
+    Information about the first GPU found is returned if any.
+
+    :returns: (GPU resource template, number of GPUs)
+    :raises ValueError: If parsing failed.
+    """
+    for resource in generic_resources.split(","):
+        match = _GPU_GRES_REGEXP.match(resource.strip())
+        if match is None:
+            continue
+        gpu_gres_template = f"gpu:{match['type_']}:{{}}"
+        return gpu_gres_template, match["count"]
+    raise ValueError(f"No GPU resource in '{generic_resources}'.")
+
+
 def create_prologue(
     default_prologue: str,
     environment_path: str,

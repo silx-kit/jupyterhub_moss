@@ -19,7 +19,13 @@ from .models import (
     PartitionsTrait,
     UserOptions,
 )
-from .utils import create_prologue, file_hash, local_path, parse_timelimit
+from .utils import (
+    create_prologue,
+    file_hash,
+    local_path,
+    parse_gpu_resource,
+    parse_timelimit,
+)
 
 # Compute resources hash once at start-up
 RESOURCES_HASH = {
@@ -119,7 +125,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 nnodes,
                 ncores_per_node,
                 ncores,
-                gpus,
+                generic_resources,
                 memory,
                 timelimit,
             ) = line.split()
@@ -127,14 +133,12 @@ class MOSlurmSpawner(SlurmSpawner):
             _, nnodes_idle, _, nnodes_total = nnodes.split("/")
             # core count - allocated/idle/other/total
             _, ncores_idle, _, ncores_total = ncores.split("/")
-            # gpu count - gpu:name:total(indexes)
+            # gpu count - gpu:type:total(indices)
             try:
-                gpus_gres = gpus.replace("(", ":").split(":")
-                gpus_total = gpus_gres[2]
-                gpu = ":".join(gpus_gres[0:2]) + ":{}"
-            except IndexError:
+                gpu_gres_template, gpus_total = parse_gpu_resource(generic_resources)
+            except ValueError:
+                gpu_gres_template = ""
                 gpus_total = "0"
-                gpu = ""
 
             try:
                 max_runtime = parse_timelimit(timelimit)
@@ -154,7 +158,7 @@ class MOSlurmSpawner(SlurmSpawner):
                     # required resource counts
                     max_nprocs=ncores_per_node.rstrip("+"),
                     max_mem=memory.rstrip("+"),
-                    gpu=gpu,
+                    gpu=gpu_gres_template,
                     max_ngpus=gpus_total,
                     max_runtime=max_runtime.total_seconds(),
                 )
