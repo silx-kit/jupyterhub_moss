@@ -321,12 +321,29 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             options.gres = gpu_gres_template.format(options.ngpus)
 
-        # Custom envs are always added to PATH
-        prologue_env_path = options.environment_path
-        # Default envs only added to PATH if add_to_path is True
-        partition_default_envs = partition_info.jupyter_environments
-        if options.environment_id in partition_default_envs:
-            if not partition_default_envs[options.environment_id].add_to_path:
+        # Use first env from the partition if none is requested
+        if (
+            not options.environment_id
+            and not options.environment_path
+            and not options.environment_modules
+        ):
+            default_env = list(partition_info.jupyter_environments.keys())[0]
+            options.environment_id = default_env
+
+        if options.environment_id not in partition_info.jupyter_environments:
+            # Custom envs are always added to PATH
+            prologue_env_path = options.environment_path
+        else:
+            # It's a known env: use its config instead of received path and modules
+            jupyter_environment = partition_info.jupyter_environments[
+                options.environment_id
+            ]
+            options.environment_path = jupyter_environment.path
+            options.environment_modules = jupyter_environment.modules
+            # Default envs only added to PATH if add_to_path is True
+            if jupyter_environment.add_to_path:
+                prologue_env_path = jupyter_environment.path
+            else:
                 prologue_env_path = ""
 
         options.prologue = create_prologue(
