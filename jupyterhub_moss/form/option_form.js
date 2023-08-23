@@ -7,7 +7,7 @@ function removeAllChildren(node) {
   }
 }
 
-function createEnvironmentDiv(key, description, path, modules, checked = false) {
+function createEnvironmentDiv(key, description, path, modules, iscustom = false) {
   const div = document.createElement('div');
   div.classList.add('environment-div');
 
@@ -18,12 +18,12 @@ function createEnvironmentDiv(key, description, path, modules, checked = false) 
   const path_input = document.createElement('input');
   path_input.setAttribute('type', 'hidden');
   path_input.setAttribute('class', 'environment_path');
-  path_input.setAttribute('value', path);
+  path_input.setAttribute('value', iscustom ? path : '');
   div.appendChild(path_input);
   const mods_input = document.createElement('input');
   mods_input.setAttribute('type', 'hidden');
   mods_input.setAttribute('class', 'environment_modules');
-  mods_input.setAttribute('value', modules);
+  mods_input.setAttribute('value', iscustom ? modules : '');
   div.appendChild(mods_input);
 
   const input = document.createElement('input');
@@ -34,9 +34,6 @@ function createEnvironmentDiv(key, description, path, modules, checked = false) 
   input.setAttribute('value', key);
 
   input.addEventListener('change', updateAddCustomEnvironment);
-  if (checked) {
-    input.setAttribute('checked', '');
-  }
   div.appendChild(input);
 
   const label = document.createElement('label');
@@ -96,7 +93,7 @@ function addCustomEnvironment(key, description, path, modules, persist = true) {
     'environment_simple_custom'
   );
 
-  const div = createEnvironmentDiv(key, description, path, modules);
+  const div = createEnvironmentDiv(key, description, path, modules, true);
 
   button = document.createElement('button');
   button.setAttribute('type', 'button');
@@ -236,7 +233,7 @@ function updateDefaultEnvironments() {
     const info = partitionInfo.jupyter_environments[key];
 
     defaultEnvironmentsDiv.appendChild(
-      createEnvironmentDiv(key, info.description, info.path, info.modules)
+      createEnvironmentDiv(key, info.description, info.path, info.modules, false)
     );
 
     const option = document.createElement('option');
