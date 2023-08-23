@@ -226,9 +226,16 @@ The following optional query arguments are available:
   - `root_dir`: The path of the "root" folder browsable from Jupyter(Lab)
     (user's home directory if not provided)
 
-  Note: To use a Jupyter environment defined in the configuration, only provide
-  its `environment_id`. To use a custom Jupyter environment, provide the
-  corresponding `environment_path` and/or `environment_modules`.
+To use a Jupyter environment defined in the configuration, only provide its
+`environment_id`, for example:
+`https://<server:port>/hub/spawn?partition=partition_1&environment_id=default`.
+
+To use a custom Jupyter environment, instead provide the corresponding
+`environment_path` and/or `environment_modules`, for example:
+
+- `https://<server:port>/hub/spawn?partition=partition_1&environment_path=/path/to/jupyter/bin`,
+  or
+- `https://<server:port>/hub/spawn?partition=partition_1&environment_modules=myjupytermodule`.
 
 ## Development
 
