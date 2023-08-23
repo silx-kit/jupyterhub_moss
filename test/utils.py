@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Optional
+from urllib.parse import urlencode
 from jupyterhub.tests.utils import async_requests, public_host
 from jupyterhub.utils import url_path_join
 from traitlets import Unicode, default
@@ -5,18 +9,33 @@ from traitlets import Unicode, default
 from jupyterhub_moss import MOSlurmSpawner
 
 
-def post_request(path, app, data, cookies=None, **kwargs):
-    """Send a POST request on the hub
+def request(
+    app,
+    method: str,
+    path: str,
+    data: Optional[dict] = None,
+    cookies: Optional[dict] = None,
+    **kwargs,
+):
+    """Send a GET or POST request on the hub
 
     Similar to jupyterhub.tests.utils.get_page
     """
-    if cookies is not None and "_xsrf" in cookies:
-        data["_xsrf"] = cookies["_xsrf"]
+    if data is None:
+        data = {}
 
     base_url = url_path_join(public_host(app), app.hub.base_url)
-    return async_requests.post(
-        url_path_join(base_url, path), data=data, cookies=cookies, **kwargs
-    )
+    url = url_path_join(base_url, path)
+
+    if method == "POST":
+        if cookies is not None and "_xsrf" in cookies:
+            data["_xsrf"] = cookies["_xsrf"]
+        return async_requests.post(url, data=data, cookies=cookies, **kwargs)
+
+    assert method == "GET"
+    if data:  # Convert data to query string
+        url += f"?{urlencode(data)}"
+    return async_requests.get(url, cookies=cookies, **kwargs)
 
 
 class MOSlurmSpawnerMock(MOSlurmSpawner):
