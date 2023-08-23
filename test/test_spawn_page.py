@@ -2,9 +2,9 @@ import json
 import re
 from unittest import mock
 
-from jupyterhub.tests.utils import get_page
+import pytest
 
-from .utils import MOSlurmSpawnerMock, post_request
+from .utils import MOSlurmSpawnerMock, request
 
 
 class MOSSMockSimple(MOSlurmSpawnerMock):
@@ -46,7 +46,7 @@ async def test_spawn_page(app):
     """Test display of spawn page and check embedded SLURM resources info"""
     with mock.patch.dict(app.users.settings, {"spawner_class": MOSSMockSimple}):
         cookies = await app.login_user("jones")
-        r = await get_page("spawn", app, cookies=cookies)
+        r = await request(app, "GET", "spawn", cookies=cookies)
 
         assert r.status_code == 200
         assert r.url.endswith("/spawn")
@@ -88,26 +88,53 @@ async def test_spawn_page(app):
         assert ref_partitions_info == slurm_data["partitions"]
 
 
-async def test_spawn_from_get_query(app):
-    """Test spawning through a GET query"""
+def assert_environment(spawner, partition: str, environment_id: str):
+    """Assert that spawner is set to use given partition and environment"""
+    expected_environment = spawner.partitions[partition]["jupyter_environments"][
+        environment_id
+    ]
+
+    user_options = spawner.user_options
+    assert user_options["partition"] == partition
+    assert user_options["environment_id"] == environment_id
+    assert user_options["environment_path"] == expected_environment["path"]
+    assert user_options["environment_modules"] == expected_environment["modules"]
+
+
+@pytest.mark.parametrize("method", ["GET", "POST"])
+async def test_spawn_simple(app, method):
+    """Test spawning with simple params"""
     with mock.patch.dict(app.users.settings, {"spawner_class": MOSSMockSimple}):
         cookies = await app.login_user("jones")
-        r = await get_page("spawn?partition=partition_1&nprocs=4", app, cookies=cookies)
+        r = await request(
+            app,
+            method,
+            "spawn",
+            data={"partition": "partition_1", "nprocs": 4},
+            cookies=cookies,
+        )
 
+        spawner = app.users["jones"].get_spawner()
+        assert_environment(spawner, "partition_1", "default")
         assert r.status_code == 200
         assert "/hub/spawn-pending" in r.url
 
 
-async def test_spawn_from_post_request(app):
-    """Test spawning through a POST request"""
+@pytest.mark.parametrize("method", ["GET", "POST"])
+async def test_spawn_with_environment_id(app, method):
+    """Test spawning by giving only environment id"""
     with mock.patch.dict(app.users.settings, {"spawner_class": MOSSMockSimple}):
         cookies = await app.login_user("jones")
-        r = await post_request(
-            "spawn",
+        r = await request(
             app,
+            method,
+            "spawn",
+            data={"partition": "partition_1", "environment_id": "modules"},
             cookies=cookies,
-            data={"partition": "partition_1", "nprocs": 4},
         )
+
+        spawner = app.users["jones"].get_spawner()
+        assert_environment(spawner, "partition_1", "modules")
 
         assert r.status_code == 200
         assert "/hub/spawn-pending" in r.url
