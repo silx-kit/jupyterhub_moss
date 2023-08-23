@@ -176,7 +176,7 @@ requests.
 
 The _Advanced_ tab allows finer control on the requested resources.
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/215526665-a650a54d-e7ec-4d50-b5ab-a02d93b23d19.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/262627623-91bd63de-6374-47d4-9064-d1a6e3d56411.png width="50%">
 
 The user can select any partition (`partition_3` is added in this case) and the
 table of available resources reflects this. The user can also choose any number
