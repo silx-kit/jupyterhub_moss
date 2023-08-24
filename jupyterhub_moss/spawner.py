@@ -331,23 +331,28 @@ class MOSlurmSpawner(SlurmSpawner):
             options.environment_id = default_env
 
         if options.environment_id not in partition_info.jupyter_environments:
-            # Custom envs are always added to PATH
-            prologue_env_path = options.environment_path
-        else:
-            # It's a known env: use its config instead of received path and modules
-            jupyter_environment = partition_info.jupyter_environments[
-                options.environment_id
-            ]
-            options.environment_path = jupyter_environment.path
-            options.environment_modules = jupyter_environment.modules
-            # Default envs only added to PATH if add_to_path is True
-            if jupyter_environment.add_to_path:
-                prologue_env_path = jupyter_environment.path
-            else:
-                prologue_env_path = ""
+            # Custom env
+            options.prologue = create_prologue(
+                self.req_prologue,
+                "",
+                options.environment_path,  # Custom envs are always added to PATH
+                options.environment_modules,
+            )
+            return
+
+        # It's a known env: use its config instead of received path and modules
+        jupyter_environment = partition_info.jupyter_environments[
+            options.environment_id
+        ]
+        options.environment_path = jupyter_environment.path
+        options.environment_modules = jupyter_environment.modules
 
         options.prologue = create_prologue(
-            self.req_prologue, prologue_env_path, options.environment_modules
+            self.req_prologue,
+            jupyter_environment.prologue,
+            # Default envs only added to PATH if add_to_path is True
+            jupyter_environment.path if jupyter_environment.add_to_path else "",
+            jupyter_environment.modules,
         )
 
     async def options_from_form(self, formdata: dict[str, list[str]]) -> dict:

@@ -3,6 +3,7 @@ import re
 from unittest import mock
 
 import pytest
+from tornado import gen
 
 from .utils import MOSlurmSpawnerMock, request
 
@@ -36,6 +37,7 @@ class MOSSMockSimple(MOSlurmSpawnerMock):
                         "description": "Environment modules",
                         "modules": "JupyterLab/3.6.0",
                         "add_to_path": False,
+                        "prologue": "echo 'Using modules'",
                     },
                 },
             },
@@ -135,6 +137,34 @@ async def test_spawn_with_environment_id(app, method):
 
         spawner = app.users["jones"].get_spawner()
         assert_environment(spawner, "partition_1", "modules")
+
+        assert r.status_code == 200
+        assert "/hub/spawn-pending" in r.url
+
+
+@pytest.mark.parametrize("method", ["GET", "POST"])
+async def test_spawn_script_prologue(app, method):
+    """Test spawning script includes default and env prologue"""
+
+    class SpawnerTestScript(MOSSMockSimple):
+        @gen.coroutine
+        def _get_batch_script(self, **subvars):
+            script = yield super()._get_batch_script(**subvars)
+            assert "echo 'Using spawner prologue'" in script
+            assert "echo 'Using modules'" in script
+            return script
+
+    SpawnerTestScript.req_prologue = "echo 'Using spawner prologue'"
+
+    with mock.patch.dict(app.users.settings, {"spawner_class": SpawnerTestScript}):
+        cookies = await app.login_user("jones")
+        r = await request(
+            app,
+            method,
+            "spawn",
+            data={"partition": "partition_1", "environment_id": "modules"},
+            cookies=cookies,
+        )
 
         assert r.status_code == 200
         assert "/hub/spawn-pending" in r.url

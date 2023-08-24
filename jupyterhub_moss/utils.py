@@ -66,11 +66,14 @@ def parse_gpu_resource(generic_resources: str) -> tuple[str, str]:
 
 def create_prologue(
     default_prologue: str,
+    environment_prologue: str,
     environment_path: str,
     environment_modules: str,
 ) -> str:
     """Create prologue commands"""
     prologue = default_prologue
+    if environment_prologue:
+        prologue += f"\n{environment_prologue}"
 
     # Load environment modules
     if environment_modules:

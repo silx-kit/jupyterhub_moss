@@ -147,8 +147,7 @@ For a minimalistic working demo, check the
   - `add_to_path`: Whether or not to prepend the environment `path` to shell
     `PATH`.
   - `prologue`: Shell commands to execute on the Slurm node before starting the
-    Jupyter single-user server. This can be used to run, e.g.,
-    `module load <module>`. By default no command is run.
+    Jupyter single-user server. By default no command is run.
 
 ### Spawn page
 
