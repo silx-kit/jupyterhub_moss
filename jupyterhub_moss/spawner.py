@@ -124,7 +124,7 @@ class MOSlurmSpawner(SlurmSpawner):
             ) = line.split()
 
             # ignore nodes that are full or down
-            if node_state not in ["idle", "mix"]:
+            if node_state not in ["idle", "mix", "alloc"]:
                 continue
 
             # core count - allocated/idle/other/total
