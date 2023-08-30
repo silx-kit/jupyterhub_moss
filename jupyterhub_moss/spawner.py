@@ -123,7 +123,8 @@ class MOSlurmSpawner(SlurmSpawner):
                 timelimit,
             ) = line.split()
 
-            # ignore nodes that are full or down
+            # ignore nodes that are down
+            # take into account full nodes, see AD#18521
             if node_state not in ["idle", "mix", "alloc"]:
                 continue
 
