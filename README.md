@@ -4,7 +4,6 @@ Fork of the original [silx-kit/jupyterhub_moss](https://github.com/silx-kit/jupy
 maintained by VUB-HPC.
 
 Notable changes in this fork:
-* support for loading modules in the singleuser server job
 * support different groups of default environment
 * display available resources as job slots per amount of cores
 
@@ -142,9 +141,8 @@ For a minimalistic working demo, check the
   where almost all Slurm job settings can be set. Some partitions can be hidden
   from the _Simple_ tab with setting `simple` to `False`.
 - `jupyter_environments`: Mapping of identifer name to information about Python
-  environment used to run Jupyter on the Slurm nodes. Either `path` or
-  `modules` (or both) should be defined. This information is a mapping
-  containing:
+  environment used to run Jupyter on the Slurm nodes. Either `path` or `modules`
+  (or both) should be defined. This information is a mapping containing:
   - `description`: Text used for display in the selection options.
   - `path`: The path to a Python environment bin/ used to start jupyter on the
     Slurm nodes. **jupyterhub_moss** needs that a virtual (or conda) environment
@@ -156,8 +154,7 @@ For a minimalistic working demo, check the
   - `add_to_path`: Whether or not to prepend the environment `path` to shell
     `PATH`.
   - `prologue`: Shell commands to execute on the Slurm node before starting the
-    Jupyter single-user server. This can be used to run, e.g.,
-    `module load <module>`. By default no command is run.
+    Jupyter single-user server. By default no command is run.
 
 ### Spawn page
 
@@ -185,7 +182,7 @@ requests.
 
 The _Advanced_ tab allows finer control on the requested resources.
 
-<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/215526665-a650a54d-e7ec-4d50-b5ab-a02d93b23d19.png width="50%">
+<img style="margin:1rem auto" src=https://user-images.githubusercontent.com/9449698/262627623-91bd63de-6374-47d4-9064-d1a6e3d56411.png width="50%">
 
 The user can select any partition (`partition_3` is added in this case) and the
 table of available resources reflects this. The user can also choose any number
@@ -207,7 +204,7 @@ The following optional query arguments are available:
 
 - SLURM configuration:
 
-  - `mem`: Total amount of memory per node
+  - `memory`: Total amount of memory per node
     ([`--mem`](https://slurm.schedmd.com/sbatch.html#OPT_mem))
   - `ngpus`: Number of GPUs
     ([`--gres:<gpu>:`](https://slurm.schedmd.com/sbatch.html#OPT_gres))
@@ -221,13 +218,30 @@ The following optional query arguments are available:
     ([`--time`](https://slurm.schedmd.com/sbatch.html#OPT_time))
 
 - Jupyter(Lab) configuration:
+
   - `default_url`: The URL to open the Jupyter environment with: use `/lab` to
     start [JupyterLab](https://jupyterlab.readthedocs.io/en/stable/) or use
     [JupyterLab URLs](https://jupyterlab.readthedocs.io/en/stable/user/urls.html)
-  - `environment_path`: Path to Python environment bin/ used to start Jupyter
-  - `environment_modules`: Space separated list of modules to be loaded in single-user server job
+  - `environment_id`: Name of the Python environment defined in the
+    configuration used to start Jupyter
+  - `environment_path`: Path to the Python environment bin/ used to start
+    Jupyter
+  - `environment_modules`: Space-separated list of
+    [environment module](https://modules.sourceforge.net/) names to load before
+    starting Jupyter
   - `root_dir`: The path of the "root" folder browsable from Jupyter(Lab)
     (user's home directory if not provided)
+
+To use a Jupyter environment defined in the configuration, only provide its
+`environment_id`, for example:
+`https://<server:port>/hub/spawn?partition=partition_1&environment_id=default`.
+
+To use a custom Jupyter environment, instead provide the corresponding
+`environment_path` and/or `environment_modules`, for example:
+
+- `https://<server:port>/hub/spawn?partition=partition_1&environment_path=/path/to/jupyter/bin`,
+  or
+- `https://<server:port>/hub/spawn?partition=partition_1&environment_modules=myjupytermodule`.
 
 ## Development
 

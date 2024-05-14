@@ -7,23 +7,23 @@ function removeAllChildren(node) {
   }
 }
 
-function createEnvironmentDiv(key, description, path, modules, checked = false) {
+function createEnvironmentDiv(key, description, path, modules, iscustom = false) {
   const div = document.createElement('div');
   div.classList.add('environment-div');
 
   const radio_id = `environment_radio_${key}`;
-  const title = `Environment Name: ${description}`;
+  const title = [path ? `Path: ${path}` : "", modules ? `Modules: ${modules}` : ""].filter(v => v).join("\n");
 
   // Store definitions in hidden inputs
   const path_input = document.createElement('input');
   path_input.setAttribute('type', 'hidden');
   path_input.setAttribute('class', 'environment_path');
-  path_input.setAttribute('value', path);
+  path_input.setAttribute('value', iscustom ? path : '');
   div.appendChild(path_input);
   const mods_input = document.createElement('input');
   mods_input.setAttribute('type', 'hidden');
   mods_input.setAttribute('class', 'environment_modules');
-  mods_input.setAttribute('value', modules);
+  mods_input.setAttribute('value', iscustom ? modules : '');
   div.appendChild(mods_input);
 
   const input = document.createElement('input');
@@ -33,16 +33,13 @@ function createEnvironmentDiv(key, description, path, modules, checked = false) 
   input.setAttribute('name', 'environment_id');
   input.setAttribute('value', key);
 
-  input.addEventListener('change', updateEnvironmentAddNameRequired);
-  if (checked) {
-    input.setAttribute('checked', '');
-  }
+  input.addEventListener('change', updateAddCustomEnvironment);
   div.appendChild(input);
 
   const label = document.createElement('label');
   label.setAttribute('for', radio_id);
   label.setAttribute('title', title);
-  label.textContent = description;
+  label.textContent = description ? description : [path, modules].filter(v => v).join(" - ");
   div.appendChild(label);
 
   return div;
@@ -111,7 +108,7 @@ function addCustomEnvironment(key, description, path, modules, persist = true) {
     'environment_simple_custom'
   );
 
-  const div = createEnvironmentDiv(key, description, path, modules);
+  const div = createEnvironmentDiv(key, description, path, modules, true);
 
   button = document.createElement('button');
   button.setAttribute('type', 'button');
@@ -226,7 +223,7 @@ function restoreCustomEnvironmentsFromLocalStorage() {
   }
 
   for (const key in config) {
-    addCustomEnvironment(key, config[key].description, config[key].path, config[key].modules, false);
+    addCustomEnvironment(key, config[key].description, config[key].path || "", config[key].modules || "", false);
   }
 }
 
@@ -313,13 +310,21 @@ function setVisible(element, visible) {
   }
 }
 
-function updateEnvironmentAddNameRequired() {
+function updateAddCustomEnvironment() {
+  const environmentAddButton = document.getElementById('environment_add_button');
   const environmentAddRadio = document.getElementById('environment_add_radio');
-  const environmentAddName = document.getElementById('environment_add_name');
-  if (environmentAddRadio.checked) {
-    environmentAddName.setAttribute('required', '');
+  const environmentAddPath = document.getElementById('environment_add_path');
+  const environmentAddMods = document.getElementById('environment_add_modules');
+
+  const isPathOrModules = environmentAddPath.value !== "" || environmentAddMods.value !== "";
+  environmentAddButton.disabled = !isPathOrModules;
+
+  if (environmentAddRadio.checked && !isPathOrModules) {
+    environmentAddPath.setAttribute('required', '');
+    environmentAddMods.setAttribute('required', '');
   } else {
-    environmentAddName.removeAttribute('required');
+    environmentAddPath.removeAttribute('required');
+    environmentAddMods.removeAttribute('required');
   }
 }
 
@@ -611,21 +616,25 @@ document.addEventListener('DOMContentLoaded', () => {
     .addEventListener('change', (e) => updateMemValue());
 
   // Handle add custom environment
-  document
-    .getElementById('environment_add_name')
-    .addEventListener('input', (e) => {
-      const isInputEmpty = e.target.value === '';
-      if (environmentAddRadio.value === '' && !isInputEmpty) {var myEle = document.getElementById("myElement");
-        // First input in the name: select its radio button
-        environmentAddRadio.checked = true;
-      }
-      environmentAddRadio.value = e.target.value;
-      environmentAddButton.disabled = isInputEmpty;
-    });
+  environmentAddPath.addEventListener('input', updateAddCustomEnvironment);
+  environmentAddMods.addEventListener('input', updateAddCustomEnvironment);
+
+  environmentAddName.addEventListener('focus', () => {
+    environmentAddRadio.checked = true;
+    updateAddCustomEnvironment();
+  });
+  environmentAddPath.addEventListener('focus', () => {
+    environmentAddRadio.checked = true;
+    updateAddCustomEnvironment();
+  });
+  environmentAddMods.addEventListener('focus', () => {
+    environmentAddRadio.checked = true;
+    updateAddCustomEnvironment();
+  });
 
   environmentAddRadio.addEventListener(
     'change',
-    updateEnvironmentAddNameRequired
+    updateAddCustomEnvironment
   );
 
   environmentAddButton.addEventListener('click', (e) => {
@@ -638,12 +647,11 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     if (environmentAddRadio.checked) {
       selectEnvironment(key);
-      updateEnvironmentAddNameRequired();
     }
     environmentAddName.value = '';
     environmentAddPath.value = '';
     environmentAddMods.value = '';
-    environmentAddName.dispatchEvent(new Event('input'));
+    updateAddCustomEnvironment();
   });
 
   // Catch form submit
