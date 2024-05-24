@@ -17,6 +17,16 @@
 </table>
 {% endmacro %}
 
+{% block stylesheet %}
+{{ super() }}
+<style>
+#environment_simple {
+  color: #f37524;
+  font-weight: 900;
+}
+</style>
+{% endblock %}
+
 {% block simple_tab_footer %}
 {{ resource_table(partitions, simple_only=true) }}
 {% endblock simple_tab_footer %}

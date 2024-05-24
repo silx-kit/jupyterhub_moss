@@ -18,7 +18,13 @@ from .models import (
     PartitionsTrait,
     UserOptions,
 )
-from .utils import create_prologue, file_hash, local_path, parse_timelimit
+from .utils import (
+    create_prologue,
+    file_hash,
+    local_path,
+    parse_gpu_resource,
+    parse_timelimit,
+)
 
 # Compute resources hash once at start-up
 RESOURCES_HASH = {
@@ -73,7 +79,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
     @traitlets.validate("partitions")
     def _validate_partitions(self, proposal: dict) -> dict[str, dict]:
-        return PartitionsTrait.parse_obj(proposal["value"]).dict()
+        return PartitionsTrait.model_validate(proposal["value"]).model_dump()
 
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes/state, cores/node, cores/state, gpus, total memory for all partitions
@@ -237,11 +243,11 @@ class MOSlurmSpawner(SlurmSpawner):
         resources_info = self.slurm_info_resources(out)
         self.log.debug("Slurm partition resources: %s", resources_info)
 
-        partitions = PartitionsTrait.parse_obj(self.partitions)
+        partitions = PartitionsTrait.model_validate(self.partitions)
 
         # use data from Slurm as base and overwrite with manual configuration settings
         partitions_info = {
-            partition: PartitionInfo.parse_obj(
+            partition: PartitionInfo.model_validate(
                 {
                     **resources_info[partition],
                     **config_partition_info.dict(exclude_none=True),
@@ -266,7 +272,7 @@ class MOSlurmSpawner(SlurmSpawner):
         # Strip prologue from partitions_info:
         # it is not useful and can cause some parsing issues
         partitions_dict = {
-            name: info.dict(
+            name: info.model_dump(
                 exclude={
                     "jupyter_environments": {
                         env_name: {"prologue"} for env_name in info.jupyter_environments
@@ -332,17 +338,38 @@ class MOSlurmSpawner(SlurmSpawner):
                 raise RuntimeError("GPU(s) not available for this partition")
             options.gres = gpu_gres_template.format(options.ngpus)
 
-        partition_envs = self.partitions[options.partition]["jupyter_environments"]
+        # Use first env from the partition if none is requested
+        if (
+            not options.environment_id
+            and not options.environment_path
+            and not options.environment_modules
+        ):
+            default_env = list(partition_info.jupyter_environments.keys())[0]
+            options.environment_id = default_env
 
-        # Custom envs are always added to PATH
-        # Defaults envs only if add_to_path is True
-        prologue_env_path = options.environment_path
-        if options.environment_id in partition_envs:
-            if not partition_envs[options.environment_id]["add_to_path"]:
-                prologue_env_path = ""
+        if options.environment_id not in partition_info.jupyter_environments:
+            # Custom env
+            options.prologue = create_prologue(
+                self.req_prologue,
+                "",
+                options.environment_path,  # Custom envs are always added to PATH
+                options.environment_modules,
+            )
+            return
+
+        # It's a known env: use its config instead of received path and modules
+        jupyter_environment = partition_info.jupyter_environments[
+            options.environment_id
+        ]
+        options.environment_path = jupyter_environment.path
+        options.environment_modules = jupyter_environment.modules
 
         options.prologue = create_prologue(
-            self.req_prologue, prologue_env_path, options.environment_modules
+            self.req_prologue,
+            jupyter_environment.prologue,
+            # Default envs only added to PATH if add_to_path is True
+            jupyter_environment.path if jupyter_environment.add_to_path else "",
+            jupyter_environment.modules,
         )
 
     async def options_from_form(self, formdata: dict[str, list[str]]) -> dict:
@@ -358,7 +385,7 @@ class MOSlurmSpawner(SlurmSpawner):
         self.__validate_options(options, partition_info)
         self.__update_options(options, partition_info)
 
-        return options.dict()
+        return options.model_dump()
 
     def __update_spawn_commands(self, cmd_path: str) -> None:
         """Add path to commands"""
@@ -388,8 +415,12 @@ class MOSlurmSpawner(SlurmSpawner):
             self.notebook_dir = self.user_options["root_dir"]
 
         environment_id = self.user_options["environment_id"]
-        self.log.info(f"Used environment: {environment_id}")
-        self.__update_spawn_commands(self.user_options["environment_path"])
+        environment_path = self.user_options["environment_path"]
+        environment_modules = self.user_options["environment_modules"]
+        self.log.info(
+            f"Used environment: ID: {environment_id}, path: {environment_path}, modules: {environment_modules}"
+        )
+        self.__update_spawn_commands(environment_path)
 
         return await super().start()
 
