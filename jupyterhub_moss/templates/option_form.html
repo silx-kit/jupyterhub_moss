@@ -2,7 +2,7 @@
 <h4 class="subheading">Available resources at this time</h4>
 <table class="table">
   <tr class="active">
-    <th style="padding-right: 10rem;">Partition</th>
+    <th>Cluster Partition</th>
     <th style="text-align: center; width: 25%;">1-core slots</th>
     <th style="text-align: center; width: 25%;">2-cores slots</th>
     <th style="text-align: center; width: 25%;">4-cores slots</th>
@@ -43,7 +43,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
 </ul>
 <div class="tab-content">
   <div id="home" class="tab-pane fade in active">
-    <h4 class="subheading">Partition</h4>
+    <h4 class="subheading">Cluster Partition</h4>
     <div class="radio-toolbar">
       {% for name, partition in partitions.items() %}
       {% if partition.simple %}
@@ -58,7 +58,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
       />
       <label for="{{ name }}">
         <p>{{ partition.description }} <span class="label-extra-info">({{ partition.architecture }})</span></p>
-        <p class="label-extra-info">Partition: {{ name }}</p>
+        <p class="label-extra-info">{{ name }}</p>
       </label>
       {% endif %}
       {% endfor %}
@@ -148,7 +148,7 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
   <div id="menu1" class="tab-pane fade indent-right" align="right">
     <div class="form-container">
     <label for="partition" accesskey="p">
-      Partition <span class="label-extra-info">(--partition)</span>:
+      Cluster Partition:
     </label>
     <select
       name="partition"

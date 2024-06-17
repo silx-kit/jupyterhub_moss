@@ -13,6 +13,7 @@
 {% endif %}{% if gres       %}#SBATCH --gres={{gres}}
 {% endif %}{% if nprocs     %}#SBATCH --cpus-per-task={{nprocs}}
 {% endif %}{% if reservation%}#SBATCH --reservation={{reservation}}
+{% endif %}{% if clusters   %}#SBATCH {{clusters}}
 {% endif %}{% if options    %}#SBATCH {{options}}{% endif %}
 
 set -euo pipefail
