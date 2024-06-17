@@ -341,7 +341,7 @@ class MOSlurmSpawner(SlurmSpawner):
         partition_name, cluster_name = parse_partition_id(options.partition)
         options.partition = partition_name
         if cluster_name:
-            options.clusters = f"--clusters {cluster_name}"
+            options.clusters = f"--clusters={cluster_name}"
         self.req_cluster = cluster_name
         self.state_exechost_exp = rf"\1.{cluster_name}.os"
 

@@ -83,6 +83,7 @@ class PartitionConfig(BaseModel, frozen=True, extra="forbid"):
     description: str = ""
     jupyter_environments: Dict[str, JupyterEnvironment]
     simple: bool = True
+    visible_resources: bool = True
 
 
 class PartitionInfo(PartitionConfig, PartitionResources):

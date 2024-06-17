@@ -183,3 +183,12 @@
 #environment_add_button:disabled {
   color: lightgray;
 }
+
+.resource_table > tbody > tr > th {
+    text-align: center;
+    width: 20%;
+    vertical-align: middle;
+}
+.resource_table > tbody > tr > td {
+    text-align: center;
+}
