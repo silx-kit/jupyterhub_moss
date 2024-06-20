@@ -4,6 +4,7 @@ Fork of the original [silx-kit/jupyterhub_moss](https://github.com/silx-kit/jupy
 maintained by VUB-HPC.
 
 Notable changes in this fork:
+* support for multi-cluster setups in Slurm
 * support different groups of default environment
 * display available resources as job slots per amount of cores
 

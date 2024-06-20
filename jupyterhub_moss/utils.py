@@ -85,3 +85,17 @@ def create_prologue(
         prologue += f'\nexport PATH="{environment_path}:$PATH"'
 
     return prologue
+
+
+def parse_partition_id(partition_id: str) -> tuple[str, str]:
+    """Parse partition ID string from configuration file"""
+    id_sections = partition_id.split('.', 1)
+    id_sections.reverse()
+    partition_name = id_sections.pop(0)
+
+    cluster_name = ''
+    if id_sections:
+        cluster_name = id_sections.pop(0)
+
+    return partition_name, cluster_name
+

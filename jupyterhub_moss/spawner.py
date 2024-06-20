@@ -23,6 +23,7 @@ from .utils import (
     file_hash,
     local_path,
     parse_gpu_resource,
+    parse_partition_id,
     parse_timelimit,
 )
 
@@ -83,7 +84,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes/state, cores/node, cores/state, gpus, total memory for all partitions
-        r"sinfo -N -a --noheader -O 'PartitionName,StateCompact,CPUsState,Gres,GresUsed,Memory,Time'",
+        r"sinfo -N -p {partition} {clusters} --noheader -O 'Cluster,PartitionName,StateCompact,CPUsState,Gres:64,GresUsed:64,Memory,Time'",
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}."
         "Output will be parsed by ``slurm_info_resources``.",
     ).tag(config=True)
@@ -120,6 +121,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
         for line in slurm_info_out.splitlines():
             (
+                cluster,
                 partition,
                 node_state,
                 ncores,
@@ -133,6 +135,10 @@ class MOSlurmSpawner(SlurmSpawner):
             # take into account full nodes, see AD#18521
             if node_state not in ["idle", "mix", "alloc"]:
                 continue
+
+            # unique reference from cluster and partition names
+            if cluster != 'N/A':
+               partition = f"{cluster}.{partition}"
 
             # core count - allocated/idle/other/total
             _, ncores_idle, _, ncores_total = ncores.split("/")
@@ -228,33 +234,38 @@ class MOSlurmSpawner(SlurmSpawner):
         2. Parses output with slurm_info_resources
         3. Combines info with partitions traitlet
         """
-        # Execute given slurm info command
-        subvars = self.get_req_subvars()
-        cmd = " ".join(
-            (
-                format_template(self.exec_prefix, **subvars),
-                format_template(self.slurm_info_cmd, **subvars),
-            )
-        )
-        self.log.debug("Slurm info command: %s", cmd)
-        out = await self.run_command(cmd)
-
-        # Parse command output
-        resources_info = self.slurm_info_resources(out)
-        self.log.debug("Slurm partition resources: %s", resources_info)
-
         partitions = PartitionsTrait.model_validate(self.partitions)
+        partitions_info = {}
 
-        # use data from Slurm as base and overwrite with manual configuration settings
-        partitions_info = {
-            partition: PartitionInfo.model_validate(
+        # Execute given slurm info command on each partition
+        for partition_id, config_partition_info in partitions.items():
+            subvars = self.get_req_subvars()
+            subvars["partition"], subvars["clusters"] = parse_partition_id(partition_id)
+            if subvars["clusters"]:
+                subvars["clusters"] = f"-M {subvars['clusters']}"
+
+            sinfo_cmd = " ".join(
+                (
+                    format_template(self.exec_prefix, **subvars),
+                    format_template(self.slurm_info_cmd, **subvars),
+                )
+            )
+            self.log.debug("Slurm info command for partition ID '%s': %s", partition_id, sinfo_cmd)
+            partition_sinfo_out = await self.run_command(sinfo_cmd)
+            # self.log.debug("Slurm info command output: %s", partition_sinfo_out)
+
+            # Parse command output
+            resources_info = self.slurm_info_resources(partition_sinfo_out)
+            self.log.debug("Slurm partition resources: %s", resources_info)
+
+            # use data from Slurm as base and overwrite with manual configuration settings
+            partitions_info[partition_id] = PartitionInfo.model_validate(
                 {
-                    **resources_info[partition],
+                    **resources_info[partition_id],
                     **config_partition_info.dict(exclude_none=True),
                 }
             )
-            for partition, config_partition_info in partitions.items()
-        }
+
         return partitions_info
 
     @staticmethod
@@ -326,6 +337,14 @@ class MOSlurmSpawner(SlurmSpawner):
 
         The provided `options` argument is modified in-place.
         """
+        # Handle multi-cluster partitions
+        partition_name, cluster_name = parse_partition_id(options.partition)
+        options.partition = partition_name
+        if cluster_name:
+            options.clusters = f"--clusters={cluster_name}"
+        self.req_cluster = cluster_name
+        self.state_exechost_exp = rf"\1.{cluster_name}.os"
+
         # Specific handling of exclusive flag
         # When memory=0 or all CPU are requested, set the exclusive flag
         if options.nprocs == partition_info.max_nprocs or options.memory == "0":
