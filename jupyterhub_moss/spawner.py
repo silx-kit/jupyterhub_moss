@@ -138,7 +138,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
             # unique reference from cluster and partition names
             if cluster != 'N/A':
-               partition = f"{cluster}.{partition}"
+                partition = f"{cluster}.{partition}"
 
             # core count - allocated/idle/other/total
             _, ncores_idle, _, ncores_total = ncores.split("/")
