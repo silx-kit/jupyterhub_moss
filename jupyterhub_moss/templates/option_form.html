@@ -9,7 +9,7 @@
     <th>GPU slots</th>
   </tr>
   {% for name, partition in partitions.items() %}
-  {% if partition.visible_resources %}
+  {% if not partition.shared %}
   {% if partition.simple or not simple_only %}
   <tr>
     <th style="text-align: left">{{ name }}</th>
