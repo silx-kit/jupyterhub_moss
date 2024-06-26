@@ -9,6 +9,7 @@
 
 .radio-toolbar label {
   flex: 1 1 0%;
+  position: relative;
   background-color: white;
   margin: 5px;
   padding: 10px 20px;
@@ -32,8 +33,9 @@
 }
 
 .radio-toolbar input[type='radio']:checked + label {
-  background-color: #d3d3d3;
   border-color: #d3d3d3;
+  background: #ffd481;
+  background: linear-gradient(320deg, rgba(255,212,129,1) 20%, rgba(252,238,157,1) 100%);
 }
 
 .radio-toolbar input[type='radio']:focus + label {
@@ -43,7 +45,33 @@
 .radio-toolbar input[type='radio']:disabled + label {
   opacity: 0.4;
   cursor: not-allowed;
-  background-color: cyan;
+  color: #cccccc;
+}
+.feedback-container input[type='submit']:disabled {
+  cursor: not-allowed;
+  color: #999999;
+  background-color: #cccccc;
+  border-color: #eeeeee;
+}
+
+.radio-toolbar input[type='radio']:disabled + label:after {
+  content: "Resources not available";
+  position: absolute;
+  display: none;
+  width: 80%;
+  top: 50%;
+  left: 10%;
+  transform: translate(0%, -50%);
+  padding: 4px;
+  background: white;
+  color: red;
+  border-radius: 5px;
+  border: 1px solid red;
+  font-weight: normal;
+  word-wrap: break-word;
+}
+.radio-toolbar input[type='radio']:disabled + label:hover:after {
+    display: block;
 }
 
 .subheading {

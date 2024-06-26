@@ -310,6 +310,17 @@ function setVisible(element, visible) {
   }
 }
 
+function disableRadioInput(element, disabled) {
+  element.disabled = disabled;
+  if (disabled) {
+    element.checked = false;
+  }
+}
+
+function disableSubmit(disabled) {
+  document.querySelector('input[type=submit]').disabled = disabled;
+}
+
 function updateAddCustomEnvironment() {
   const environmentAddButton = document.getElementById('environment_add_button');
   const environmentAddRadio = document.getElementById('environment_add_radio');
@@ -333,11 +344,6 @@ function setSimplePartition(name) {
   const gpuDivSimple = document.getElementById('gpu_simple');
   const gpuRadio0Simple = document.getElementById('0Gpu');
   const ngpusElem = document.getElementById('ngpus');
-  const fourCoreSimple = document.getElementById('fourCores');
-  const quarterCoreSimple = document.getElementById('quarterCore');
-  const quarterCoresLabel = document.querySelector(
-    `label[for="${quarterCoreSimple.id}"]`
-  );
   const nprocsElem = document.getElementById('nprocs');
   const runtimeSelect = document.getElementById('runtime_simple');
 
@@ -355,18 +361,38 @@ function setSimplePartition(name) {
   gpuRadio0Simple.checked = true;
   ngpusElem.value = '0';
 
-  // Update displayed NProcs info and values
-  // Get number of CPUs for given paritition choice
-  const quarterNProcs = Math.floor(info.max_nprocs / 4);
+  // Update displayed GPU slots
+  for (slot = 0; slot < info.max_ngpus+1; slot++) {
+    const gpuSlot = document.getElementById(`${slot}Gpu`);
+    disableRadioInput(gpuSlot, parseInt(info.job_slots[3]) < parseInt(slot));
+  }
 
+  // Update displayed NProcs info and values
+  // Quarter CPU slot
+  const quarterNProcs = Math.floor(info.max_nprocs / 4);
+  const quarterCoreSimple = document.getElementById('quarterCore');
+  const quarterCoresLabel = document.querySelector(
+    `label[for="${quarterCoreSimple.id}"]`
+  );
   quarterCoresLabel.textContent = `${quarterNProcs} cores`;
   quarterCoreSimple.value = quarterNProcs;
-  const quarterCoreIsVisible = quarterNProcs > 4;
-  setVisible(quarterCoresLabel, quarterCoreIsVisible);
-  if (quarterCoreSimple.checked && !quarterCoreIsVisible) {
-    fourCoreSimple.checked = true;
-    fourCoreSimple.dispatchEvent(new Event('change'));
+  setVisible(quarterCoresLabel, quarterNProcs > 4);
+  disableRadioInput(quarterCoreSimple, info.job_slots[2] === 0);
+  // CPU 4-core slot
+  const fourCoreSimple = document.getElementById('fourCores');
+  disableRadioInput(fourCoreSimple, info.job_slots[2] === 0);
+  // CPU 2-core slot
+  const twoCoreSimple = document.getElementById('twoCores');
+  disableRadioInput(twoCoreSimple, info.job_slots[1] === 0);
+  // CPU 1-core slot
+  const minCoreSimple = document.getElementById('minimumCore');
+  disableRadioInput(minCoreSimple, info.job_slots[0] === 0);
+  if ( info.job_slots[0] ) {
+    minCoreSimple.checked = true;
+    minCoreSimple.dispatchEvent(new Event('change'));
   }
+  // disable submit if no slots are available
+  disableSubmit(info.job_slots[0] === 0);
 
   // Update nprocs according to current CPUs choice
   const selector = document.querySelector(
@@ -585,6 +611,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       resetSpawnForm();
     }
+  });
+
+  // Reset submit button when opening advanced tab
+  document.getElementById('advanced_tab_link').addEventListener('click', () => {
+      disableSubmit(false);
   });
 
   // Update limits when partition is changed

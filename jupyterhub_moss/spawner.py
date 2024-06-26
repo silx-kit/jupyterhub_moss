@@ -84,7 +84,7 @@ class MOSlurmSpawner(SlurmSpawner):
 
     slurm_info_cmd = traitlets.Unicode(
         # Get number of nodes/state, cores/node, cores/state, gpus, total memory for all partitions
-        r"sinfo -N -p {partition} {clusters} --noheader -O 'Cluster,PartitionName,StateCompact,CPUsState,Gres:64,GresUsed:64,Memory,Time'",
+        r"sinfo -N -p {partition} {clusters} --noheader -O 'Cluster,PartitionName,StateCompact,CPUsState,Gres:64,GresUsed:64,Memory,Time,OverSubscribe'",
         help="Command to query cluster information from Slurm. Formatted using req_xyz traits as {xyz}."
         "Output will be parsed by ``slurm_info_resources``.",
     ).tag(config=True)
@@ -129,6 +129,7 @@ class MOSlurmSpawner(SlurmSpawner):
                 gres_used,
                 memory,
                 timelimit,
+                oversubscribe,
             ) = line.split()
 
             # ignore nodes that are down
@@ -138,27 +139,53 @@ class MOSlurmSpawner(SlurmSpawner):
 
             # unique reference from cluster and partition names
             if cluster != 'N/A':
-               partition = f"{cluster}.{partition}"
+                partition = f"{cluster}.{partition}"
 
             # core count - allocated/idle/other/total
             _, ncores_idle, _, ncores_total = ncores.split("/")
             ncores_idle = int(ncores_idle)
             ncores_total = int(ncores_total)
+            max_job_ncores = ncores_total
 
             # gpu count - gpu:name:total(indexes)
             try:
+                gpus_used = int(gres_used.replace("(", ":").split(":")[2])
                 gpus_gres = gres_total.replace("(", ":").split(":")
                 gpus_total = int(gpus_gres[2])
                 gpu = ":".join(gpus_gres[0:2]) + ":{}"
-                gpus_used = int(gres_used.replace("(", ":").split(":")[2])
             except IndexError:
-                gpus_total = 0
                 gpus_used = 0
+                gpus_total = 0
                 gpu = ""
+            finally:
+                max_job_gpus = gpus_total
+
+            # shared resources: oversubscription, sharding
+            # partitions with shared resources are always available for submission
+            shared = False
+            if oversubscribe.startswith(("FORCE", "YES")):
+                # Slurm does not report usage of oversubscribed resources
+                # sinfo shows partition as full once each core has a single job running on them
+                # even though more jobs will be allowed according to the oversubscription factor
+                _, oversub_factor= oversubscribe.split(":", 1)
+                ncores_total *= int(oversub_factor)
+                ncores_idle = ncores_total
+                shared = True
+            if "shard" in gres_used:
+                # Slurm does not report usage of shards
+                # sinfo reports total number of shards, but not number of used shards
+                shard_gpus_total = gres_total.split("shard")[1]
+                gpus_total = int(shard_gpus_total.replace("(", ":").split(":")[2])
+                shard_gpus_used = gres_used.split("shard")[1]
+                gpus_used = int(shard_gpus_used.replace("(", ":").split(":")[2])
+                max_job_gpus = 1
+                gpu = "shard:{}"
+                shared = True
 
             # job slots for resource display
             # 1 core, 2 cores, 4 cores, 1 GPU
-            job_slots = [ncores_idle, ncores_idle // 2, ncores_idle // 4, gpus_total-gpus_used]
+            gpu_slots = gpus_total - gpus_used
+            job_slots = [ncores_idle, ncores_idle // 2, ncores_idle // 4, gpu_slots]
 
             try:
                 max_runtime = parse_timelimit(timelimit)
@@ -173,11 +200,12 @@ class MOSlurmSpawner(SlurmSpawner):
                     # display resource counts
                     "job_slots": job_slots,
                     # required resource counts
-                    "max_nprocs": ncores_total,
+                    "max_nprocs": max_job_ncores,
                     "max_mem": memory.rstrip("+"),
                     "gpu": gpu,
-                    "max_ngpus": gpus_total,
+                    "max_ngpus": max_job_gpus,
                     "max_runtime": max_runtime.total_seconds(),
+                    "shared": shared,
                 }
             except ValidationError as err:
                 self.log.error("Error parsing output of slurm_info_cmd: %s", err)
