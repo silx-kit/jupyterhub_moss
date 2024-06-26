@@ -5,8 +5,10 @@ maintained by VUB-HPC.
 
 Notable changes in this fork:
 * support for multi-cluster setups in Slurm
+* support for oversubscription and sharding in Slurm
 * support different groups of default environment
 * display available resources as job slots per amount of cores
+* disable unavailable resources from resource panel
 
 **jupyterhub_moss** is a Python package that provides:
 
