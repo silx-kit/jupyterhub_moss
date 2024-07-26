@@ -95,3 +95,6 @@ c.BatchSpawnerBase.exec_prefix = ""
 c.JupyterHub.ip = "127.0.0.1"
 c.JupyterHub.hub_ip = "127.0.0.1"
 c.JupyterHub.port = 8000
+
+# Demo: Allow any user
+c.Authenticator.allow_all = True
