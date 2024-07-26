@@ -8,16 +8,16 @@ from pydantic import (
     field_validator,
     BaseModel,
     ConfigDict,
-    FieldValidationInfo,
     NonNegativeInt,
     PositiveInt,
     RootModel,
+    ValidationInfo,
 )
 
 # Validators
 
 
-def check_match_gpu(v: Optional[int], info: FieldValidationInfo) -> Optional[int]:
+def check_match_gpu(v: Optional[int], info: ValidationInfo) -> Optional[int]:
     if v is not None and v > 0 and info.data.get("gpu") == "":
         return 0  # GPU explicitly disabled
     return v
@@ -69,7 +69,7 @@ class JupyterEnvironment(BaseModel, frozen=True, extra="forbid"):
 
     # validators
     @field_validator("modules")
-    def check_path_or_mods(cls, v: str, info: FieldValidationInfo) -> str:
+    def check_path_or_mods(cls, v: str, info: ValidationInfo) -> str:
         if not v and not info.data.get("path"):
             raise ValueError("Jupyter environment path or modules is required")
         return v
