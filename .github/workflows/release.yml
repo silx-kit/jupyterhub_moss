@@ -31,6 +31,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          name: release-artifacts
           path: dist/
 
   pypi-publish:
@@ -47,5 +48,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          name: release-artifacts
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
