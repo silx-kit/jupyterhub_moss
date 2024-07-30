@@ -31,15 +31,19 @@ window.SLURM_DATA = JSON.parse('{{ jsondata }}');
   charset="utf-8"
 ></script>
 <ul class="nav nav-tabs nav-justified">
-  <li class="active">
-    <a data-toggle="tab" href="#home" id="simple_tab_link">
+  <li class="nav-item">
+    <a  class="nav-link active" data-bs-toggle="tab" href="#home" id="simple_tab_link" >
       Simple
     </a>
   </li>
-  <li><a data-toggle="tab" href="#menu1" id="advanced_tab_link">Advanced</a></li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="tab" href="#menu1" id="advanced_tab_link">
+      Advanced
+    </a>
+  </li>
 </ul>
 <div class="tab-content">
-  <div id="home" class="tab-pane fade in active">
+  <div id="home" class="tab-pane fade show active">
     <h4 class="subheading">Partition</h4>
     <div class="radio-toolbar">
       {% for name, partition in partitions.items() %}
