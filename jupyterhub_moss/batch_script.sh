@@ -2,7 +2,7 @@
 #SBATCH --job-name=spawner-jupyterhub
 #SBATCH --chdir={{homedir}}
 #SBATCH --export={{keepvars}}
-#SBATCH --get-user-env=L
+#SBATCH --get-user-env
 {% if output %}#SBATCH --output={% if not output.startswith('/') %}{{homedir}}/{% endif %}{{output}}
 {% endif %}{% if partition  %}#SBATCH --partition={{partition}}
 {% endif %}{% if runtime    %}#SBATCH --time={{runtime}}
