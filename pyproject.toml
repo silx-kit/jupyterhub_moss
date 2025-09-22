@@ -38,6 +38,7 @@ Changelog = "https://github.com/silx-kit/jupyterhub_moss/releases"
 
 [project.optional-dependencies]
 dev = [
+    "bandit",
     "black",
     "build",
     "bump2version",
@@ -64,6 +65,9 @@ jupyterhub_moss = [
   "form/*.js",
   "templates/*.html",
 ]
+
+[tool.bandit.assert_used]
+skips = ["*test*.py"]
 
 [tool.pytest.ini_options]
 addopts = [

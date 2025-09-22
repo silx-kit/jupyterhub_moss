@@ -25,6 +25,10 @@ From the source directory:
 
     flake8
 
+* Check code with `bandit <https://bandit.readthedocs.io/>`_ security linter::
+
+    bandit -c pyproject.toml -r .
+
 * Check typing with `mypy <https://mypy.readthedocs.io>`_`::
 
     mypy
