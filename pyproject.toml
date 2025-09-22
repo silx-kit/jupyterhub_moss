@@ -1,6 +1,68 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=77.0.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "jupyterhub_moss"
+dynamic = ["version"]
+authors = [
+    {name = "European Synchrotron Radiation Facility", email = "jupyter@esrf.fr"},
+]
+description = "JupyterHub SLURM Spawner with specific spawn page"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["jupyterhub", "slurm"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Framework :: Jupyter",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: JavaScript",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "batchspawner>=1.0",
+    "jinja2",
+    "jupyterhub>=5.0.0",
+    "pydantic>=2.4.0,<3",
+    "traitlets",
+]
+
+[project.urls]
+Homepage = "https://github.com/silx-kit/jupyterhub_moss"
+Repository = "https://github.com/silx-kit/jupyterhub_moss"
+Issues = "https://github.com/silx-kit/jupyterhub_moss/issues"
+Changelog = "https://github.com/silx-kit/jupyterhub_moss/releases"
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "build",
+    "bump2version",
+    "check-manifest",
+    "flake8",
+    "jupyter_server",
+    "mypy",
+    "pytest",
+    "pytest-asyncio>=0.17,<0.23",
+]
+
+[tool.setuptools]
+packages = ["jupyterhub_moss"]
+include-package-data = false
+
+[tool.setuptools.dynamic]
+version = {attr = "jupyterhub_moss.version"}
+
+[tool.setuptools.package-data]
+jupyterhub_moss = [
+  "batch_script.sh",
+  "form/*.css",
+  "form/*.js",
+  "templates/*.html",
+]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -12,7 +74,6 @@ testpaths = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
 plugins = "pydantic.mypy"
 files = [
   "jupyterhub_moss",
