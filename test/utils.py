@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import tempfile
-from typing import Optional
 from urllib.parse import urlencode
 
 from jupyterhub.tests.utils import async_requests, public_host
@@ -15,8 +14,8 @@ def request(
     app,
     method: str,
     path: str,
-    data: Optional[dict] = None,
-    cookies: Optional[dict] = None,
+    data: dict | None = None,
+    cookies: dict | None = None,
     **kwargs,
 ):
     """Send a GET or POST request on the hub

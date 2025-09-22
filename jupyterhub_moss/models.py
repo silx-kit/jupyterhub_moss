@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Optional
 
 from pydantic import (
     BaseModel,
@@ -17,7 +16,7 @@ from pydantic import (
 # Validators
 
 
-def check_match_gpu(v: Optional[int], info: ValidationInfo) -> Optional[int]:
+def check_match_gpu(v: int | None, info: ValidationInfo) -> int | None:
     if v is not None and v > 0 and info.data.get("gpu") == "":
         return 0  # GPU explicitly disabled
     return v
@@ -80,7 +79,7 @@ class PartitionConfig(BaseModel, frozen=True, extra="forbid"):
 
     architecture: str = ""
     description: str = ""
-    jupyter_environments: Dict[str, JupyterEnvironment]
+    jupyter_environments: dict[str, JupyterEnvironment]
     simple: bool = True
 
 
@@ -93,22 +92,22 @@ class PartitionInfo(PartitionConfig, PartitionResources):
 class _PartitionTraits(PartitionConfig, frozen=True, extra="forbid"):
     """Configuration of a single partition passed as ``partitions`` traits"""
 
-    gpu: Optional[str] = None
-    max_ngpus: Optional[int] = None
-    max_nprocs: Optional[int] = None
-    max_runtime: Optional[int] = None
+    gpu: str | None = None
+    max_ngpus: int | None = None
+    max_nprocs: int | None = None
+    max_runtime: int | None = None
 
     # validators
     _check_match_gpu = field_validator("max_ngpus")(check_match_gpu)
 
     @field_validator("max_ngpus")
-    def check_is_positive_or_none(cls, v: Optional[int]) -> Optional[int]:
+    def check_is_positive_or_none(cls, v: int | None) -> int | None:
         if v is not None and v < 0:
             raise ValueError("Value must be positive")
         return v
 
     @field_validator("max_nprocs", "max_runtime")
-    def check_is_strictly_positive_or_none(cls, v: Optional[int]) -> Optional[int]:
+    def check_is_strictly_positive_or_none(cls, v: int | None) -> int | None:
         if v is not None and v <= 0:
             raise ValueError("Value must be strictly positive")
         return v
@@ -117,7 +116,7 @@ class _PartitionTraits(PartitionConfig, frozen=True, extra="forbid"):
 class PartitionsTrait(RootModel):
     """Configuration passed as ``partitions`` trait"""
 
-    root: Dict[str, _PartitionTraits]
+    root: dict[str, _PartitionTraits]
 
     model_config = ConfigDict(frozen=True)
 

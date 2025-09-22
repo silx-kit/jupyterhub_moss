@@ -4,7 +4,8 @@ import datetime
 import hashlib
 import os.path
 import re
-from typing import Any, Callable, Iterable, Optional
+from collections.abc import Callable, Iterable
+from typing import Any
 
 
 def local_path(path: str) -> str:
@@ -17,7 +18,7 @@ def file_hash(filename: str) -> str:
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def find(function: Callable[[Any], bool], iterable: Iterable[Any]) -> Optional[Any]:
+def find(function: Callable[[Any], bool], iterable: Iterable[Any]) -> Any | None:
     for item in iterable:
         if function(item):
             return item

@@ -5,7 +5,7 @@ import functools
 import importlib.metadata
 import json
 import os.path
-from typing import Callable
+from collections.abc import Callable
 
 import traitlets
 from batchspawner import SlurmSpawner, format_template
