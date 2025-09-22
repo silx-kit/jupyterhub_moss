@@ -4,5 +4,6 @@ graft test
 prune .vscode
 exclude .bumpversion.cfg
 exclude .editorconfig
+exclude .flake8
 exclude .prettierrc.json
 exclude CONTRIBUTING.md

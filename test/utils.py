@@ -1,7 +1,6 @@
-from __future__ import annotations
-
-from typing import Optional
+import tempfile
 from urllib.parse import urlencode
+
 from jupyterhub.tests.utils import async_requests, public_host
 from jupyterhub.utils import url_path_join
 from traitlets import Unicode, default
@@ -13,8 +12,8 @@ def request(
     app,
     method: str,
     path: str,
-    data: Optional[dict] = None,
-    cookies: Optional[dict] = None,
+    data: dict | None = None,
+    cookies: dict | None = None,
     **kwargs,
 ):
     """Send a GET or POST request on the hub
@@ -52,9 +51,13 @@ class MOSlurmSpawnerMock(MOSlurmSpawner):
 
     req_homedir = Unicode(help="The home directory for the user")
 
+    def __init__(self, *args, **kwargs):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        super().__init__(*args, **kwargs)
+
     @default("req_homedir")
     def _default_req_homedir(self):
-        return f"/tmp/jupyterhub_moss_tests/{self.user.name}"
+        return f"/{self._tmpdir.name}/jupyterhub_moss_tests/{self.user.name}"
 
     def user_env(self, env):
         env["USER"] = self.user.name

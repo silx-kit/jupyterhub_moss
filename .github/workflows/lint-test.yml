@@ -13,43 +13,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🏷️
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python 🐍
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.8'
+          python-version: '3.10'
 
       - name: Install dependencies ⚙️
         run: |
           python -m pip install --upgrade pip
           pip install .[dev]
 
-      - name: Log Python environment ✏️
-        run: |
-          pip freeze
+      - run: pip freeze
 
-      - name: black ◼️
-        run: black --check .
+      - run: bandit -c pyproject.toml -r .
+      - run: black --check .
+      - run: flake8
+      - run: isort --check .
+      - run: mypy
+      - run: check-manifest
+      - run: python -m build --sdist
+      - run: python -m twine check dist/*
 
-      - name: flake8 ❄️
-        run: flake8 .
-
-      - name: mypy 🧐
-        run: mypy
-
-      - name: check-manifest 📰
-        run: check-manifest
-
-      - name: Install Node v20
-        uses: actions/setup-node@v4
+      - name: Install Node v22
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install configurable-http-proxy
         run: |
           npm install -g configurable-http-proxy
           npm list
 
-      - name: pytest tests 👓
-        run: python -m pytest -v
+      - run: python -m pytest -v

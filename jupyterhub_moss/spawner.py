@@ -1,11 +1,9 @@
-from __future__ import annotations
-
 import datetime
 import functools
 import importlib.metadata
 import json
 import os.path
-from typing import Callable
+from collections.abc import Callable
 
 import traitlets
 from batchspawner import SlurmSpawner, format_template
@@ -198,7 +196,7 @@ class MOSlurmSpawner(SlurmSpawner):
         )
         environment = Environment(
             loader=loader,
-            autoescape=False,
+            autoescape=False,  # nosec: B701
             trim_blocks=True,
             lstrip_blocks=True,
         )
@@ -241,7 +239,7 @@ class MOSlurmSpawner(SlurmSpawner):
         return partitions_info
 
     @staticmethod
-    async def create_options_form(spawner: MOSlurmSpawner) -> str:
+    async def create_options_form(spawner: "MOSlurmSpawner") -> str:
         """Create a form for the user to choose the configuration for the SLURM job"""
         partitions_info = await spawner._get_partitions_info()
 
@@ -290,11 +288,12 @@ class MOSlurmSpawner(SlurmSpawner):
 
         Raises an exception when a check fails.
         """
-        if options.runtime:
-            assert (
-                parse_timelimit(options.runtime).total_seconds()
-                <= partition_info.max_runtime
-            ), "Requested runtime exceeds partition time limit"
+        if (
+            options.runtime
+            and parse_timelimit(options.runtime).total_seconds()
+            > partition_info.max_runtime
+        ):
+            raise AssertionError("Requested runtime exceeds partition time limit")
 
         if options.nprocs > partition_info.max_nprocs:
             raise AssertionError("Unsupported number of CPU cores")
