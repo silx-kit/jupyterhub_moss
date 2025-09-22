@@ -43,6 +43,7 @@ dev = [
     "bump2version",
     "check-manifest",
     "flake8",
+    "isort",
     "jupyter_server",
     "mypy",
     "pytest",
@@ -72,6 +73,9 @@ asyncio_mode = "auto"
 testpaths = [
   "test",
 ]
+
+[tool.isort]
+profile = "black"
 
 [tool.mypy]
 plugins = "pydantic.mypy"

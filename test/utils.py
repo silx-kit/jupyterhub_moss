@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 from urllib.parse import urlencode
+
 from jupyterhub.tests.utils import async_requests, public_host
 from jupyterhub.utils import url_path_join
 from traitlets import Unicode, default
