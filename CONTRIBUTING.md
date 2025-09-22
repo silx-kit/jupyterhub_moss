@@ -45,13 +45,6 @@ python -m pytest
 Note: This is different from calling `pytest`, see
 [Invoking pytest versus python -m pytest](https://docs.pytest.org/en/latest/explanation/pythonpath.html#invoking-pytest-versus-python-m-pytest).
 
-### CI
-
-The CI will check that the lint check passes, that all files are correctly
-formatted (using `black --check .`) and that tests passes. Before commiting, be
-sure to run `flake8`, `black`, `mypy` and `python -m pytest` to ensure CI
-passes.
-
 ## Generate the spawn page locally
 
 Even if you do not have access to a Slurm cluster, it is possible to mock the
