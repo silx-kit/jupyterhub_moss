@@ -8,35 +8,26 @@ The dependencies needed to contribute can be installed by
 pip install .[dev]
 ```
 
-### Linting
+Formatting/Linting
+==================
 
-[flake8](https://flake8.pycqa.org/en/latest/index.html) is used to lint the
-code. The config is located in [setup.cfg](./setup.cfg). Linting can be run
-using
+From the source directory:
 
-```
-flake8 .
-```
+* Format code with `black <https://black.readthedocs.io/>`_::
 
-### Formatting
+    black .
 
-[black](https://black.readthedocs.io/en/stable/) is used to format Python files.
-Most editors can be configured to format on save but you can run the formatting
-manually using
+* Sort imports with `isort <https://pycqa.github.io/isort/>`_::
 
-```
-black .
-```
+    isort .
 
-### Typing
+* Check code with `flake8 <https://flake8.pycqa.org/>`_::
 
-[mypy](https://mypy.readthedocs.io/en/stable) is used to check typing
-statically. The config is located in `pyproject.toml`. Type checking can be run
-using
+    flake8
 
-```
-mypy
-```
+* Check typing with `mypy <https://mypy.readthedocs.io>`_`::
+
+    mypy
 
 ### Testing
 
