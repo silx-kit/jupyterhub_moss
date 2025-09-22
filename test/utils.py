@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import tempfile
 from urllib.parse import urlencode
 

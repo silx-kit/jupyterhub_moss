@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 import functools
 import importlib.metadata
@@ -241,7 +239,7 @@ class MOSlurmSpawner(SlurmSpawner):
         return partitions_info
 
     @staticmethod
-    async def create_options_form(spawner: MOSlurmSpawner) -> str:
+    async def create_options_form(spawner: "MOSlurmSpawner") -> str:
         """Create a form for the user to choose the configuration for the SLURM job"""
         partitions_info = await spawner._get_partitions_info()
 

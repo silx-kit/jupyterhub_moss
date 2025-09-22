@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 
 from pydantic import (
@@ -153,7 +151,7 @@ class UserOptions(BaseModel):
     prologue: str = ""
 
     @classmethod
-    def parse_formdata(cls, formdata: dict[str, list[str]]) -> UserOptions:
+    def parse_formdata(cls, formdata: dict[str, list[str]]) -> "UserOptions":
         # Those keys should not come from the request, they are set later by the spawner
         excluded_keys = "gres", "prologue"
         fields = {
