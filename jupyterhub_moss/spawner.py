@@ -198,7 +198,7 @@ class MOSlurmSpawner(SlurmSpawner):
         )
         environment = Environment(
             loader=loader,
-            autoescape=False,
+            autoescape=False,  # nosec: B701
             trim_blocks=True,
             lstrip_blocks=True,
         )
@@ -290,11 +290,12 @@ class MOSlurmSpawner(SlurmSpawner):
 
         Raises an exception when a check fails.
         """
-        if options.runtime:
-            assert (
-                parse_timelimit(options.runtime).total_seconds()
-                <= partition_info.max_runtime
-            ), "Requested runtime exceeds partition time limit"
+        if (
+            options.runtime
+            and parse_timelimit(options.runtime).total_seconds()
+            > partition_info.max_runtime
+        ):
+            raise AssertionError("Requested runtime exceeds partition time limit")
 
         if options.nprocs > partition_info.max_nprocs:
             raise AssertionError("Unsupported number of CPU cores")

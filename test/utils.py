@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import tempfile
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -53,9 +54,13 @@ class MOSlurmSpawnerMock(MOSlurmSpawner):
 
     req_homedir = Unicode(help="The home directory for the user")
 
+    def __init__(self, *args, **kwargs):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        super().__init__(*args, **kwargs)
+
     @default("req_homedir")
     def _default_req_homedir(self):
-        return f"/tmp/jupyterhub_moss_tests/{self.user.name}"
+        return f"/{self._tmpdir.name}/jupyterhub_moss_tests/{self.user.name}"
 
     def user_env(self, env):
         env["USER"] = self.user.name
