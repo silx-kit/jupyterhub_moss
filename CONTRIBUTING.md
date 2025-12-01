@@ -8,30 +8,38 @@ The dependencies needed to contribute can be installed by
 pip install .[dev]
 ```
 
-Formatting/Linting
-==================
+# Formatting/Linting
 
 From the source directory:
 
-* Format code with `black <https://black.readthedocs.io/>`_::
+- Format code with [black](https://black.readthedocs.io/):
 
-    black .
+  ```
+  black .
+  ```
 
-* Sort imports with `isort <https://pycqa.github.io/isort/>`_::
+- Sort imports with [isort](https://pycqa.github.io/isort/):
 
-    isort .
+  ```
+  isort .
+  ```
 
-* Check code with `flake8 <https://flake8.pycqa.org/>`_::
+- Check code with [flake8](https://flake8.pycqa.org/):
 
-    flake8
+  ```
+  flake8
+  ```
 
-* Check code with `bandit <https://bandit.readthedocs.io/>`_ security linter::
+- Check code with [bandit](https://bandit.readthedocs.io/) security linter:
 
-    bandit -c pyproject.toml -r .
+  ```
+  bandit -c pyproject.toml -r .
+  ```
 
-* Check typing with `mypy <https://mypy.readthedocs.io>`_`::
-
-    mypy
+- Check typing with [mypy](https://mypy.readthedocs.io):
+  ```
+  mypy
+  ```
 
 ### Testing
 

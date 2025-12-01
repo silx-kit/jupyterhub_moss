@@ -12,17 +12,19 @@
 
 <img style="margin:auto" src=https://user-images.githubusercontent.com/9449698/215526389-2ef5ac32-5d50-49de-aa5f-46972feaccf1.png width="50%">
 
-## Install
+## Installation
 
 `pip install jupyterhub_moss`
 
 ## Usage
 
-### Partition settings
+To use **jupyterhub_moss**, you first need a working
+[JupyterHub](https://jupyterhub.readthedocs.io/) instance, see
+[JupyterHub](https://jupyterhub.readthedocs.io/) and
+[Jupyterhub's `Spawner`](https://jupyterhub.readthedocs.io/en/stable/reference/api/spawner.html)
+documentation.
 
-To use **jupyterhub_moss**, you need first a working
-[JupyterHub](https://jupyterhub.readthedocs.io/) instance. **jupyterhub_moss**
-needs then to be imported in
+**jupyterhub_moss** needs then to be imported in
 [your JupyterHub configuration file](https://jupyterhub.readthedocs.io/en/stable/getting-started/config-basics.html)
 (usually named `jupyterhub_conf.py`):
 
@@ -37,6 +39,8 @@ c = get_config()
 # Init JupyterHub configuration to use this spawner
 jupyterhub_moss.set_config(c)
 ```
+
+### Partition settings
 
 Once **jupyterhub_moss** is set up, you can define the partitions available on
 Slurm by setting `c.MOSlurmSpawner.partitions` in the same file:
