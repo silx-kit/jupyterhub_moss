@@ -271,9 +271,11 @@ class MOSlurmSpawner(SlurmSpawner):
             }
         )
 
+        hub_base_url = spawner.handler.hub.base_url.rstrip("/")
+
         return spawner.__option_form_template.render(
-            hash_option_form_css=RESOURCES_HASH["option_form.css"],
-            hash_option_form_js=RESOURCES_HASH["option_form.js"],
+            option_form_css=f"{hub_base_url}/form/option_form.css?v={RESOURCES_HASH['option_form.css']}",
+            option_form_js=f"{hub_base_url}/form/option_form.js?v={RESOURCES_HASH['option_form.js']}",
             partitions=partitions_dict,
             default_partition=default_partition,
             batchspawner_version=BATCHSPAWNER_VERSION,
